@@ -1,0 +1,25 @@
+{
+  "name": "UI Annotator",
+  "version": "1.0.0",
+  "manifest_version": 3,
+  "description": "Tool for annotating web elements",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup/index.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["contentScript.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "permissions": ["activeTab", "storage", "downloads"]
+}
