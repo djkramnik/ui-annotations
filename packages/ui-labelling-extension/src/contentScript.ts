@@ -220,7 +220,7 @@ type GlobalState = {
         case 'currEl':
           if (globals.state === 'navigation' && value) {
             removeRects()
-            drawRect({
+            drawCandidate({
               element: value as HTMLElement,
               parent: overlay
             })
@@ -266,7 +266,6 @@ type GlobalState = {
                 // fragile
                 removeIcon.parentElement?.remove()
               })
-              // will need delete buttons in here
               drawRect({
                 id,
                 element: ref,
@@ -387,6 +386,56 @@ type GlobalState = {
       parent.appendChild(annotation)
     }
 
+    // when we draw a candidate for annotation, we also want to include some nav helpers
+    // (direct children and siblings that match criteria)
+    function drawCandidate({
+      element,
+      parent,
+    }: {
+      element: HTMLElement
+      parent: HTMLElement
+    }) {
+      drawRect({
+        element,
+        parent,
+      })
+      // get siblings.. drawRect on them
+      const siblings = getSibs(element)
+      console.log('sib? sib?? sib!!!!', siblings.length)
+
+      // traverse down the dom, skipping containers that have the same bounding box as this
+      // (i.e. layers of div wrappers that do nothing to layout)
+      // const differentlyShapedPredecessor = traverseDown(element)
+
+      // // get all the elements at that level
+      // const differentlyShapedKids = differentlyShapedPredecessor
+      //   ? getSibs(differentlyShapedPredecessor).concat(differentlyShapedPredecessor)
+      //   : []
+
+      siblings.forEach((sib, index) => {
+        drawRect({
+          id: `candidate_annotation_sib_${index}`,
+          element: sib,
+          parent,
+          styles: {
+            border: `2px solid #0FFF5050`
+          }
+        })
+      })
+
+      // differentlyShapedKids.forEach((child, index) => {
+      //   drawRect({
+      //     id: `candidate_annotation_child_${index}`,
+      //     element: child,
+      //     parent,
+      //     styles: {
+      //       border: `2px solid aliceblue`,
+      //       boxShadow: `inset 0 4px 8px rgba(0, 0, 0, 0.3)`
+      //     }
+      //   })
+      // })
+    }
+
     // this is active only when the global state is "navigation"
     function handleNavigationKeyPress(event: KeyboardEvent) {
       if (!globals.currEl) {
@@ -446,11 +495,16 @@ type GlobalState = {
             break
           }
           const firstDifferentlyShapedParent = traverseUp(globals.currEl)
-          if (!firstDifferentlyShapedParent) {
+
+          const lastParent = firstDifferentlyShapedParent
+            ? findHighestSharedShape(firstDifferentlyShapedParent)
+            : null
+
+          if (!lastParent) {
             log.warn('arrowup', 'no differently shaped parent')
             break
           }
-          globals.currEl = firstDifferentlyShapedParent
+          globals.currEl = lastParent
           break
         case 'k':
           const currChildren = Array.from(globals.currEl.children)
@@ -486,7 +540,17 @@ type GlobalState = {
     // END CALLBACK SOUP
 
     // SO CALLED UTILS
-    function traverseUp(el: HTMLElement, tolerance: number = 10): HTMLElement | null {
+
+    function getSibs(el: HTMLElement): HTMLElement[] {
+      const parent = el.parentElement
+      if (!parent) {
+        return []
+      }
+      return Array.from(parent.children)
+        .filter(element => element !== el && element instanceof HTMLElement) as HTMLElement[]
+    }
+
+    function traverseUp(el: HTMLElement, tolerance: number = 2): HTMLElement | null {
       if (el === document.body) {
         return null
       }
@@ -502,7 +566,22 @@ type GlobalState = {
       return parent
     }
 
-    function traverseDown(el: HTMLElement, tolerance: number = 10): HTMLElement | null {
+    function findHighestSharedShape(el: HTMLElement) {
+      if (el === document.body) {
+        return el
+      }
+      const parent = el.parentElement
+      if (!parent) {
+        return el
+      }
+      const boxesMatch = boxesTheSame(el.getBoundingClientRect(), parent.getBoundingClientRect())
+      if (boxesMatch) {
+        return findHighestSharedShape(parent)
+      }
+      return el // the difference
+    }
+
+    function traverseDown(el: HTMLElement, tolerance: number = 2): HTMLElement | null {
       if (el.children.length < 1) {
         return null
       }
@@ -518,7 +597,7 @@ type GlobalState = {
       return traverseDown(el.children[0] as HTMLElement, tolerance)
     }
 
-    function boxesTheSame (bb1: DOMRect, bb2: DOMRect, tolerance: number): boolean {
+    function boxesTheSame (bb1: DOMRect, bb2: DOMRect, tolerance: number = 2): boolean {
       return Math.abs(bb1.top - bb2.top) < tolerance &&
         Math.abs(bb1.left - bb2.left) < tolerance &&
         Math.abs(bb1.right - bb2.right) < tolerance &&
