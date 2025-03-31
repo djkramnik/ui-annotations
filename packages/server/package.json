@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp .env ./dist/.env",
     "watch": "tsc -w"
   },
   "keywords": [],
@@ -11,9 +11,14 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/node": "^22.13.14",
+    "@types/pg": "^8.11.11",
+    "dotenv": "^16.4.7",
     "typescript": "^5.8.2"
   },
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "knex": "^3.1.0",
+    "pg": "^8.14.1"
   }
 }

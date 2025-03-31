@@ -4,12 +4,19 @@
   "main": "index.js",
   "scripts": {
     "build:extension": "npm run -w ui-labelling-extension build",
-    "watch:extension": "npm run -w ui-labelling-extension watch"
+    "watch:extension": "npm run -w ui-labelling-extension watch",
+    "build:server": "npm run -w ui-labelling-server build",
+    "start:server": "nodemon packages/server/dist/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "private": true,
-  "workspaces": ["packages/*"]
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
 }
