@@ -369,7 +369,7 @@ type GlobalState = {
       annotation.style.height = height + 'px'
       annotation.style.top = top + 'px'
       annotation.style.left = left + 'px'
-      annotation.style.border= `2px solid #0FFF50`
+      annotation.style.boxSizing = 'border-box'
 
       // override styles if any
       if (styles) {
@@ -378,7 +378,10 @@ type GlobalState = {
             // @ts-ignore
             annotation.style[k] = v
           })
+      } else {
+        annotation.style.border= `2px solid #0FFF50`
       }
+
       // custom child element if any
       if (child) {
         annotation.appendChild(child)
@@ -417,7 +420,7 @@ type GlobalState = {
           element: sib,
           parent,
           styles: {
-            border: `2px solid ##D3D3D350`,
+            border: `2px solid #D3D3D370`,
             backgroundColor: '#D3D3D330'
           }
         })
