@@ -401,7 +401,6 @@ type GlobalState = {
       })
       // get siblings.. drawRect on them
       const siblings = getSibs(element)
-      console.log('sib? sib?? sib!!!!', siblings.length)
 
       // traverse down the dom, skipping containers that have the same bounding box as this
       // (i.e. layers of div wrappers that do nothing to layout)
@@ -418,7 +417,8 @@ type GlobalState = {
           element: sib,
           parent,
           styles: {
-            border: `2px solid #0FFF5050`
+            border: `2px solid ##D3D3D350`,
+            backgroundColor: '#D3D3D330'
           }
         })
       })
