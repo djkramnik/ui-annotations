@@ -1,23 +1,16 @@
 import dotenv = require('dotenv')
-import knex from 'knex'
 import path from 'path'
 import express from 'express'
+import { annotationRouter } from './routes/annotation'
+import { getDb } from './db'
 
 dotenv.config({ path: path.join(__dirname, '.env') })
 
 ;(async function main() {
-  const db = knex({
-    client: 'pg',
-    connection: {
-      host: '127.0.0.1',
-      user: process.env.DATABASE_USER,
-      password: process.env.DATABASE_PASSWORD,
-      database: process.env.DATABASE_DB
-    }
-  })
+  const db = getDb()
 
   try {
-    await db.raw('SELECT count(*) FROM annotations')
+    console.log('test', (await db.raw('SELECT count(*) FROM annotations')).rows[0])
     // if we are here, we are connected to db
     const app = express()
     const port = process.env.PORT || 4000
@@ -26,19 +19,25 @@ dotenv.config({ path: path.join(__dirname, '.env') })
     }
 
     app.use(express.static(process.env.UI_DIR))
-    app.use(express.json())
+    app.use(express.json({ limit: '10mb' }))
+    app.use('/api/annotation', annotationRouter)
 
-    // TODO POST endpoint to save annotation(s) to db
-    // TODO: GET endpoint to fetch all annotations for a given url
-    // TODO: GET endpoint to fetch all distinct urls for annotations
-
-    app.listen(port, () => {
+    const server = app.listen(port, () => {
       console.log('serving listening on port', port)
       console.log('serving static files from ', process.env.UI_DIR)
     })
+
+    process.on('SIGTERM', shutDown);
+    process.on('SIGINT', shutDown);
+
+    function shutDown() {
+      server.close(() => {
+        db.destroy().then(() => {
+          process.exit(0)
+        })
+      })
+    }
   } catch(err) {
     console.error(err)
-  } finally {
-    db.destroy()
   }
 })()

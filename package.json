@@ -6,6 +6,7 @@
     "build:extension": "npm run -w ui-labelling-extension build",
     "watch:extension": "npm run -w ui-labelling-extension watch",
     "build:server": "npm run -w ui-labelling-server build",
+    "watch:server": "npm run -w ui-labelling-server watch",
     "start:server": "nodemon packages/server/dist/index.js"
   },
   "keywords": [],
