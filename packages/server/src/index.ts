@@ -18,6 +18,10 @@ dotenv.config({ path: path.join(__dirname, '.env') })
       throw Error('no UI_DIR environment variable')
     }
 
+    app.get('/view/', (req, res) => {
+      res.redirect('/');
+    });
+
     app.use(express.static(process.env.UI_DIR))
     app.use(express.json({ limit: '10mb' }))
     app.use('/api/annotation', annotationRouter)
