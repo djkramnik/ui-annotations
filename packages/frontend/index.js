@@ -1,7 +1,12 @@
 ;(async function main() {
 
-  const rows = await fetchAnnotationList()
-  populateDirectory(rows, document.querySelector('.directory'))
+  showDirectory()
+
+  const state = GlobalState(handleViewChange)
+
+  document.querySelector('#back-btn').addEventListener('click', event => {
+    state.activeView = null
+  })
 
   async function fetchAnnotationList() {
     const response = await fetch('http://localhost:4000/api/annotation')
@@ -24,12 +29,57 @@
       anchor.setAttribute('href', '#')
       anchor.addEventListener('click', (e) => {
         e.preventDefault()
-        window.history.pushState({}, null, 'http://localhost:4000/view/' + row.id)
+        state.activeView = row.id
       })
       anchor.innerText = `${row.url}`
       item.appendChild(anchor)
       list.appendChild(item)
     })
     parent.appendChild(list)
+  }
+
+  function GlobalState(cb) {
+    let activeView = null
+    const obj = {
+      activeView,
+    }
+    Object.defineProperty(obj, 'activeView', {
+      set: (value) => {
+        cb('activeView', value)
+        activeView = value
+      },
+      get: () => activeView
+    })
+    return obj
+  }
+
+  function handleViewChange(action, value) {
+    switch(action) {
+      case 'activeView':
+        if (value === null) {
+          window.history.pushState({}, null, 'http://localhost:4000')
+          showDirectory()
+          break
+        }
+        window.history.pushState({ view: value }, null, 'http://localhost:4000/view/' + value)
+        showAnnotation(value)
+        break
+      default:
+        console.warn('unknown action', action)
+        break
+    }
+  }
+
+  async function showDirectory() {
+    document.querySelector('#directory-view').style.display = 'initial'
+    document.querySelector('#annotation-view').style.display = 'none'
+    const rows = await fetchAnnotationList()
+    populateDirectory(rows, document.querySelector('.directory'))
+  }
+
+  async function showAnnotation(view) {
+    document.querySelector('#directory-view').style.display = 'none'
+    document.querySelector('#annotation-view').style.display = 'initial'
+    document.querySelector('#annotation-heading').innerText = view
   }
 })()

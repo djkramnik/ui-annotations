@@ -18,7 +18,7 @@ dotenv.config({ path: path.join(__dirname, '.env') })
       throw Error('no UI_DIR environment variable')
     }
 
-    app.get('/view/', (req, res) => {
+    app.get(/^\/view\/(\d+)$/, (req, res) => {
       res.redirect('/');
     });
 
