@@ -44,6 +44,35 @@
     parent.appendChild(list)
   }
 
+  function populateAnnotation(annotation, parent) {
+    const {
+      url,
+      payload: {
+        annotations,
+        window,
+      },
+      screenshot
+    } = annotation
+    const existingUi = parent.querySelector('.annotation')
+    if (existingUi) {
+      existingUi.remove()
+    }
+    const ui = document.createElement('div')
+    ui.classList.add('annotation')
+    ui.innerHTML = `
+      <h3>${url}</h3>
+      <div id="annotation-img" style="background-size:contain;position:relative;width:${window.width}px;height:${window.height}px;">
+        <div style="position:absolute;top:0;left:0;width:100%;height:100%;"></div>
+      </div>
+    `
+    parent.appendChild(ui)
+    ui.querySelector('#annotation-img').style.backgroundImage = `url('data:image/png;base64,${toBase64(screenshot.data)}')`
+
+    function toBase64(arrayBuffer) {
+      return btoa([].reduce.call(new Uint8Array(arrayBuffer),function(p,c){return p+String.fromCharCode(c)},''))
+    }
+  }
+
   function GlobalState(cb) {
     let activeView = null
     const obj = {
@@ -87,6 +116,8 @@
     document.querySelector('#directory-view').style.display = 'none'
     document.querySelector('#annotation-view').style.display = 'initial'
     document.querySelector('#annotation-heading').innerText = view
-
+    const annotation = await fetchAnnotation(view)
+    console.log('annotation', annotation)
+    populateAnnotation(annotation, document.querySelector('#annotation-view'))
   }
 })()

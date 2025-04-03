@@ -53,8 +53,7 @@ annotationRouter.get('/:id', async (req: Request, res: Response) => {
   try {
     const db = getDb()
     const { rows } = await db.raw(
-      `SELECT id, url, payload,
-      encode(screenshot, 'base64') as screenshot
+      `SELECT id, url, payload, screenshot
       from annotations where id = ?`,
       [annotationId]
     )
