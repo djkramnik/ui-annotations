@@ -9,7 +9,13 @@
   })
 
   async function fetchAnnotationList() {
-    const response = await fetch('http://localhost:4000/api/annotation')
+    const response = await fetch('/api/annotation')
+    const json = await response.json()
+    return json.data
+  }
+
+  async function fetchAnnotation(id) {
+    const response = await fetch('/api/annotation/' + id)
     const json = await response.json()
     return json.data
   }
@@ -57,11 +63,11 @@
     switch(action) {
       case 'activeView':
         if (value === null) {
-          window.history.pushState({}, null, 'http://localhost:4000')
+          window.history.pushState({}, null, '/')
           showDirectory()
           break
         }
-        window.history.pushState({ view: value }, null, 'http://localhost:4000/view/' + value)
+        window.history.pushState({ view: value }, null, '/view/' + value)
         showAnnotation(value)
         break
       default:
@@ -81,5 +87,6 @@
     document.querySelector('#directory-view').style.display = 'none'
     document.querySelector('#annotation-view').style.display = 'initial'
     document.querySelector('#annotation-heading').innerText = view
+
   }
 })()
