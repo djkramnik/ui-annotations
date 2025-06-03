@@ -1,7 +1,13 @@
 ## UI Annotations
 
-Primarily a browser extension to help me quickly annotate UI elements on webpages, for training computer vision models.
-Also includes a web server for storing annotations in local postgres instance, and a small frontend for viewing them.
+Primarily a chrome browser extension to help me quickly annotate UI elements on webpages, for training computer vision models.
+This repo also includes a web server for storing annotations in local postgres instance, and a small frontend for viewing them.
+
+#### TODO
+1. Export button should actually save to local server that saves to postgres
+2. Finish the frontend to view existing saved annotations
+3. Need proper labels.  Nice to have: A way to configure them from the extension popup.html.
+4. Collect a lot of data.
 
 ### UI Labelling Extension
 
@@ -30,19 +36,23 @@ a bounding box of different shape than the `currEl`.
 
 When we navigate via `ijkl` keys, and the `currEl` changes, the ui renders new bounding boxes.
 
-* Enter: SELECT THE CURR ELEMENT FOR ANNOTATION.  This changes the global state to `confirmation`
+* Enter: SELECT THE CURR ELEMENT TO SAVE AS AN ANNOTATION.  This changes the global state to `confirmation`
 
 #### Confirmation
 A popup is shown in which the user can choose an existing label to pair with the candidate annotation.  If the form is submitted, then the annotation (bounding box) is saved in the global annotation array.
 
-### Displaying Annotations
+#### Displaying Annotations
 Elements that have been thus save as annotations can be displayed or toggled by pressing the `a` key, regardless of the current global state.  The displayed annotations have a trash icon that,
 if clicked, remove that annotation from the state.
 
-### Saving Annotations to DB
+#### Saving Annotations to DB
 Clicking the extension icon produces a small popup with an export option.  Exporting will save all the current annotations, along with metadata about the current url, viewport dimensions and time of day, to the database.  THIS IS OUR TRAINING DATA.
 
-
+#### Build and Test Extension
+1. `npm run build:extension`.  This will create or update a `dist` folder in the `ui-labelling-extension` package root.
+2. Go to `chrome://extensions`. Make sure "Developer Mode" is toggled on.
+3. Click "Load unpacked".  Select the `dist` folder created in the build step as the location to unpack.  It should contain a `manifest.json` file.
+4.  Navigate to a page. Adjust the viewport and scroll to the desired part of the page where you want to collect those juicy annotations.  Click the `Start` button to begin.
 
 
 
