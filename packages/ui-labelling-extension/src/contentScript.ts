@@ -32,7 +32,7 @@ type GlobalState = {
   }[])
 }
 
-;(function main() {
+;(function () {
   const logPrefix = '[UI-LABELLER] '
 
   const log = {
