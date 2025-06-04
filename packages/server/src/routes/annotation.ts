@@ -4,30 +4,50 @@ import { getDb } from '../db'
 export const annotationRouter = Router()
 
 type AnnotationPayload = {
-  scrollY: number
   url: string
-  data: {
-    window: {
+  date: string
+  window: {
+      scrollY: number
       width: number
       height: number
-    }
-    screenshot: string
-    annotations: {
-      box: { top: number, left: number, width: number, height: number }
-      label: string
-    }[]
   }
+  annotations: {
+      id: string
+      rect: {
+        x: number
+        y: number
+        width: number
+        height: number
+      }
+      label: string
+  }[]
+  screenshot: string
 }
 
 annotationRouter.post('/', async (req: Request, res: Response) => {
   try {
-    const { scrollY, url, data } = req.body as AnnotationPayload
-    const { screenshot, ...rest } = data
+    const {
+      url,
+      annotations,
+      date,
+      screenshot,
+      window
+    } = req.body as AnnotationPayload
+
     const db = getDb()
 
     const { rows } = await db.raw(
       `INSERT into annotations (scrolly, url, payload, screenshot) values (?, ?, ?::jsonb, decode(?, 'base64')) RETURNING *`,
-      [scrollY, url, JSON.stringify(rest), screenshot]
+      [
+        window.scrollY,
+        url,
+        JSON.stringify({
+          annotations,
+          date,
+          window,
+        }),
+        screenshot,
+      ]
     )
 
     res.status(200).send({ data: rows[0].id })

@@ -15,13 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const payload = await getExportPayload()
     exportBtn.removeAttribute('disabled')
 
-    const url = 'data:application/json;base64,' + window.btoa(
-      JSON.stringify(payload)
-    );
-    chrome.downloads.download({
-        url: url,
-        filename: 'ui_labelled.json'
-    });
+    console.log('PAYLOAD 2 EXPORT', payload)
   })
 
   clearBtn.addEventListener('click', async () => {
