@@ -13,9 +13,31 @@ document.addEventListener('DOMContentLoaded', () => {
   exportBtn.addEventListener('click', async () => {
     exportBtn.setAttribute('disabled', 'disabled')
     const payload = await getExportPayload()
-    exportBtn.removeAttribute('disabled')
 
     console.log('PAYLOAD 2 EXPORT', payload)
+
+    try {
+      fetch('http://localhost:4000/api/annotation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(response => {
+        if (response.ok) {
+          console.log('successful export', response)
+          sendMessage('exportSuccess')
+          return
+        }
+        throw `Bad status: ${response.status}`
+      })
+    } catch(e) {
+      sendMessage('exportFailed')
+      console.error('could not export', e)
+    } finally {
+      exportBtn.removeAttribute('disabled')
+    }
   })
 
   clearBtn.addEventListener('click', async () => {
@@ -26,15 +48,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   startBtn.addEventListener('click', async () => {
     startBtn.setAttribute('disabled', 'disabled')
-    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-      if (typeof tabs[0]?.id !== 'number') {
-        return
-      }
-      await chrome.tabs.sendMessage(tabs[0].id, { type: 'startMain' })
+    sendMessage('startMain', () => {
       startBtn.removeAttribute('disabled')
     })
   })
 })
+
+function sendMessage(type: string, cb?: () => void) {
+  return chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+    if (typeof tabs[0]?.id !== 'number') {
+      return
+    }
+    await chrome.tabs.sendMessage(tabs[0].id, { type })
+    cb?.()
+  })
+}
 
 async function getExportPayload() {
   const obj = await chrome.storage.local.get(['annotations', 'meta'])
