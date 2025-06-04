@@ -4,10 +4,23 @@ Primarily a chrome browser extension to help me quickly annotate UI elements on 
 This repo also includes a web server for storing annotations in local postgres instance, and a small frontend for viewing them.
 
 #### TODO
-1. Export button should actually save to local server that saves to postgres
-2. Finish the frontend to view existing saved annotations
-3. Need proper labels.  Nice to have: A way to configure them from the extension popup.html.
-4. Collect a lot of data.
+1. Finish the frontend to view existing saved annotations
+2. Remove or add individual annotations from the frontend?
+3. Final label list
+4. Upload json of a given annotation from the frontend to Google
+5. Remove entire db entry from the frontend
+6. Collect data
+
+#### Buggos / QOL
+
+* after export fail/success show some kind of message
+* when you start, disable scrolling the viewport?
+* option to unlock (put state back to dormant?)
+* unable to nav to 'Find A Store' on the starbucks.com page. Maybe this is due to the differently shaped nav criteria
+
+popup.html
+* style the popup.html so I can see when its disabled.  close icon in the corner prob (can I dismiss popup programatically)
+* does clear button do anything?
 
 ### UI Labelling Extension
 

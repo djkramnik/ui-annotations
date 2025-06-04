@@ -61,7 +61,7 @@
     ui.classList.add('annotation')
     ui.innerHTML = `
       <h3>${url}</h3>
-      <div id="annotation-img" style="background-size:contain;position:relative;width:${window.width}px;height:${window.height}px;">
+      <div id="annotation-img" style="background-size:contain;position:relative;width:${(window.width/2)}px;height:${(window.height/2)}px;">
         <div style="position:absolute;top:0;left:0;width:100%;height:100%;"></div>
       </div>
     `

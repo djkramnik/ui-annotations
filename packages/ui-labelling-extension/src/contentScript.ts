@@ -11,12 +11,12 @@ enum StorageKeys {
 }
 
 enum AnnotationLabel {
-  table = 'table',
-  list = 'list',
-  rowContainer = 'row-container',
-  columnContainer = 'column-container',
+  button = 'button',
   link = 'link',
-  button = 'button'
+  logo = 'logo',
+  heading = 'heading',
+  copy = 'copy',
+  iconLocation = 'iconLocation'
 }
 
 type GlobalState = {
@@ -43,12 +43,12 @@ type GlobalState = {
 
   // label, color
   const annotationLabels: Record<AnnotationLabel, string> = {
-    table: '#d0fffe',
-    list: '#fffddb',
-    'row-container': '#e4ffde',
-    'column-container': '#ffd3fd',
-    link: '#ffe7d3',
-    button: '#f08080'
+    button: '#d0fffe',
+    link: '#fffddb',
+    logo: '#e4ffde',
+    heading: '#ffd3fd',
+    copy: '#ffe7d3',
+    iconLocation: '#f08080'
   }
 
   function GlobalState(cb: (key: keyof GlobalState, value: any) => void) {
