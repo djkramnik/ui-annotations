@@ -1,0 +1,27 @@
+{
+  "name": "ui-labelling-frontend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "next": "^15.3.3",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
