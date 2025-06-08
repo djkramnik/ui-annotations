@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "build:shared": "npm run -w ui-labelling-shared build",
     "build:extension": "npm run -w ui-labelling-extension build",
     "watch:extension": "npm run -w ui-labelling-extension watch",
     "build:server": "npm run -w ui-labelling-server build",
