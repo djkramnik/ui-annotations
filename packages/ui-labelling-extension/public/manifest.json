@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "manifest_version": 3,
   "description": "Tool for annotating web elements",
-  "background": {
-    "service_worker": "background.js"
-  },
   "action": {
     "default_popup": "popup/index.html"
   },
