@@ -11,7 +11,8 @@ module.exports = (_, argv) => ({
 
   /** One entry per extension script you care about. */
   entry: {
-    content: path.resolve(__dirname, 'src/content.ts'),
+    contentScript: path.resolve(__dirname, 'src/contentScript.ts'),
+    'popup/popup': path.resolve(__dirname, 'src/popup/popup.ts')
     // popup:   path.resolve(__dirname, 'src/popup.tsx'),
     // background: path.resolve(__dirname, 'src/background.ts'),
   },
@@ -30,7 +31,7 @@ module.exports = (_, argv) => ({
     alias: {
       'ui-labelling-shared': path.resolve(
         __dirname,
-        '../ui-labelling-shared/dist/index.js'
+        '../shared/dist/index.js'
       ),
     },
   },
@@ -49,8 +50,9 @@ module.exports = (_, argv) => ({
   plugins: [
     new CopyPlugin({
       patterns: [
-        { from: 'manifest.json', to: '.' },
-        { from: 'assets', to: 'assets', noErrorOnMissing: true },
+        { from: 'public/manifest.json', to: '.' },
+        { from: 'public/assets', to: 'assets', noErrorOnMissing: true },
+        { from: 'src/popup/index.html', to: 'popup/index.html' },
       ],
     }),
   ],
