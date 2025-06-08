@@ -1,3 +1,5 @@
+import { AnnotationLabel, annotationLabels } from 'ui-labelling-shared'
+
 type ExtensionState =
 | 'dormant'
 | 'initial'
@@ -8,15 +10,6 @@ enum StorageKeys {
   annotations = 'annotations',
   screenshot = 'screenshot',
   meta = 'meta'
-}
-
-enum AnnotationLabel {
-  button = 'button',
-  link = 'link',
-  logo = 'logo',
-  heading = 'heading',
-  copy = 'copy',
-  iconLocation = 'iconLocation'
 }
 
 type GlobalState = {
@@ -39,16 +32,6 @@ type GlobalState = {
     warn: (...args: any[]) => console.warn(logPrefix, ...args),
     info: (...args: any[]) => console.log(logPrefix, ...args),
     error: (...args: any[]) => console.error(logPrefix, ...args)
-  }
-
-  // label, color
-  const annotationLabels: Record<AnnotationLabel, string> = {
-    button: '#d0fffe',
-    link: '#fffddb',
-    logo: '#e4ffde',
-    heading: '#ffd3fd',
-    copy: '#ffe7d3',
-    iconLocation: '#f08080'
   }
 
   function GlobalState(cb: (key: keyof GlobalState, value: any) => void) {

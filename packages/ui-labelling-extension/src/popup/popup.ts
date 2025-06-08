@@ -1,4 +1,6 @@
 
+import { AnnotationLabel } from "ui-labelling-shared"
+
 document.addEventListener('DOMContentLoaded', () => {
   // today copy to clipboard, tomorrow the world
   const exportBtn = document.getElementById('export-btn')

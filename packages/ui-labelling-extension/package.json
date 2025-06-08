@@ -10,6 +10,9 @@
   "author": "",
   "license": "ISC",
   "description": "",
+  "dependencies": {
+    "ui-labelling-shared": "file:../shared"
+  },
   "devDependencies": {
     "@types/chrome": "^0.0.309",
     "typescript": "^5.8.2"
