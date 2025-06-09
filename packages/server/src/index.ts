@@ -14,21 +14,12 @@ dotenv.config({ path: path.join(__dirname, '.env') })
     // if we are here, we are connected to db
     const app = express()
     const port = process.env.PORT || 4000
-    if (!process.env.UI_DIR) {
-      throw Error('no UI_DIR environment variable')
-    }
 
-    app.get(/^\/view\/(\d+)$/, (req, res) => {
-      res.redirect('/');
-    });
-
-    app.use(express.static(process.env.UI_DIR))
     app.use(express.json({ limit: '10mb' }))
     app.use('/api/annotation', annotationRouter)
 
     const server = app.listen(port, () => {
       console.log('serving listening on port', port)
-      console.log('serving static files from ', process.env.UI_DIR)
     })
 
     process.on('SIGTERM', shutDown);
