@@ -17,6 +17,15 @@ export default function DirectoryPage() {
   }, [])
 
   return (
-    'hi'
+    <main id="directory-view" className="directory">
+    <h2>Directory</h2>
+    <ol id="directory-list">
+      {rows.map(({ id, url }) => (
+        <li key={id}>
+          <Link href={`/view/${id}`}>{url}</Link>
+        </li>
+      ))}
+    </ol>
+  </main>
   )
 }
