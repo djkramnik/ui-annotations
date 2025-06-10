@@ -7,7 +7,7 @@ export const Container = ({
     <div style={{
       width: '96%',
       margin: 'auto',
-      backgroundColor: '#eee'
+      backgroundColor: '#eee q'
     }}>
       {children}
     </div>

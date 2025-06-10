@@ -4,10 +4,20 @@ import { toBase64 } from '../../utils/base64'
 import { Container } from '../../components/container'
 import { Flex } from '../../components/flex'
 import { annotationLabels } from 'ui-labelling-shared'
+import ScreenshotAnnotator from '../../components/screenshot-annotated'   // ← NEW
+
+interface AnnotationPayload {
+  window: { width: number; height: number }
+  annotations: {
+    id: string
+    label: string
+    rect: { x: number; y: number; width: number; height: number }
+  }[]
+}
 
 interface Annotation {
   url: string
-  payload: { window: { width: number; height: number } }
+  payload: AnnotationPayload
   screenshot: { data: ArrayBuffer }
 }
 
@@ -27,9 +37,11 @@ export default function AnnotationPage() {
 
   const {
     url,
-    payload: { window: win },
+    payload: { window: win, annotations },
     screenshot,
   } = annotation
+
+  const screenshotDataUrl = `data:image/png;base64,${toBase64(screenshot.data)}`
 
   return (
     <main id="annotation-view">
@@ -39,46 +51,48 @@ export default function AnnotationPage() {
         </button>
         <h3>{url}</h3>
         <Flex>
+          {/* ───────── screenshot with live-scaled rectangles ───────── */}
           <div
-            id="annotation-img"
+            id="annotation-img-wrapper"
             style={{
-
+              flexBasis: '90%',
               border: '1px solid #aaa',
               borderRight: 'none',
-              backgroundSize: 'contain',
-              backgroundImage: `url('data:image/png;base64,${toBase64(
-                screenshot.data,
-              )}')`,
-              position: 'relative',
-              width: '90%',
-              height: '80vw'
             }}
           >
+            <ScreenshotAnnotator
+              screenshot={screenshotDataUrl}
+              annotations={annotations}
+              frame={{ width: win.width, height: win.height }}
+            />
           </div>
-          <Flex style={{ 
-            flexGrow: '1',
-            border: '1px solid #aaa',
-            backgroundColor: '#fff',
-            padding: '4px',
-            flexDirection: 'column'
-            }}>
-              {
-                Object.entries(annotationLabels).map(label => {
-                  return (
-                    <div style={{
-                      width: '100%',
-                      backgroundColor: label[1],
-                      padding: '4px',
-                      fontSize: '16px'
-                    }}>
-                      {label[0]}
-                    </div>
-                  )
-                })
-              }
+
+          {/* ───────── colour legend ───────── */}
+          <Flex
+            style={{
+              flexGrow: 1,
+              border: '1px solid #aaa',
+              backgroundColor: '#fff',
+              padding: 4,
+              flexDirection: 'column',
+            }}
+          >
+            {Object.entries(annotationLabels).map(([label, colour]) => (
+              <div
+                key={label}
+                style={{
+                  width: '100%',
+                  backgroundColor: colour,
+                  padding: 4,
+                  fontSize: 16,
+                }}
+              >
+                {label}
+              </div>
+            ))}
           </Flex>
         </Flex>
-    </Container>
+      </Container>
     </main>
   )
 }
