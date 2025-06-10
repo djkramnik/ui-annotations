@@ -25,8 +25,14 @@ dotenv.config({ path: path.join(__dirname, '.env') })
 
     function shutDown() {
       server.close(() => {
-        prisma.$dis()
-
+        prisma.$disconnect()
+          .then(() => {
+            process.exit(0)
+          })
+          .catch((e) => {
+            console.error('could not disconnect prisma', e)
+            process.exit(1)
+          })
       })
     }
   } catch(err) {
