@@ -1,63 +1,59 @@
-// ScreenshotAnnotator.tsx
-import React, { useRef, useState, useLayoutEffect } from 'react';
+import React, { useRef, useState, useLayoutEffect } from 'react'
+import { annotationLabels } from 'ui-labelling-shared'        // ← NEW
 
-type Rect = { x: number; y: number; width: number; height: number };
-type Ann  = { id: string; label: string; rect: Rect };
+type Rect = { x: number; y: number; width: number; height: number }
+type Ann  = { id: string; label: string; rect: Rect }
 
 interface Props {
-  screenshot: string;                     // data:image/png;base64,...
-  annotations: Ann[];                     // payload.annotations
-  frame: { width: number; height: number };// capture size (1019 × 673 in example)
+  screenshot: string                      // data:image/png;base64,...
+  annotations: Ann[]                      // payload.annotations
+  frame: { width: number; height: number } // capture size (1019 × 673, etc.)
 }
 
-// quick palette – adjust / add per-label if you like
-const colour = {
-  link:    'rgba(17,107,255,.35)',
-  default: 'rgba(255,66,64,.35)',
-};
-
 export default function ScreenshotAnnotator({ screenshot, annotations, frame }: Props) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [scale, setScale] = useState({ x: 1, y: 1 });
+  const ref = useRef<HTMLDivElement | null>(null)
+  const [scale, setScale] = useState({ x: 1, y: 1 })
 
-  /* ──────────────────── measure & rescale ─────────────────── */
+  /* ─── measure & rescale ─── */
   useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    const el = ref.current
+    if (!el) return
 
     const update = () => {
-      // actual pixels on screen vs. capture size
       setScale({
         x: el.offsetWidth  / frame.width,
         y: el.offsetHeight / frame.height,
-      });
-    };
+      })
+    }
 
-    update();                         // run once immediately
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [frame.width, frame.height]);
+    update()                               // run once immediately
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [frame.width, frame.height])
 
-  /* ──────────────────── styles ─────────────────── */
+  /* ─── styles ─── */
   const containerStyle: React.CSSProperties = {
     position: 'relative',
-    width: '100%',                   // fluid – parent defines width
+    width: '100%',
     height: 'auto',
-    aspectRatio: `${frame.width} / ${frame.height}`, // keeps aspect
+    aspectRatio: `${frame.width} / ${frame.height}`,
     backgroundImage: `url(${screenshot})`,
     backgroundSize: 'contain',
     backgroundRepeat: 'no-repeat',
     backgroundPosition: 'top left',
     overflow: 'hidden',
-  };
+  }
 
-  /* ──────────────────── render ─────────────────── */
+  /* ─── render ─── */
   return (
     <div ref={ref} style={containerStyle}>
       {annotations.map(({ id, label, rect }) => {
-        const fill   = colour[label] ?? colour.default;
-        const border = fill.replace(/0\.35\)$/, '1)');
+        const fill   = annotationLabels[label] ?? 'rgba(255,66,64,0.35)'
+        // make an opaque border if the fill is rgba with alpha
+        const border = fill.startsWith('rgba')
+          ? fill.replace(/[\d.]+\)$/, '1)')
+          : fill
 
         return (
           <div
@@ -83,8 +79,8 @@ export default function ScreenshotAnnotator({ screenshot, annotations, frame }: 
           >
             {label}
           </div>
-        );
+        )
       })}
     </div>
-  );
+  )
 }
