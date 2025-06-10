@@ -4,7 +4,7 @@ Primarily a chrome browser extension to help me quickly annotate UI elements on 
 This repo also includes a web server for storing annotations in local postgres instance, and a small frontend for viewing them.
 
 #### TODO
-1. Finish the frontend to view existing saved annotations (Turn this into next.js.  It is ultimately easier)
+1. Save annotations to cloud postgres db
 2. Remove or add individual annotations from the frontend?
 3. Final label list
 4. Upload json of a given annotation from the frontend to Google
