@@ -71,7 +71,7 @@ export default function ScreenshotAnnotator({ screenshot, annotations, frame }: 
               display: 'flex',
               alignItems: 'flex-start',
               padding: '2px 4px',
-              color: '#fff',
+              color: 'black',
               fontSize: 12,
               fontWeight: 600,
               textShadow: '0 0 2px rgba(0,0,0,.6)',
