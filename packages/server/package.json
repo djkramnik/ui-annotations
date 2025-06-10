@@ -15,15 +15,12 @@
   "devDependencies": {
     "@types/express": "^5.0.1",
     "@types/node": "^22.13.14",
-    "@types/pg": "^8.11.11",
     "dotenv": "^16.4.7",
     "prisma": "^6.9.0",
     "typescript": "^5.8.2"
   },
   "dependencies": {
     "@prisma/client": "^6.9.0",
-    "express": "^5.1.0",
-    "knex": "^3.1.0",
-    "pg": "^8.14.1"
+    "express": "^5.1.0"
   }
 }

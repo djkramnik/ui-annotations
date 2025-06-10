@@ -2,15 +2,13 @@ import dotenv = require('dotenv')
 import path from 'path'
 import express from 'express'
 import { annotationRouter } from './routes/annotation'
-import { getDb } from './db'
+import { prisma } from './db'
 
 dotenv.config({ path: path.join(__dirname, '.env') })
 
 ;(async function main() {
-  const db = getDb()
 
   try {
-    console.log('test', (await db.raw('SELECT count(*) FROM annotations')).rows[0])
     // if we are here, we are connected to db
     const app = express()
     const port = process.env.PORT || 4000
@@ -27,9 +25,8 @@ dotenv.config({ path: path.join(__dirname, '.env') })
 
     function shutDown() {
       server.close(() => {
-        db.destroy().then(() => {
-          process.exit(0)
-        })
+        prisma.$dis()
+
       })
     }
   } catch(err) {
