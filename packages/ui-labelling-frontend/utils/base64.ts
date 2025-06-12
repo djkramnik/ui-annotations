@@ -5,8 +5,7 @@
  */
 export function toBase64(buf: ArrayBuffer): string {
   // 1. If we’re running in Node (e.g. during SSR) just use Buffer.
-  if (typeof Buffer !== 'undefined') {
-    // @ts-ignore – Buffer is available at runtime in Node.
+  if (typeof buf !== 'undefined') {
     return Buffer.from(buf).toString('base64')
   }
 

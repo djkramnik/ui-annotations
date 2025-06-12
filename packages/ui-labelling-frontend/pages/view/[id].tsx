@@ -7,7 +7,6 @@ import { annotationLabels } from 'ui-labelling-shared'
 import ScreenshotAnnotator from '../../components/screenshot-annotated'   // ← NEW
 
 interface AnnotationPayload {
-  window: { width: number; height: number }
   annotations: {
     id: string
     label: string
@@ -19,6 +18,11 @@ interface Annotation {
   url: string
   payload: AnnotationPayload
   screenshot: { data: ArrayBuffer }
+  scrollY: number
+  viewHeight: number
+  viewWidth: number
+  date: string
+  id: number
 }
 
 export default function AnnotationPage() {
@@ -37,8 +41,10 @@ export default function AnnotationPage() {
 
   const {
     url,
-    payload: { window: win, annotations },
+    payload: { annotations },
     screenshot,
+    viewWidth,
+    viewHeight,
   } = annotation
 
   const screenshotDataUrl = `data:image/png;base64,${toBase64(screenshot.data)}`
@@ -63,7 +69,7 @@ export default function AnnotationPage() {
             <ScreenshotAnnotator
               screenshot={screenshotDataUrl}
               annotations={annotations}
-              frame={{ width: win.width, height: win.height }}
+              frame={{ width: viewWidth, height: viewHeight }}
             />
           </div>
 

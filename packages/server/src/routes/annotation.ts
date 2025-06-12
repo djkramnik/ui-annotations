@@ -78,7 +78,6 @@ annotationRouter.get('/:id', async (req: Request, res: Response) => {
   try {
     const row = await prisma.annotation.findUnique({
       where: { id: annotationId },
-      select: { id: true, url: true, payload: true, screenshot: true },
     })
 
     if (!row) {
@@ -91,7 +90,7 @@ annotationRouter.get('/:id', async (req: Request, res: Response) => {
     // Convert binary screenshot to base-64 so the API contract stays the same
     const data = {
       ...row,
-      screenshot: row.screenshot ? row.screenshot.toString('base64') : null,
+      screenshot: row.screenshot ? (row.screenshot as Buffer).toString('base64') : null,
     }
 
     res.status(200).send({ data })

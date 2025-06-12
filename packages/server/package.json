@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "dev": "nodemon ./src/index.ts",
     "prisma:init": "npx prisma init",
     "prisma:generate": "npx prisma generate",
     "build": "tsc && cp .env ./dist/.env",
@@ -16,7 +17,9 @@
     "@types/express": "^5.0.1",
     "@types/node": "^22.13.14",
     "dotenv": "^16.4.7",
+    "nodemon": "^3.1.10",
     "prisma": "^6.9.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.8.2"
   },
   "dependencies": {
