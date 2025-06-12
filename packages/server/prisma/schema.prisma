@@ -25,6 +25,7 @@ model Annotation {
   url         String   @db.VarChar(50)
   payload     Json     @db.JsonB
   screenshot  Bytes?   @db.ByteA            // nullable `bytea`
+  published   Int      @default(0)
 
   @@map("annotations")                      // points back to the snake-case table
 }
