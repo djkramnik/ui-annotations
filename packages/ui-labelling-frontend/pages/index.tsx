@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { SimpleDate } from '../components/date'
 
 type Row = {
   id: string
@@ -32,7 +33,7 @@ export default function DirectoryPage() {
             <li key={id} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
               {index + 1}.
               <Link href={`/view/${id}`}>{url}</Link>
-              <strong>Date: {new Date(date).toLocaleDateString()} {new Date(date).toLocaleTimeString()}</strong>
+              <strong>Date: <SimpleDate date={date} /></strong>
               <p>Scroll: {scrollY}</p>
             </li>
           ))

@@ -6,12 +6,16 @@ export const Flex = ({
   gap,
   dir,
   wrap,
+  aic,
+  jcsb,
   style
 }: {
   children?: React.ReactNode
   gap?: string
   dir?: CSSProperties['flexDirection']
   wrap?: CSSProperties['flexWrap']
+  aic?: boolean
+  jcsb?: boolean
   style?: CSSProperties
 }) => {
   return (
@@ -20,6 +24,8 @@ export const Flex = ({
       gap,
       flexDirection: dir,
       flexWrap: wrap,
+      ...(aic ? { alignItems: 'center'} : {}),
+      ...(jcsb ? { justifyContent: 'space-between'} : {}),
       ...style
     }}>
       {children}

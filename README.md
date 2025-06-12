@@ -4,13 +4,13 @@ Primarily a chrome browser extension to help me quickly annotate UI elements on 
 This repo also includes a web server for storing annotations in local postgres instance, and a small frontend for viewing them.
 
 #### TODO
-* add date and scrollY to directory page
-* from the frontend, a button to update draft to 0 (published)
-* differentiate between published and draft in server (flag) and frontend (directory)
-* add a button to delete from frontend, and endpoint to server
-* add a button to move published back to draft
-* Remove or add individual annotations from the frontend? (and then update) but only available for draft for some reason.
-* manually draw rectangle and label it, from the frontend
+* frontend annotation work
+  * publish
+  * delete
+  * draw
+  * toggle through, and adjust or remove individual annotations
+  * update db with changes
+
 * Final label list
 * Upload json of a given annotation from the frontend to Google
 
