@@ -24,6 +24,40 @@ type AnnotationPayload = {
   screenshot: string
 }
 
+annotationRouter.delete('/:id', async (req: Request, res: Response) => {
+  const annotationId = Number(req.params.id)
+  try {
+    await prisma.annotation.delete({
+      where: { id: annotationId },
+    })
+
+    res.status(200).send({ data: {
+      id: annotationId
+    }})
+  } catch (err) {
+    console.error(err)
+    res.status(500).send({ message: 'Unexpected error ' + err })
+  }
+})
+
+annotationRouter.put('/publish/:id', async (req: Request, res: Response) => {
+  const annotationId = Number(req.params.id)
+  try {
+    const row = await prisma.annotation.update({
+      where: { id: annotationId },
+      data: { published: 1 }
+    })
+
+    res.status(200).send({ data: {
+      ...row,
+      screenshot: Array.from(row.screenshot!)
+    }})
+  } catch (err) {
+    console.error(err)
+    res.status(500).send({ message: 'Unexpected error ' + err })
+  }
+})
+
 annotationRouter.post('/', async (req: Request, res: Response) => {
   try {
     const {
