@@ -87,13 +87,10 @@ annotationRouter.get('/:id', async (req: Request, res: Response) => {
       return
     }
 
-    // Convert binary screenshot to base-64 so the API contract stays the same
-    const data = {
+    res.status(200).send({ data: {
       ...row,
-      screenshot: row.screenshot ? (row.screenshot as Buffer).toString('base64') : null,
-    }
-
-    res.status(200).send({ data })
+      screenshot: Array.from(row.screenshot!)
+    }})
   } catch (err) {
     console.error(err)
     res.status(500).send({ message: 'Unexpected error ' + err })

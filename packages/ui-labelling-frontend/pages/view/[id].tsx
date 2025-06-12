@@ -17,7 +17,7 @@ interface AnnotationPayload {
 interface Annotation {
   url: string
   payload: AnnotationPayload
-  screenshot: { data: ArrayBuffer }
+  screenshot: ArrayBuffer
   scrollY: number
   viewHeight: number
   viewWidth: number
@@ -47,7 +47,7 @@ export default function AnnotationPage() {
     viewHeight,
   } = annotation
 
-  const screenshotDataUrl = `data:image/png;base64,${toBase64(screenshot.data)}`
+  const screenshotDataUrl = `data:image/png;base64,${toBase64(screenshot)}`
 
   return (
     <main id="annotation-view">
