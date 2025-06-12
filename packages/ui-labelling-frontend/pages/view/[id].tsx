@@ -1,6 +1,5 @@
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
-import { toBase64 } from '../../utils/base64'
 import { Container } from '../../components/container'
 import { Flex } from '../../components/flex'
 import { annotationLabels } from 'ui-labelling-shared'
@@ -47,7 +46,7 @@ export default function AnnotationPage() {
     viewHeight,
   } = annotation
 
-  const screenshotDataUrl = `data:image/png;base64,${toBase64(screenshot)}`
+  const screenshotDataUrl = `data:image/png;base64,${Buffer.from(screenshot).toString('base64')}`
 
   return (
     <main id="annotation-view">
