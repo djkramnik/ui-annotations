@@ -5,8 +5,6 @@ This repo also includes a web server for storing annotations in local postgres i
 
 #### TODO
 * frontend annotation work
-  * publish
-  * delete
   * draw
   * toggle through, and adjust or remove individual annotations
   * update db with changes
@@ -18,10 +16,12 @@ This repo also includes a web server for storing annotations in local postgres i
 
 #### Buggos / QOL
 
+* prior to taking screenshot you have to remove all the decorations
 * after export fail/success show some kind of message
 * when you start, disable scrolling the viewport?
 * option to unlock (put state back to dormant?)
 * unable to nav to 'Find A Store' on the starbucks.com page. Maybe this is due to the differently shaped nav criteria
+
 
 popup.html
 * style the popup.html so I can see when its disabled.  close icon in the corner prob (can I dismiss popup programatically)

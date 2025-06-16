@@ -91,7 +91,7 @@ type GlobalState = {
   const trashCanUrl = chrome.runtime.getURL('/assets/trash-can.svg')
   log.info('asset', trashCanUrl)
 
-  async function main() {
+  function main() {
     const globals = GlobalState(handleGlobalChange)
 
     chrome.storage.local.set({
@@ -112,7 +112,7 @@ type GlobalState = {
 
     if (document.getElementById(globals.overlayId)) {
       log.warn('overlay already present during initialization.  Aborting everything!')
-      return
+      return null
     }
     const overlay = document.createElement(globals.overlayId)
     overlay.setAttribute('id', globals.overlayId)
@@ -592,26 +592,36 @@ type GlobalState = {
 
 
     // END OF SO CALLED UTILS
+    return globals
   }
 
   // do the thing
 
+
+  let globalsRef: null | GlobalState = null
   chrome.runtime.onMessage.addListener((message: { type?: string }) => {
     log.info('content script received message', message)
     if (typeof message?.type !== 'string') {
       log.error('Could not parse runtime message', message)
       return
     }
+
     switch(message.type) {
+      case 'clean':
+        if (globalsRef === null) {
+          log.warn("request for clean up but we have no global state")
+          return
+        }
+        globalsRef.state = 'initial' // this will trigger a removal of all the decorations from the overlay
+        break
       case 'startMain':
         const overlay = document.querySelector('ui-labelling-overlay')
-
         if (overlay) {
           // TODO.  clean up here instead of running away
           log.warn('request to run main but overlay already present on this page.')
           return
         }
-        main()
+        globalsRef = main()
         break
     }
   })

@@ -1,6 +1,12 @@
 
 import { AnnotationLabel } from "ui-labelling-shared"
 
+function getMessagePromise(message: string): Promise<void> {
+  return new Promise(resolve => {
+    sendMessage(message, () => { resolve() })
+  })
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // today copy to clipboard, tomorrow the world
   const exportBtn = document.getElementById('export-btn')
@@ -13,6 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   exportBtn.addEventListener('click', async () => {
+
+    // clear the overlay, reset global state to initial
+    await getMessagePromise('clean')
     exportBtn.setAttribute('disabled', 'disabled')
     const payload = await getExportPayload()
 
