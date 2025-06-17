@@ -16,12 +16,15 @@ This repo also includes a web server for storing annotations in local postgres i
 
 #### Buggos / QOL
 
-* prior to taking screenshot you have to remove all the decorations
 * after export fail/success show some kind of message
 * when you start, disable scrolling the viewport?
 * option to unlock (put state back to dormant?)
 * unable to nav to 'Find A Store' on the starbucks.com page. Maybe this is due to the differently shaped nav criteria
-
+* max height on the remove icon
+* the colours for the show annotations too light at times
+* the styling of the extension popup should be site style agnostic.
+* the conversion of currEl in the extension from a single node to an array...
+* the ability to click p and project by some criteria (tag+structure, classname). this will populate the array and you can label them and include them in one click.
 
 popup.html
 * style the popup.html so I can see when its disabled.  close icon in the corner prob (can I dismiss popup programatically)

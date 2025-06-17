@@ -122,7 +122,7 @@ type GlobalState = {
     overlay.style.height = '100vh'
     overlay.style.top = '0'
     overlay.style.left = '0'
-    overlay.style.zIndex = '666'
+    overlay.style.zIndex = '999666999' // obscene
 
     document.body.appendChild(overlay)
 
@@ -607,12 +607,21 @@ type GlobalState = {
     }
 
     switch(message.type) {
+      case 'exportSuccess':
+        // among other things, show a toast and clear annotations
+        if (globalsRef === null) {
+          log.warn("how could we have no globals ref after export")
+          return
+        }
+        globalsRef.annotations = []
+        break
       case 'clean':
         if (globalsRef === null) {
           log.warn("request for clean up but we have no global state")
           return
         }
         globalsRef.state = 'initial' // this will trigger a removal of all the decorations from the overlay
+        globalsRef.showAnnotations = false
         break
       case 'startMain':
         const overlay = document.querySelector('ui-labelling-overlay')
