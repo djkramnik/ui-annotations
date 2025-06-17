@@ -22,7 +22,7 @@ model Annotation {
   viewHeight  Int      @map("view_height")
 
   date        DateTime @db.Timestamptz(6)   // `timestamp with time zone`
-  url         String   @db.VarChar(50)
+  url         String   @db.Text
   payload     Json     @db.JsonB
   screenshot  Bytes?   @db.ByteA            // nullable `bytea`
   published   Int      @default(0)
