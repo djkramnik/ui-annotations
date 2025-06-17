@@ -19,11 +19,12 @@ const Annotation = ({
 } & Row) => {
   const { id, url, date, scrollY } = rest
   return (
-    <li key={id} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-      {index + 1}.
-      <Link href={`/view/${id}`}>{url}</Link>
-      <strong>Date: <SimpleDate date={date} /></strong>
-      <p>Scroll: {scrollY}</p>
+    <li>
+      <Flex gap="12px" aic>
+        <Link href={`/view/${id}`}>{url}</Link>
+        <strong>Date: <SimpleDate date={date} /></strong>
+        <p style={{ margin: 0 }}>Scroll: {scrollY}</p>
+      </Flex>
     </li>
   )
 }
