@@ -6,6 +6,8 @@ import { annotationLabels } from 'ui-labelling-shared'
 import ScreenshotAnnotator from '../../components/screenshot-annotated'   // ← NEW
 import { SimpleDate } from '../../components/date'
 import { deleteAnnotation, publishAnnotation, unPublishAnnotation } from '../../api'
+import { DrawSurface } from '../../components/draw-surface'
+import { Rect } from '../../utils/type'
 
 interface AnnotationPayload {
   annotations: {
@@ -47,6 +49,10 @@ export default function AnnotationPage() {
     dangerState: null,
     currToggleIndex: null
   })
+
+  const testHandleEnter = useCallback((rect: Rect) => {
+    console.log('handle enter', rect)
+  }, [])
 
   const handleDrawClick = useCallback(() => {
     setPageState({
@@ -195,7 +201,9 @@ export default function AnnotationPage() {
               screenshot={screenshotDataUrl}
               annotations={annotations}
               frame={{ width: viewWidth, height: viewHeight }}
-            />
+            >
+              <DrawSurface handleEnter={testHandleEnter} />
+            </ScreenshotAnnotator>
           </div>
 
           <Flex dir="column" gap="24px" style={{ flexGrow: '1' }}>

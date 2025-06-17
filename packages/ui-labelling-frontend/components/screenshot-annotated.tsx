@@ -1,16 +1,20 @@
 import React, { useRef, useState, useLayoutEffect } from 'react'
 import { annotationLabels } from 'ui-labelling-shared'        // ← NEW
+import { Rect } from '../utils/type';
 
-type Rect = { x: number; y: number; width: number; height: number }
-type Ann  = { id: string; label: string; rect: Rect }
+type Annotation  = { id: string; label: string; rect: Rect }
 
-interface Props {
-  screenshot: string                      // data:image/png;base64,...
-  annotations: Ann[]                      // payload.annotations
-  frame: { width: number; height: number } // capture size (1019 × 673, etc.)
-}
-
-export default function ScreenshotAnnotator({ screenshot, annotations, frame }: Props) {
+export default function ScreenshotAnnotator({
+  screenshot,
+  annotations,
+  frame,
+  children
+}: {
+  screenshot: string
+  annotations: Annotation[]
+  frame: { width: number; height: number }
+  children?: React.ReactNode
+}) {
   const ref = useRef<HTMLDivElement | null>(null)
   const [scale, setScale] = useState({ x: 1, y: 1 })
 
@@ -81,6 +85,7 @@ export default function ScreenshotAnnotator({ screenshot, annotations, frame }: 
           </div>
         )
       })}
+      {children}
     </div>
   )
 }
