@@ -84,20 +84,22 @@ export default function AnnotationPage() {
           }))
           resetPageState()
         }}>
-          <div>
-            <label htmlFor="label-select">Annotation Label</label>
-            <select id="label-select" name="label" required>
-              <option value="" disabled selected>Select label</option>
-              {
-                labels.map(label => {
-                  return (
-                    <option key={label} value={label}>{label}</option>
-                  )
-                })
-              }
-            </select>
-          </div>
-          <Flex dir="column">
+          <Flex dir="column" gap="12px">
+            <Flex>
+              <div>
+                <label htmlFor="label-select">Annotation Label</label>
+                <select id="label-select" name="label" required>
+                  <option value="" disabled selected>Select label</option>
+                  {
+                    labels.map(label => {
+                      return (
+                        <option key={label} value={label}>{label}</option>
+                      )
+                    })
+                  }
+                </select>
+              </div>
+            </Flex>
             <Flex gap="6px">
               <button type="submit">
                 submit
@@ -112,7 +114,7 @@ export default function AnnotationPage() {
     )
   }, [pageState, resetPageState, labels, setAnnotation])
 
-  const handleNewDrawCandidate = useCallback((rect: Rect, ref: HTMLDivElement) => {
+  const handleNewDrawCandidate = useCallback((rect: Rect) => {
     setPageState(state => ({...state, drawCandidate: rect}))
   }, [setPageState])
 
@@ -274,7 +276,11 @@ export default function AnnotationPage() {
             {
               pageState.mode === 'draw'
                 ? (
-                  <DrawSurface handleCandidate={handleNewDrawCandidate} />
+                  <DrawSurface
+                    handleCandidate={handleNewDrawCandidate}
+                    ogHeight={viewHeight}
+                    ogWidth={viewWidth}
+                  />
                 )
                 : null
             }

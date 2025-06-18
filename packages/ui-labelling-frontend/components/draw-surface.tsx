@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { debounce } from "../utils/debounce"
+import { scaleRect } from "../utils/scale"
 
 type Rect = {
   x: number
@@ -12,14 +13,28 @@ type Rect = {
 // an overlay with mouse events to let the user draw a rectangle
 // a callback for pressing enter, which passes the dimensions of the rectangle as arguments
 export const DrawSurface = ({
-  handleCandidate
+  handleCandidate,
+  ogWidth,
+  ogHeight,
 }: {
-  handleCandidate: (rect: Rect, ref: HTMLDivElement) => void
+  handleCandidate: (rect: Rect) => void
+  ogWidth: number
+  ogHeight: number
 }) => {
+  const [scale, setScale] = useState<[number, number] | null>(null)
   const ref = useRef<HTMLDivElement | null>(null)
   const drawRectangle = useRef<Rect | null>(null)
   const startPoint = useRef<{x: number; y: number} | null>(null)
 
+  useLayoutEffect(() => {
+    if (!ref.current) {
+      return
+    }
+    setScale([
+      ogWidth / ref.current.offsetWidth,
+      ogHeight / ref.current.offsetHeight
+    ])
+  }, [setScale, ogWidth, ogHeight])
 
   const getBox = useCallback((e: MouseEvent) => {
     if (!startPoint.current) {
@@ -63,6 +78,9 @@ export const DrawSurface = ({
   }, [getBox])
 
   useEffect(() => {
+    if (!scale) {
+      return
+    }
     window.addEventListener('mousedown', handleMouseDown)
 
     function handleMouseDown(e: MouseEvent) {
@@ -122,7 +140,7 @@ export const DrawSurface = ({
       }
       switch(e.key) {
         case 'Enter':
-          handleCandidate(drawRectangle.current, ref.current)
+          handleCandidate(scaleRect(drawRectangle.current, scale))
           break
         case 'q':
           ref.current.querySelector('#drawRect')?.remove()
@@ -130,7 +148,6 @@ export const DrawSurface = ({
       }
 
       window.removeEventListener('keypress', handleKeyPress)
-
     }
 
     return () => {
@@ -139,7 +156,7 @@ export const DrawSurface = ({
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('keypress', handleKeyPress)
     }
-  }, [handleCandidate])
+  }, [handleCandidate, scale])
 
 
   // utils
