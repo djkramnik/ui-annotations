@@ -12,12 +12,11 @@ type Rect = {
 // an overlay with mouse events to let the user draw a rectangle
 // a callback for pressing enter, which passes the dimensions of the rectangle as arguments
 export const DrawSurface = ({
-  handleEnter
+  handleCandidate
 }: {
-  handleEnter: (rect: Rect) => void
+  handleCandidate: (rect: Rect, ref: HTMLDivElement) => void
 }) => {
   const ref = useRef<HTMLDivElement | null>(null)
-  const isDrawing = useRef<boolean>(false)
   const drawRectangle = useRef<Rect | null>(null)
   const startPoint = useRef<{x: number; y: number} | null>(null)
 
@@ -39,46 +38,42 @@ export const DrawSurface = ({
     }
   }, [])
 
-  // memoizing this for static reference for adding and removing as window listener callback
-  // debouncing this as it is relatively expense op that could be called many times per second
-  const handleMouseMove = useCallback(() => {
-    return debounce(
-      function _handleMouseMove(e: MouseEvent) {
-        if (!ref || !withinBounds(e) || !startPoint.current) {
-          return
-        }
-        const { top, left, width, height } = getBox(e)
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!ref || !withinBounds(e) || !startPoint.current) {
+      return
+    }
+    const { top, left, width, height } = getBox(e)
 
-        // remove prev rectangle if any
-        ref.current.querySelector('#drawRect')?.remove()
-        const rect = document.createElement('div')
-        rect.setAttribute('id', 'drawRect')
-        ref.current.appendChild(rect)
-        rect.style.position = 'absolute'
-        rect.style.top = `${top}px`
-        rect.style.left= `${left}px`
-        rect.style.width = `${width}px`
-        rect.style.height = `${height}px`
-        rect.style.border = `1px solid #16F529`
-        rect.style.boxSizing = 'border-box'
-      },
-      200 // debounce period
-    )
+    let greenRect = ref.current.querySelector('#drawRect') as HTMLDivElement
+
+    if (!greenRect) {
+      greenRect = document.createElement('div')
+      greenRect.setAttribute('id', 'drawRect')
+      greenRect.style.position = 'absolute'
+      greenRect.style.border = `1px solid #16F529`
+      greenRect.style.boxSizing = 'border-box'
+      ref.current.appendChild(greenRect)
+    }
+
+    greenRect.style.top = `${top}px`
+    greenRect.style.left= `${left}px`
+    greenRect.style.width = `${width}px`
+    greenRect.style.height = `${height}px`
+
   }, [getBox])
 
   useEffect(() => {
-    if (isDrawing.current !== false) {
-      return
-    }
-
     window.addEventListener('mousedown', handleMouseDown)
 
     function handleMouseDown(e: MouseEvent) {
-      if (!withinBounds(e) || drawRectangle.current !== null) {
+      if (!withinBounds(e)) {
         return
       }
       const { rx, ry } = getRelativeXY(e)
+
+      // establish this as the start point
       startPoint.current = { x: rx, y: ry }
+
       // remove this for now
       window.removeEventListener('mousedown', handleMouseDown)
 
@@ -95,6 +90,12 @@ export const DrawSurface = ({
 
       const { top, left, width, height } = getBox(e)
 
+      // if the box is too small do nothing, just reset
+      if (width < 5 || height < 5) {
+        ref.current.querySelector('#drawRect')?.remove()
+        return
+      }
+
       // draw the rectangle at its final position
       ref.current.querySelector('#drawRect')?.remove()
       const rect = document.createElement('div')
@@ -107,17 +108,38 @@ export const DrawSurface = ({
       rect.style.height = `${height}px`
       rect.style.border = `1px solid #16F529`
       rect.style.boxSizing = 'border-box'
-      handleEnter({x: left, y: top, width, height })
+
+      // save the latest rectangle
+      drawRectangle.current = { x: left, y: top, width, height }
+      // remove the start point
+      startPoint.current = null
+      window.addEventListener('keypress', handleKeyPress)
     }
 
-    // should be debounced I think
+    function handleKeyPress(e: KeyboardEvent) {
+      if (drawRectangle.current === null || !['Enter', 'q'].includes(e.key)) {
+        return
+      }
+      switch(e.key) {
+        case 'Enter':
+          handleCandidate(drawRectangle.current, ref.current)
+          break
+        case 'q':
+          ref.current.querySelector('#drawRect')?.remove()
+          break
+      }
+
+      window.removeEventListener('keypress', handleKeyPress)
+
+    }
 
     return () => {
       window.removeEventListener('mousedown', handleMouseDown)
       window.removeEventListener('mouseup', handleMouseUp)
       window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('keypress', handleKeyPress)
     }
-  }, [handleEnter])
+  }, [handleCandidate])
 
 
   // utils

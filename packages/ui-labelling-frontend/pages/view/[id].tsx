@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import { useCallback, useEffect, useState } from 'react'
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { Container } from '../../components/container'
 import { Flex } from '../../components/flex'
 import { annotationLabels } from 'ui-labelling-shared'
@@ -8,6 +8,7 @@ import { SimpleDate } from '../../components/date'
 import { deleteAnnotation, publishAnnotation, unPublishAnnotation } from '../../api'
 import { DrawSurface } from '../../components/draw-surface'
 import { Rect } from '../../utils/type'
+import { Popup } from '../../components/popup'
 
 interface AnnotationPayload {
   annotations: {
@@ -35,6 +36,7 @@ type DangerState = | 'publish' | 'delete' | 'update'
 
 export default function AnnotationPage() {
   // async button press activate this
+  const [changed, setChanged] = useState<boolean>(false)
   const [disabled, setDisabled] = useState<boolean>(false)
   const { query, push, isReady } = useRouter()
   const [annotation, setAnnotation] = useState<Annotation | null>(null)
@@ -42,6 +44,7 @@ export default function AnnotationPage() {
     mode: PageMode
     toggleState: ToggleState | null
     dangerState: DangerState | null
+    drawCandidate?: Rect
     currToggleIndex: number | null
   }>({
     mode: 'initial',
@@ -50,9 +53,68 @@ export default function AnnotationPage() {
     currToggleIndex: null
   })
 
-  const testHandleEnter = useCallback((rect: Rect) => {
-    console.log('handle enter', rect)
+  const labels = useMemo(() => {
+    return Object.keys(annotationLabels)
   }, [])
+
+  const resetPageState = useCallback(() => {
+    setPageState({
+      mode: 'initial',
+      toggleState: null,
+      dangerState: null,
+      currToggleIndex: null
+    })
+  }, [setPageState])
+
+  const NewAnnotationForm = useMemo(() => {
+    return () => !pageState.drawCandidate ? null : (
+      <Popup handleClose={resetPageState}>
+        <form onSubmit={(e: FormEvent<HTMLFormElement>) => {
+          e.preventDefault()
+          const select = e.currentTarget.elements.namedItem('label') as HTMLSelectElement
+          setAnnotation(annotation => ({
+            ...annotation,
+            payload: {
+              annotations: annotation.payload.annotations.concat({
+                id: String(new Date().getTime()), // I am baffled why I ever included this
+                label: select.value,
+                rect: pageState.drawCandidate
+              })
+            }
+          }))
+          resetPageState()
+        }}>
+          <div>
+            <label htmlFor="label-select">Annotation Label</label>
+            <select id="label-select" name="label" required>
+              <option value="" disabled selected>Select label</option>
+              {
+                labels.map(label => {
+                  return (
+                    <option key={label} value={label}>{label}</option>
+                  )
+                })
+              }
+            </select>
+          </div>
+          <Flex dir="column">
+            <Flex gap="6px">
+              <button type="submit">
+                submit
+              </button>
+              <button type="button" onClick={resetPageState}>
+                cancel
+              </button>
+            </Flex>
+          </Flex>
+        </form>
+      </Popup>
+    )
+  }, [pageState, resetPageState, labels, setAnnotation])
+
+  const handleNewDrawCandidate = useCallback((rect: Rect, ref: HTMLDivElement) => {
+    setPageState(state => ({...state, drawCandidate: rect}))
+  }, [setPageState])
 
   const handleDrawClick = useCallback(() => {
     setPageState({
@@ -163,6 +225,13 @@ export default function AnnotationPage() {
 
   return (
     <main id="annotation-view">
+      {
+        pageState.drawCandidate
+          ? (
+            <NewAnnotationForm />
+          )
+          : null
+      }
       <Container>
         <button id="back-btn" onClick={() => push('/')}>
           Back
@@ -202,7 +271,13 @@ export default function AnnotationPage() {
               annotations={annotations}
               frame={{ width: viewWidth, height: viewHeight }}
             >
-              <DrawSurface handleEnter={testHandleEnter} />
+            {
+              pageState.mode === 'draw'
+                ? (
+                  <DrawSurface handleCandidate={handleNewDrawCandidate} />
+                )
+                : null
+            }
             </ScreenshotAnnotator>
           </div>
 
