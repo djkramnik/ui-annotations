@@ -5,7 +5,6 @@ This repo also includes a web server for storing annotations in local postgres i
 
 #### TODO
 * frontend annotation work
-  * draw
   * toggle through, and adjust or remove individual annotations
   * update db with changes
 
