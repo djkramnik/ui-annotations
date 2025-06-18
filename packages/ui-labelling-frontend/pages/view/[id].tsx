@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Container } from '../../components/container'
 import { Flex } from '../../components/flex'
 import { annotationLabels } from 'ui-labelling-shared'
@@ -35,7 +35,7 @@ type ToggleState = | 'delete' | 'adjust' | 'label'
 type DangerState = | 'publish' | 'delete' | 'update'
 
 export default function AnnotationPage() {
-  // async button press activate this
+  const originalAnnotations = useRef<AnnotationPayload['annotations'] | null>(null)
   const [changed, setChanged] = useState<boolean>(false)
   const [disabled, setDisabled] = useState<boolean>(false)
   const { query, push, isReady } = useRouter()
@@ -86,7 +86,7 @@ export default function AnnotationPage() {
         }}>
           <Flex dir="column" gap="12px">
             <Flex>
-              <div>
+              <Flex dir="column">
                 <label htmlFor="label-select">Annotation Label</label>
                 <select id="label-select" name="label" required>
                   <option value="" disabled selected>Select label</option>
@@ -98,7 +98,7 @@ export default function AnnotationPage() {
                     })
                   }
                 </select>
-              </div>
+              </Flex>
             </Flex>
             <Flex gap="6px">
               <button type="submit">
@@ -204,9 +204,34 @@ export default function AnnotationPage() {
     if (!isReady) return
     fetch(`/api/annotation/${query.id}`)
       .then(r => r.json())
-      .then(({ data }) => setAnnotation(data))
+      .then(({ data }: { data: Annotation }) => {
+        setAnnotation(data)
+        originalAnnotations.current = data.payload.annotations
+      })
       .catch(console.error)
   }, [isReady, query.id])
+
+  // whenever annotations changes, monitor for difference from original
+  // to keep track of whether there are unsaved changes.  This will be used when navigating away from page, to show a warn
+  // and to populate a helpful old man capitalized message
+  useEffect(() => {
+    if (!annotation || !originalAnnotations.current) {
+      return
+    }
+    const newPayload = annotation.payload.annotations
+    setChanged(
+      newPayload.length !== originalAnnotations.current.length ||
+      newPayload.some((item, index) => {
+        const og = originalAnnotations[index]
+        return item.id !== og.id ||
+          item.label !== og.label ||
+          item.rect.x !== og.rect.x ||
+          item.rect.y !== og.rect.y ||
+          item.rect.width !== og.rect.width ||
+          item.rect.height !== og.rect.height
+      })
+    )
+  }, [setChanged, annotation])
 
   if (!annotation) {
     return <p>Loading…</p>
@@ -255,8 +280,9 @@ export default function AnnotationPage() {
               disabled={disabled}>Delete</button>
           </Flex>
         </Flex>
-        <Flex>
+        <Flex gap="12px" aic>
           <h3>Mode: {pageState.mode}</h3>
+          <strong>{changed ? 'THERE BE UNSAVED CHANGES' : 'NO CHANGES!'}</strong>
         </Flex>
         <Flex>
           {/* ───────── screenshot with live-scaled rectangles ───────── */}
