@@ -1,4 +1,4 @@
-import React, { useRef, useState, useLayoutEffect } from 'react'
+import React, { useRef, useState, useLayoutEffect, CSSProperties } from 'react'
 import { annotationLabels } from 'ui-labelling-shared'        // ← NEW
 import { Rect } from '../utils/type';
 
@@ -8,11 +8,13 @@ export default function ScreenshotAnnotator({
   screenshot,
   annotations,
   frame,
+  labelOverride,
   children
 }: {
   screenshot: string
   annotations: Annotation[]
   frame: { width: number; height: number }
+  labelOverride?: CSSProperties
   children?: React.ReactNode
 }) {
   const ref = useRef<HTMLDivElement | null>(null)
@@ -79,6 +81,7 @@ export default function ScreenshotAnnotator({
               fontSize: 12,
               fontWeight: 600,
               textShadow: '0 0 2px rgba(0,0,0,.6)',
+              ...labelOverride
             }}
           >
             {label}

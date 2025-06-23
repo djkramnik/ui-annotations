@@ -180,6 +180,17 @@ export default function AnnotationPage() {
     })
   }, [setPageState])
 
+  const handleToggleIndexChange = useCallback((newIndex: number) => {
+    setPageState(state => {
+      if (state.mode !== 'toggle') {
+        console.error('SOMETHING WENT VERY WRONG.')
+        return state
+      }
+      state.currToggleIndex = newIndex
+      return {...state}
+    })
+  }, [setPageState])
+
   useEffect(() => {
     if (!isReady) return
     fetch(`/api/annotation/${query.id}`)
@@ -277,7 +288,19 @@ export default function AnnotationPage() {
           >
             <ScreenshotAnnotator
               screenshot={screenshotDataUrl}
-              annotations={payload.annotations}
+              labelOverride={
+                pageState.mode !== 'toggle'
+                  ? undefined
+                  : {
+                    backgroundColor: 'transparent',
+                    border: `1px solid #16F529`
+                  }
+              }
+              annotations={
+                pageState.mode !== 'toggle'
+                  ? payload.annotations
+                  : [payload.annotations[pageState.currToggleIndex ?? 0]]
+                }
               frame={{ width: viewWidth, height: viewHeight }}
             >
             {
@@ -330,7 +353,7 @@ export default function AnnotationPage() {
                 ? (
                   <AnnotationToggler
                     annotations={payload.annotations}
-                    handleIndexChange={(index) => console.log('new index', index)}
+                    handleIndexChange={handleToggleIndexChange}
                     handleUpdate={(label: string) => console.log('new label', label)}
                   />
                 )
