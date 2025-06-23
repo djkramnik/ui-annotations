@@ -10,7 +10,7 @@ export const AnnotationToggler = ({
 }: {
   annotations: AnnotationPayload['annotations']
   handleIndexChange: (newIndex: number) => void
-  handleUpdate: (label: string) => void
+  handleUpdate: (label: string, index: number) => void
 }) => {
   const [currIndex, setCurrIndex] = useState<number>(0)
 
@@ -55,7 +55,7 @@ export const SelectedAnnotation = (
   }: {
     index: number
     annotation: AnnotationPayload['annotations'][0]
-    handleUpdate: (label: string) => void
+    handleUpdate: (label: string, index: number) => void
     children?: React.ReactNode
   }) => {
     const [currLabel, setCurrLabel] = useState<string>(annotation.label)
@@ -71,7 +71,7 @@ export const SelectedAnnotation = (
         <Flex>
           <form onSubmit={e => {
             e.preventDefault()
-            handleUpdate(currLabel)
+            handleUpdate(currLabel, index)
           }}>
             <Flex dir="column" gap="4px">
               <label htmlFor="label-select" style={{ fontWeight: 'bold' }}>Label:</label>

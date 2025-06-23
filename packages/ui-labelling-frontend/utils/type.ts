@@ -24,3 +24,5 @@ export interface Annotations {
   id: number
   published: | 0 | 1
 }
+
+export type Annotation = AnnotationPayload['annotations'][0]

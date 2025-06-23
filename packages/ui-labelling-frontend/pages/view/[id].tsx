@@ -11,6 +11,7 @@ import { Annotations, AnnotationPayload, Rect } from '../../utils/type'
 import { Popup } from '../../components/popup'
 import { useLabels } from '../../hooks/labels'
 import { AnnotationToggler, SelectedAnnotation } from '../../components/annotation'
+import { useAdjustRect } from '../../hooks/adjust'
 
 type PageMode = | 'initial' | 'toggle' | 'draw' | 'danger'
 type ToggleState = | 'delete' | 'adjust' | 'label'
@@ -36,6 +37,11 @@ export default function AnnotationPage() {
   })
 
   const labels = useLabels()
+
+  const adjustment = useAdjustRect(typeof pageState.currToggleIndex === 'number'
+    ? (annotations?.[pageState.currToggleIndex] ?? null)
+    : null
+  )
 
   const resetPageState = useCallback(() => {
     setPageState({
@@ -190,6 +196,30 @@ export default function AnnotationPage() {
       return {...state}
     })
   }, [setPageState])
+
+  const handleLabelUpdate = useCallback((newLabel: string, index: number) => {
+    if (pageState.currToggleIndex === null) {
+      console.error('SOMETHING WENT VERY WRONG IN HANDLE LABEL')
+      return
+    }
+    setAnnotations(annotations => {
+      const curr = annotations.payload.annotations[index]
+      return {
+        ...annotations,
+        payload: {
+          annotations: annotations.payload.annotations.map(a => {
+            if (curr.id === a.id) {
+              return {
+                ...a,
+                label: newLabel // holy shit
+              }
+            }
+            return a
+          })
+        }
+      }
+    })
+  }, [pageState, setAnnotations])
 
   useEffect(() => {
     if (!isReady) return
@@ -354,7 +384,7 @@ export default function AnnotationPage() {
                   <AnnotationToggler
                     annotations={payload.annotations}
                     handleIndexChange={handleToggleIndexChange}
-                    handleUpdate={(label: string) => console.log('new label', label)}
+                    handleUpdate={handleLabelUpdate}
                   />
                 )
                 : null
