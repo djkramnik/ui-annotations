@@ -10,7 +10,7 @@ import { DrawSurface } from '../../components/draw-surface'
 import { Annotations, AnnotationPayload, Rect } from '../../utils/type'
 import { Popup } from '../../components/popup'
 import { useLabels } from '../../hooks/labels'
-import { AnnotationToggler, SelectedAnnotation } from '../../components/annotation'
+import { AnnotationToggler } from '../../components/annotation'
 import { useAdjustRect } from '../../hooks/adjust'
 
 type PageMode = | 'initial' | 'toggle' | 'draw' | 'danger'
@@ -75,7 +75,7 @@ export default function AnnotationPage() {
               <Flex dir="column">
                 <label htmlFor="label-select">Annotation Label</label>
                 <select id="label-select" name="label" required>
-                  <option value="" disabled selected>Select label</option>
+                  <option value="" disabled defaultValue="true">Select label</option>
                   {
                     labels.map(label => {
                       return (
