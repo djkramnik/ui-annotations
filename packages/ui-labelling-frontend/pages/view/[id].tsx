@@ -7,28 +7,10 @@ import ScreenshotAnnotator from '../../components/screenshot-annotated'   // ←
 import { SimpleDate } from '../../components/date'
 import { deleteAnnotation, publishAnnotation, unPublishAnnotation } from '../../api'
 import { DrawSurface } from '../../components/draw-surface'
-import { Rect } from '../../utils/type'
+import { Annotations, AnnotationPayload, Rect } from '../../utils/type'
 import { Popup } from '../../components/popup'
-
-interface AnnotationPayload {
-  annotations: {
-    id: string
-    label: string
-    rect: { x: number; y: number; width: number; height: number }
-  }[]
-}
-
-interface Annotation {
-  url: string
-  payload: AnnotationPayload
-  screenshot: ArrayBuffer
-  scrollY: number
-  viewHeight: number
-  viewWidth: number
-  date: string
-  id: number
-  published: | 0 | 1
-}
+import { useLabels } from '../../hooks/labels'
+import { AnnotationToggler, SelectedAnnotation } from '../../components/annotation'
 
 type PageMode = | 'initial' | 'toggle' | 'draw' | 'danger'
 type ToggleState = | 'delete' | 'adjust' | 'label'
@@ -39,7 +21,7 @@ export default function AnnotationPage() {
   const [changed, setChanged] = useState<boolean>(false)
   const [disabled, setDisabled] = useState<boolean>(false)
   const { query, push, isReady } = useRouter()
-  const [annotation, setAnnotation] = useState<Annotation | null>(null)
+  const [annotations, setAnnotations] = useState<Annotations | null>(null)
   const [pageState, setPageState] = useState<{
     mode: PageMode
     toggleState: ToggleState | null
@@ -53,9 +35,7 @@ export default function AnnotationPage() {
     currToggleIndex: null
   })
 
-  const labels = useMemo(() => {
-    return Object.keys(annotationLabels)
-  }, [])
+  const labels = useLabels()
 
   const resetPageState = useCallback(() => {
     setPageState({
@@ -72,10 +52,10 @@ export default function AnnotationPage() {
         <form onSubmit={(e: FormEvent<HTMLFormElement>) => {
           e.preventDefault()
           const select = e.currentTarget.elements.namedItem('label') as HTMLSelectElement
-          setAnnotation(annotation => ({
-            ...annotation,
+          setAnnotations(annotations => ({
+            ...annotations,
             payload: {
-              annotations: annotation.payload.annotations.concat({
+              annotations: annotations.payload.annotations.concat({
                 id: String(new Date().getTime()), // I am baffled why I ever included this
                 label: select.value,
                 rect: pageState.drawCandidate
@@ -112,7 +92,7 @@ export default function AnnotationPage() {
         </form>
       </Popup>
     )
-  }, [pageState, resetPageState, labels, setAnnotation])
+  }, [pageState, resetPageState, labels, setAnnotations])
 
   const handleNewDrawCandidate = useCallback((rect: Rect) => {
     setPageState(state => ({...state, drawCandidate: rect}))
@@ -137,7 +117,7 @@ export default function AnnotationPage() {
   }, [setPageState])
 
   const handlePublishClick = useCallback(() => {
-    if (disabled || !annotation) {
+    if (disabled || !annotations) {
       return
     }
     setPageState({
@@ -147,12 +127,12 @@ export default function AnnotationPage() {
       currToggleIndex: null,
     })
     setDisabled(true)
-    const proceed =  window.confirm(`Sure you want to ${annotation.published === 0 ? 'PUBLISH' : 'UNPUBLISH'} this dubious work?`)
+    const proceed =  window.confirm(`Sure you want to ${annotations.published === 0 ? 'PUBLISH' : 'UNPUBLISH'} this dubious work?`)
     if (!proceed) {
       setDisabled(false)
       return
     }
-    const task: (n: number) => Promise<void> = annotation.published === 0
+    const task: (n: number) => Promise<void> = annotations.published === 0
       ? publishAnnotation
       : unPublishAnnotation
     try {
@@ -163,7 +143,7 @@ export default function AnnotationPage() {
     } finally {
       setDisabled(false)
     }
-  }, [setPageState, setDisabled, disabled, annotation])
+  }, [setPageState, setDisabled, disabled, annotations])
 
   const handleDeleteClick = useCallback(() => {
     if (disabled) {
@@ -204,8 +184,8 @@ export default function AnnotationPage() {
     if (!isReady) return
     fetch(`/api/annotation/${query.id}`)
       .then(r => r.json())
-      .then(({ data }: { data: Annotation }) => {
-        setAnnotation(data)
+      .then(({ data }: { data: Annotations }) => {
+        setAnnotations(data)
         originalAnnotations.current = data.payload.annotations
       })
       .catch(console.error)
@@ -216,10 +196,10 @@ export default function AnnotationPage() {
   // This will be used when navigating away from page, to show a warn
   // and to populate a helpful old man capitalized message
   useEffect(() => {
-    if (!annotation || !originalAnnotations.current) {
+    if (!annotations || !originalAnnotations.current) {
       return
     }
-    const newPayload = annotation.payload.annotations
+    const newPayload = annotations.payload.annotations
     setChanged(
       newPayload.length !== originalAnnotations.current.length ||
       newPayload.some((item, index) => {
@@ -232,9 +212,9 @@ export default function AnnotationPage() {
           item.rect.height !== og.rect.height
       })
     )
-  }, [setChanged, annotation])
+  }, [setChanged, annotations])
 
-  if (!annotation) {
+  if (!annotations) {
     return <p>Loading…</p>
   }
 
@@ -242,12 +222,12 @@ export default function AnnotationPage() {
     url,
     date,
     scrollY,
-    payload: { annotations },
+    payload,
     screenshot,
     viewWidth,
     viewHeight,
     published
-  } = annotation
+  } = annotations
 
   const screenshotDataUrl = `data:image/png;base64,${Buffer.from(screenshot).toString('base64')}`
 
@@ -297,7 +277,7 @@ export default function AnnotationPage() {
           >
             <ScreenshotAnnotator
               screenshot={screenshotDataUrl}
-              annotations={annotations}
+              annotations={payload.annotations}
               frame={{ width: viewWidth, height: viewHeight }}
             >
             {
@@ -314,7 +294,7 @@ export default function AnnotationPage() {
             </ScreenshotAnnotator>
           </div>
 
-          <Flex dir="column" gap="24px" style={{ flexGrow: '1' }}>
+          <Flex dir="column" gap="24px" style={{ flexGrow: '1', maxWidth: '10%' }}>
             <Flex
               style={{
                 border: '1px solid #aaa',
@@ -345,6 +325,17 @@ export default function AnnotationPage() {
                 Toggle
               </button>
             </Flex>
+            {
+              pageState.mode === 'toggle' && typeof pageState.currToggleIndex === 'number'
+                ? (
+                  <AnnotationToggler
+                    annotations={payload.annotations}
+                    handleIndexChange={(index) => console.log('new index', index)}
+                    handleUpdate={(label: string) => console.log('new label', label)}
+                  />
+                )
+                : null
+            }
           </Flex>
         </Flex>
       </Container>
