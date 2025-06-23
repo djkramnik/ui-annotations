@@ -9,8 +9,6 @@ This repo also includes a web server for storing annotations in local postgres i
   * update db with changes
 
 * Final label list
-* Upload json of a given annotation from the frontend to Google
-
 * Collect data
 
 #### Buggos / QOL

@@ -212,7 +212,8 @@ export default function AnnotationPage() {
   }, [isReady, query.id])
 
   // whenever annotations changes, monitor for difference from original
-  // to keep track of whether there are unsaved changes.  This will be used when navigating away from page, to show a warn
+  // to keep track of whether there are unsaved changes.
+  // This will be used when navigating away from page, to show a warn
   // and to populate a helpful old man capitalized message
   useEffect(() => {
     if (!annotation || !originalAnnotations.current) {
@@ -222,7 +223,7 @@ export default function AnnotationPage() {
     setChanged(
       newPayload.length !== originalAnnotations.current.length ||
       newPayload.some((item, index) => {
-        const og = originalAnnotations[index]
+        const og = originalAnnotations.current[index]
         return item.id !== og.id ||
           item.label !== og.label ||
           item.rect.x !== og.rect.x ||
