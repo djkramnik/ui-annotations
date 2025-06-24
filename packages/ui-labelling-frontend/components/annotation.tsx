@@ -6,11 +6,13 @@ import { useLabels } from "../hooks/labels";
 export const AnnotationToggler = ({
   annotations,
   handleIndexChange,
-  handleUpdate
+  handleUpdate,
+  handleRemove,
 }: {
   annotations: AnnotationPayload['annotations']
   handleIndexChange: (newIndex: number) => void
   handleUpdate: (label: string, index: number) => void
+  handleRemove: (index: number) => void
 }) => {
   const [currIndex, setCurrIndex] = useState<number>(0)
 
@@ -31,6 +33,7 @@ export const AnnotationToggler = ({
         index={currIndex}
         annotation={annotations[currIndex]}
         handleUpdate={handleUpdate}
+        handleRemove={handleRemove}
       >
         <p>The green rectangle on the screenshot is the bounding box of this annotation.
           Keypress `i,j,k,l` to reposition. `p` to scale size up, `m` to scale size down
@@ -52,11 +55,13 @@ export const SelectedAnnotation = (
     index,
     annotation,
     handleUpdate,
+    handleRemove,
     children,
   }: {
     index: number
     annotation: AnnotationPayload['annotations'][0]
     handleUpdate: (label: string, index: number) => void
+    handleRemove: (index: number) => void
     children?: React.ReactNode
   }) => {
     const [currLabel, setCurrLabel] = useState<string>(annotation.label)
@@ -92,6 +97,7 @@ export const SelectedAnnotation = (
             <button type="submit" style={{ marginTop: '4px' }}>Update</button>
           </form>
         </Flex>
+        <button onClick={e => handleRemove(index)}>Delete</button>
       </Flex>
     )
 }

@@ -5,8 +5,11 @@ This repo also includes a web server for storing annotations in local postgres i
 
 #### TODO
 * frontend annotation work
-  * toggle through, and adjust or remove individual annotations
   * update db with changes
+
+* extension
+  * quality of life and fixes
+  * extension PROJECTION feature
 
 * Final label list
 * Collect data
@@ -18,7 +21,7 @@ This repo also includes a web server for storing annotations in local postgres i
 * option to unlock (put state back to dormant?)
 * unable to nav to 'Find A Store' on the starbucks.com page. Maybe this is due to the differently shaped nav criteria
 * max height on the remove icon
-* the colours for the show annotations too light at times
+* improve the colours on the annotation dictionary
 * the styling of the extension popup should be site style agnostic.
 * the conversion of currEl in the extension from a single node to an array...
 * the ability to click p and project by some criteria (tag+structure, classname). this will populate the array and you can label them and include them in one click.

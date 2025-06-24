@@ -228,6 +228,26 @@ export default function AnnotationPage() {
     setAdjustReset(reset => !reset)
   }, [pageState, setAnnotations, adjustment, setAdjustReset])
 
+  const handleRemoveAnnotation = useCallback((index: number) => {
+    const proceed = window.confirm('you sure?  you sure you want to delete this wonderful annotation?')
+    if (!proceed) {
+      return
+    }
+    setAnnotations(annotations => {
+      const curr = annotations.payload.annotations[index]
+      return {
+        ...annotations,
+        payload: {
+          annotations: annotations.payload.annotations.filter(a => {
+            return a !== curr
+          })
+        }
+      }
+    })
+    // react hack.  we only do this to force an effect to run within useAdjustRect
+    setAdjustReset(reset => !reset)
+  }, [setAnnotations, setAdjustReset])
+
   useEffect(() => {
     if (!isReady) return
     fetch(`/api/annotation/${query.id}`)
@@ -392,6 +412,7 @@ export default function AnnotationPage() {
                     annotations={payload.annotations}
                     handleIndexChange={handleToggleIndexChange}
                     handleUpdate={handleAnnotationUpdate}
+                    handleRemove={handleRemoveAnnotation}
                   />
                 )
                 : null
