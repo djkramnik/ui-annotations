@@ -12,6 +12,7 @@ import { Popup } from '../../components/popup'
 import { useLabels } from '../../hooks/labels'
 import { AnnotationToggler } from '../../components/annotation'
 import { useAdjustRect } from '../../hooks/adjust'
+import { adjustAnnotation } from '../../utils/adjust'
 
 type PageMode = | 'initial' | 'toggle' | 'draw' | 'danger'
 type ToggleState = | 'delete' | 'adjust' | 'label'
@@ -329,7 +330,7 @@ export default function AnnotationPage() {
               annotations={
                 pageState.mode !== 'toggle'
                   ? payload.annotations
-                  : [payload.annotations[pageState.currToggleIndex ?? 0]]
+                  : [adjustAnnotation(payload.annotations[pageState.currToggleIndex ?? 0], adjustment)]
                 }
               frame={{ width: viewWidth, height: viewHeight }}
             >
