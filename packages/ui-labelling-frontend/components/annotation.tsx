@@ -33,7 +33,8 @@ export const AnnotationToggler = ({
         handleUpdate={handleUpdate}
       >
         <p>The green rectangle on the screenshot is the bounding box of this annotation.
-          Keypress `i,j,k,l` to reposition. `+` to scale size up, `-` to scale size down
+          Keypress `i,j,k,l` to reposition. `p` to scale size up, `m` to scale size down
+          'q' and 'w' to increase and decrease width, 'a' and 's' to increase and decrease height.
         </p>
       </SelectedAnnotation>
       <Flex gap="8px">

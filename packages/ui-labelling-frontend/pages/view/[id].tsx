@@ -24,6 +24,9 @@ export default function AnnotationPage() {
   const [disabled, setDisabled] = useState<boolean>(false)
   const { query, push, isReady } = useRouter()
   const [annotations, setAnnotations] = useState<Annotations | null>(null)
+  // this is just some hack to force a reset of the adjustment value
+  const [adjustReset, setAdjustReset] = useState<boolean>(false)
+
   const [pageState, setPageState] = useState<{
     mode: PageMode
     toggleState: ToggleState | null
@@ -41,7 +44,9 @@ export default function AnnotationPage() {
 
   const adjustment = useAdjustRect(typeof pageState.currToggleIndex === 'number'
     ? (annotations?.[pageState.currToggleIndex] ?? null)
-    : null
+    : null,
+    pageState.currToggleIndex ?? 0,
+    adjustReset
   )
 
   const resetPageState = useCallback(() => {
@@ -198,9 +203,9 @@ export default function AnnotationPage() {
     })
   }, [setPageState])
 
-  const handleLabelUpdate = useCallback((newLabel: string, index: number) => {
+  const handleAnnotationUpdate = useCallback((newLabel: string, index: number) => {
     if (pageState.currToggleIndex === null) {
-      console.error('SOMETHING WENT VERY WRONG IN HANDLE LABEL')
+      console.error('SOMETHING WENT VERY WRONG IN HANDLE ANNOTATION UPDATE')
       return
     }
     setAnnotations(annotations => {
@@ -210,17 +215,18 @@ export default function AnnotationPage() {
         payload: {
           annotations: annotations.payload.annotations.map(a => {
             if (curr.id === a.id) {
-              return {
+              return adjustAnnotation({
                 ...a,
-                label: newLabel // holy shit
-              }
+                label: newLabel, // holy shit
+              }, adjustment)
             }
             return a
           })
         }
       }
     })
-  }, [pageState, setAnnotations])
+    setAdjustReset(reset => !reset)
+  }, [pageState, setAnnotations, adjustment, setAdjustReset])
 
   useEffect(() => {
     if (!isReady) return
@@ -385,7 +391,7 @@ export default function AnnotationPage() {
                   <AnnotationToggler
                     annotations={payload.annotations}
                     handleIndexChange={handleToggleIndexChange}
-                    handleUpdate={handleLabelUpdate}
+                    handleUpdate={handleAnnotationUpdate}
                   />
                 )
                 : null
