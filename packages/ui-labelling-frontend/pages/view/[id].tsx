@@ -5,7 +5,7 @@ import { Flex } from '../../components/flex'
 import { annotationLabels } from 'ui-labelling-shared'
 import ScreenshotAnnotator from '../../components/screenshot-annotated'   // ← NEW
 import { SimpleDate } from '../../components/date'
-import { deleteAnnotation, publishAnnotation, unPublishAnnotation } from '../../api'
+import { deleteAnnotation, publishAnnotation, unPublishAnnotation, updateAnnotation } from '../../api'
 import { DrawSurface } from '../../components/draw-surface'
 import { Annotations, AnnotationPayload, Rect } from '../../utils/type'
 import { Popup } from '../../components/popup'
@@ -128,6 +128,35 @@ export default function AnnotationPage() {
     })
   }, [setPageState])
 
+  const updateDb = useCallback(() => {
+    if (!changed) {
+      console.warn('No changes.  No db updates bruh')
+      return
+    }
+    if (disabled) {
+      return
+    }
+    if (!annotations) {
+      console.warn('No annotations??')
+      return
+    }
+    const proceed = window.confirm('You SURE you want to meddle with this annotation?')
+    if (!proceed) {
+      return
+    }
+    setDisabled(true)
+    try {
+      updateAnnotation(
+        Number(String(query.id)),
+        { annotations: annotations.payload.annotations },
+      ).then(() => push('/'))
+    } catch(e) {
+      // show toast
+    } finally {
+      setDisabled(false)
+    }
+  }, [setDisabled, disabled, changed, annotations, push])
+
   const handlePublishClick = useCallback(() => {
     if (disabled || !annotations) {
       return
@@ -155,7 +184,7 @@ export default function AnnotationPage() {
     } finally {
       setDisabled(false)
     }
-  }, [setPageState, setDisabled, disabled, annotations])
+  }, [setPageState, setDisabled, disabled, annotations, push])
 
   const handleDeleteClick = useCallback(() => {
     if (disabled) {
@@ -181,7 +210,7 @@ export default function AnnotationPage() {
     } finally {
       setDisabled(false)
     }
-  }, [setPageState, setDisabled, disabled, query])
+  }, [setPageState, setDisabled, disabled, query, push])
 
   const handleUpdateClick = useCallback(() => {
     setPageState({

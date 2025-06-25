@@ -110,6 +110,31 @@ annotationRouter.post('/', async (req: Request, res: Response) => {
   }
 })
 
+// this updates only the annotations not the metadata
+annotationRouter.patch('/:id', async (req: Request, res: Response) => {
+  try {
+    const annotationId = Number(req.params.id)
+    const {
+      annotations,
+    } = req.body as Pick<AnnotationPayload, 'annotations'>
+
+    const record = await prisma.annotation.update({
+      data: {
+        payload: {
+          annotations,
+        },
+      },
+      where: {
+        id: annotationId
+      }
+    })
+    res.status(200).send({ data: record })
+  } catch(err) {
+    console.error(err)
+    res.status(500).send({ message: 'Unexpected error ' + err })
+  }
+})
+
 annotationRouter.get('/', async (_req: Request, res: Response) => {
   const published = _req.query.published as string
 

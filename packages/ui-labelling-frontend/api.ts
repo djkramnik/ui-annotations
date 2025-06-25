@@ -1,3 +1,5 @@
+import { AnnotationPayload } from "./utils/type"
+
 export const getAnnotations = () => {
   return (
     fetch('/api/annotation?published=0')
@@ -23,6 +25,19 @@ export const deleteAnnotation = (id: number) => {
   return (
     fetch(`/api/annotation/${id}`, { method: 'DELETE' })
       .then(r => r.json())
+  )
+}
+
+export const updateAnnotation = (
+  id: number,
+  payload: Pick<AnnotationPayload, 'annotations'>
+) => {
+  return (
+    fetch(`/api/annotation/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+    .then(r => r.json())
   )
 }
 
