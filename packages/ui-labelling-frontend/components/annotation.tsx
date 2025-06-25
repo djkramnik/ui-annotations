@@ -66,6 +66,11 @@ export const SelectedAnnotation = (
   }) => {
     const [currLabel, setCurrLabel] = useState<string>(annotation.label)
     const labels = useLabels()
+
+    useEffect(() => {
+      setCurrLabel(annotation.label)
+    }, [annotation, setCurrLabel])
+
     return (
       <Flex dir="column" gap="8px">
         <h4 style={{ margin: 0 }}>
