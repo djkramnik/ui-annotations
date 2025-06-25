@@ -26,3 +26,7 @@ export interface Annotations {
 }
 
 export type Annotation = AnnotationPayload['annotations'][0]
+
+export type PageMode = | 'initial' | 'toggle' | 'draw' | 'danger'
+export type ToggleState = | 'delete' | 'adjust' | 'label'
+export type DangerState = | 'publish' | 'delete' | 'update'

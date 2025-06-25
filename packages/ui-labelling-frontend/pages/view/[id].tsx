@@ -7,16 +7,13 @@ import ScreenshotAnnotator from '../../components/screenshot-annotated'   // ←
 import { SimpleDate } from '../../components/date'
 import { deleteAnnotation, publishAnnotation, unPublishAnnotation, updateAnnotation } from '../../api'
 import { DrawSurface } from '../../components/draw-surface'
-import { Annotations, AnnotationPayload, Rect } from '../../utils/type'
+import { Annotations, AnnotationPayload, Rect, PageMode, ToggleState, DangerState } from '../../utils/type'
 import { Popup } from '../../components/popup'
 import { useLabels } from '../../hooks/labels'
 import { AnnotationToggler } from '../../components/annotation'
 import { useAdjustRect } from '../../hooks/adjust'
 import { adjustAnnotation } from '../../utils/adjust'
-
-type PageMode = | 'initial' | 'toggle' | 'draw' | 'danger'
-type ToggleState = | 'delete' | 'adjust' | 'label'
-type DangerState = | 'publish' | 'delete' | 'update'
+import { useMode } from '../../hooks/mode'
 
 export default function AnnotationPage() {
   const originalAnnotations = useRef<AnnotationPayload['annotations'] | null>(null)
@@ -48,6 +45,7 @@ export default function AnnotationPage() {
     pageState.currToggleIndex ?? 0,
     adjustReset
   )
+
 
   const resetPageState = useCallback(() => {
     setPageState({
@@ -111,22 +109,51 @@ export default function AnnotationPage() {
   }, [setPageState])
 
   const handleDrawClick = useCallback(() => {
+    if (pageState.mode === 'draw') {
+      return
+    }
     setPageState({
       mode: 'draw',
       toggleState: null,
       dangerState: null,
       currToggleIndex: null
     })
-  }, [setPageState])
+  }, [setPageState, pageState])
 
   const handleToggleClick = useCallback(() => {
+    if (pageState.mode === 'toggle') {
+      return
+    }
     setPageState({
       mode: 'toggle',
       toggleState: null,
       dangerState: null,
       currToggleIndex: 0,
     })
-  }, [setPageState])
+  }, [setPageState, pageState])
+
+  // support changing page mode via keypress
+  const setModeFromKeypress = useCallback((mode: PageMode) => {
+    switch(mode) {
+      case 'draw':
+        handleDrawClick()
+        break
+      case 'toggle':
+        handleToggleClick()
+        break
+      case 'initial':
+        setPageState({
+          mode: 'initial',
+          toggleState: null,
+          dangerState: null,
+          currToggleIndex: null
+        })
+        break
+    }
+  }, [handleDrawClick, handleToggleClick, setPageState])
+
+  useMode(pageState.mode, setModeFromKeypress)
+  // end keypress page mode support
 
   const updateDb = useCallback(() => {
     if (!changed) {
