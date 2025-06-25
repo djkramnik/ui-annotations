@@ -212,15 +212,6 @@ export default function AnnotationPage() {
     }
   }, [setPageState, setDisabled, disabled, query, push])
 
-  const handleUpdateClick = useCallback(() => {
-    setPageState({
-      mode: 'danger',
-      toggleState: null,
-      dangerState: 'update',
-      currToggleIndex: null,
-    })
-  }, [setPageState])
-
   const handleToggleIndexChange = useCallback((newIndex: number) => {
     setPageState(state => {
       if (state.mode !== 'toggle') {
@@ -348,7 +339,7 @@ export default function AnnotationPage() {
             <p>Scroll: {scrollY}</p>
           </Flex>
           <Flex aic gap="12px">
-            <button onClick={handleUpdateClick}
+            <button onClick={updateDb}
               disabled={disabled}>Update</button>
             <button onClick={handlePublishClick}
               disabled={disabled}>

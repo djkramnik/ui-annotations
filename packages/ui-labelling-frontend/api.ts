@@ -1,30 +1,38 @@
 import { AnnotationPayload } from "./utils/type"
 
+
+const throwIfErrorStatus = (r: Response) => {
+  if (r.ok) {
+    return r.json()
+  }
+  return Promise.reject(r)
+}
+
 export const getAnnotations = () => {
   return (
     fetch('/api/annotation?published=0')
-      .then(r => r.json())
+      .then(throwIfErrorStatus)
   )
 }
 
 export const getPublishedAnnotations = () => {
   return (
     fetch('/api/annotation?published=1')
-      .then(r => r.json())
+      .then(throwIfErrorStatus)
   )
 }
 
 export const getAnnotation = (id: number) => {
   return (
     fetch(`/api/annotation/${id}`)
-      .then(r => r.json())
+      .then(throwIfErrorStatus)
   )
 }
 
 export const deleteAnnotation = (id: number) => {
   return (
     fetch(`/api/annotation/${id}`, { method: 'DELETE' })
-      .then(r => r.json())
+      .then(throwIfErrorStatus)
   )
 }
 
@@ -35,18 +43,21 @@ export const updateAnnotation = (
   return (
     fetch(`/api/annotation/${id}`, {
       method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(payload),
     })
-    .then(r => r.json())
+    .then(throwIfErrorStatus)
   )
 }
 
 export const publishAnnotation = (id: number) => {
   return fetch(`/api/annotation/publish/${id}`, { method: 'PUT' })
-    .then(r => r.json())
+    .then(throwIfErrorStatus)
 }
 
 export const unPublishAnnotation = (id: number) => {
   return fetch(`/api/annotation/unpublish/${id}`, { method: 'PUT' })
-    .then(r => r.json())
+    .then(throwIfErrorStatus)
 }
