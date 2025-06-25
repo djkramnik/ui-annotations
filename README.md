@@ -4,31 +4,25 @@ Primarily a chrome browser extension to help me quickly annotate UI elements on 
 This repo also includes a web server for storing annotations in local postgres instance, and a small frontend for viewing them.
 
 #### TODO
-* frontend annotation work
-  * update db with changes
+  #### Buggos / QOL
 
-* extension
-  * quality of life and fixes
-  * extension PROJECTION feature
+  * after export fail/success show some kind of message
+  * when you start, disable scrolling the viewport?
+  * option to unlock (put state back to dormant?)
+  * unable to nav to 'Find A Store' on the starbucks.com page. Maybe this is due to the differently shaped nav criteria
+  * max height on the remove icon
+  * improve the colours on the annotation dictionary
+  * the styling of the extension popup should be site style agnostic.
+  * the conversion of currEl in the extension from a single node to an array...
+  * the ability to click p and project by some criteria (tag+structure, classname). this will populate the array and you can label them and include them in one click.
 
-* Final label list
-* Collect data
+  popup.html
+  * style the popup.html so I can see when its disabled.  close icon in the corner prob (can I dismiss popup programatically)
+  * does clear button do anything?
 
-#### Buggos / QOL
+  * Final label list
+  * Collect data
 
-* after export fail/success show some kind of message
-* when you start, disable scrolling the viewport?
-* option to unlock (put state back to dormant?)
-* unable to nav to 'Find A Store' on the starbucks.com page. Maybe this is due to the differently shaped nav criteria
-* max height on the remove icon
-* improve the colours on the annotation dictionary
-* the styling of the extension popup should be site style agnostic.
-* the conversion of currEl in the extension from a single node to an array...
-* the ability to click p and project by some criteria (tag+structure, classname). this will populate the array and you can label them and include them in one click.
-
-popup.html
-* style the popup.html so I can see when its disabled.  close icon in the corner prob (can I dismiss popup programatically)
-* does clear button do anything?
 
 ### UI Labelling Extension
 
