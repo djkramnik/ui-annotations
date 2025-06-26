@@ -1,5 +1,6 @@
 
 import { AnnotationLabel } from "ui-labelling-shared"
+import { ExtensionMessage } from "../types"
 
 function getMessagePromise(message: string): Promise<void> {
   return new Promise(resolve => {
@@ -10,17 +11,15 @@ function getMessagePromise(message: string): Promise<void> {
 document.addEventListener('DOMContentLoaded', () => {
   // today copy to clipboard, tomorrow the world
   const exportBtn = document.getElementById('export-btn')
-  const clearBtn = document.getElementById('clear-btn')
   const startBtn = document.getElementById('start-btn')
   const endBtn = document.getElementById('end-btn')
 
-  if (!exportBtn || !clearBtn || !startBtn || !endBtn) {
+  if (!exportBtn || !startBtn || !endBtn) {
     console.error('cannot get dom objects')
     return
   }
 
   exportBtn.addEventListener('click', async () => {
-    window.close()
     // clear the overlay, reset global state to initial
     await getMessagePromise('clean')
     exportBtn.setAttribute('disabled', 'disabled')
@@ -39,39 +38,32 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(response => {
         if (response.ok) {
           console.log('successful export', response)
-          sendMessage('exportSuccess')
+          sendMessage(ExtensionMessage.exportSuccess)
           chrome.storage.local.clear()
+          window.close()
           return
         }
         throw `Bad status: ${response.status}`
       })
     } catch(e) {
-      sendMessage('exportFailed')
+      sendMessage(ExtensionMessage.exportFailed)
       console.error('could not export', e)
     } finally {
       exportBtn.removeAttribute('disabled')
     }
   })
 
-  clearBtn.addEventListener('click', async () => {
-    window.close()
-    clearBtn.setAttribute('disabled', 'disabled')
-    await chrome.storage.local.clear()
-    sendMessage('clearAnnnotations')
-    clearBtn.removeAttribute('disabled')
-  })
-
   startBtn.addEventListener('click', async () => {
-    window.close()
     startBtn.setAttribute('disabled', 'disabled')
-    sendMessage('startMain', () => {
+    sendMessage(ExtensionMessage.startMain, () => {
       startBtn.removeAttribute('disabled')
+      window.close()
     })
   })
 
   endBtn.addEventListener('click', async () => {
+    sendMessage(ExtensionMessage.turnOffExtension)
     window.close()
-    sendMessage('turnOffExtension')
   })
 })
 

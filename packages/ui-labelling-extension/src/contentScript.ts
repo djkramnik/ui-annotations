@@ -1,4 +1,5 @@
 import { AnnotationLabel, annotationLabels } from 'ui-labelling-shared'
+import { ExtensionMessage } from './types';
 
 type ExtensionState =
 | 'dormant'
@@ -27,6 +28,7 @@ type GlobalState = {
 
 ;(function () {
   const logPrefix = '[UI-LABELLER] '
+  const overlayId = 'ui-labelling-overlay'
 
   const log = {
     warn: (...args: any[]) => console.warn(logPrefix, ...args),
@@ -42,7 +44,6 @@ type GlobalState = {
       rect: DOMRect
       label: AnnotationLabel
     }[]) = []
-    let overlayId: string = 'ui-labelling-overlay'
     let currEl: HTMLElement | null = null
     let showAnnotations: boolean = false
 
@@ -684,17 +685,8 @@ type GlobalState = {
 
   let globalsRef: null | GlobalState = null
 
-  function resizeWarn() {
-    if (globalsRef && globalsRef.state !== 'dormant') {
-      const abort = window.confirm('hey you resized the window.  which frankly ruins everything. refresh page?')
-      if (abort) {
-        chrome.runtime.sendMessage({ cmd: 'hard-refresh' });
-      }
-      window.removeEventListener('resize', resizeWarn)
-    }
-  }
-
   chrome.runtime.onMessage.addListener((message: { type?: string }) => {
+    document.getElementById(overlayId)?.remove()
     log.info('content script received message', message)
     if (typeof message?.type !== 'string') {
       log.error('Could not parse runtime message', message)
@@ -702,16 +694,7 @@ type GlobalState = {
     }
 
     switch(message.type) {
-      case 'clearAnnotations':
-        if (globalsRef === null) {
-          log.warn('attempt to clear before starting')
-          return
-        }
-        globalsRef.state = 'initial'
-        globalsRef.showAnnotations = false
-        globalsRef.annotations = []
-        break
-      case 'exportFailed':
+      case ExtensionMessage.exportFailed:
         if (globalsRef === null) {
           log.warn("how could we have no globals ref after export")
           return
@@ -722,7 +705,7 @@ type GlobalState = {
           overlayId: globalsRef.overlayId,
         })
         break
-      case 'exportSuccess':
+      case ExtensionMessage.exportSuccess:
         if (globalsRef === null) {
           log.warn("how could we have no globals ref after export")
           return
@@ -734,7 +717,7 @@ type GlobalState = {
           overlayId: globalsRef.overlayId
         })
         break
-      case 'clean':
+      case ExtensionMessage.clean:
         if (globalsRef === null) {
           log.warn("request for clean up but we have no global state")
           return
@@ -742,12 +725,12 @@ type GlobalState = {
         globalsRef.state = 'initial' // this will trigger a removal of all the decorations from the overlay
         globalsRef.showAnnotations = false
         break
-      case 'turnOffExtension':
+      case ExtensionMessage.turnOffExtension:
         document.querySelector('ui-labelling-overlay')?.remove()
         globalsRef = null
-        window.removeEventListener('resize', resizeWarn)
+        unlockScroll()
         break
-      case 'startMain':
+      case ExtensionMessage.startMain:
         const overlay = document.querySelector('ui-labelling-overlay')
         if (overlay) {
           // TODO.  clean up here instead of running away
@@ -756,7 +739,6 @@ type GlobalState = {
         }
         globalsRef = main()
         lockScroll()
-        window.addEventListener('resize', resizeWarn)
         break
     }
   })
