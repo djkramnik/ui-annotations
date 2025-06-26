@@ -653,7 +653,46 @@ type GlobalState = {
     setTimeout(() => { inner.style.opacity = '0'; }, 5000); // 1 ms tick → CSS transition
   }
 
+
+  // scroll disable and enable
+  let scrollY = 0;
+
+  function lockScroll() {
+    // save the current position
+    scrollY = window.scrollY;
+
+    // fix the body in place
+    document.body.style.position = 'fixed';
+    document.body.style.top      = `-${scrollY}px`;
+    document.body.style.left     = '0';
+    document.body.style.right    = '0';
+    document.body.style.overflow = 'hidden';  // extra belt & suspenders
+  }
+
+  function unlockScroll() {
+    // restore styles
+    document.body.style.position = '';
+    document.body.style.top      = '';
+    document.body.style.left     = '';
+    document.body.style.right    = '';
+    document.body.style.overflow = '';
+
+    // pop back to where the user was
+    window.scrollTo(0, scrollY);
+  }
+  // end scroll locking
+
   let globalsRef: null | GlobalState = null
+
+  function resizeWarn() {
+    if (globalsRef && globalsRef.state !== 'dormant') {
+      const abort = window.confirm('hey you resized the window.  which frankly ruins everything. refresh page?')
+      if (abort) {
+        chrome.runtime.sendMessage({ cmd: 'hard-refresh' });
+      }
+      window.removeEventListener('resize', resizeWarn)
+    }
+  }
 
   chrome.runtime.onMessage.addListener((message: { type?: string }) => {
     log.info('content script received message', message)
@@ -663,6 +702,15 @@ type GlobalState = {
     }
 
     switch(message.type) {
+      case 'clearAnnotations':
+        if (globalsRef === null) {
+          log.warn('attempt to clear before starting')
+          return
+        }
+        globalsRef.state = 'initial'
+        globalsRef.showAnnotations = false
+        globalsRef.annotations = []
+        break
       case 'exportFailed':
         if (globalsRef === null) {
           log.warn("how could we have no globals ref after export")
@@ -675,7 +723,6 @@ type GlobalState = {
         })
         break
       case 'exportSuccess':
-        // among other things, show a toast and clear annotations
         if (globalsRef === null) {
           log.warn("how could we have no globals ref after export")
           return
@@ -695,6 +742,11 @@ type GlobalState = {
         globalsRef.state = 'initial' // this will trigger a removal of all the decorations from the overlay
         globalsRef.showAnnotations = false
         break
+      case 'turnOffExtension':
+        document.querySelector('ui-labelling-overlay')?.remove()
+        globalsRef = null
+        window.removeEventListener('resize', resizeWarn)
+        break
       case 'startMain':
         const overlay = document.querySelector('ui-labelling-overlay')
         if (overlay) {
@@ -703,6 +755,8 @@ type GlobalState = {
           return
         }
         globalsRef = main()
+        lockScroll()
+        window.addEventListener('resize', resizeWarn)
         break
     }
   })

@@ -6,9 +6,6 @@ This repo also includes a web server for storing annotations in local postgres i
 #### TODO
   #### Buggos / QOL
 
-  * after export fail/success show some kind of message
-  * when you start, disable scrolling the viewport?
-  * option to unlock (put state back to dormant?)
   * unable to nav to 'Find A Store' on the starbucks.com page. Maybe this is due to the differently shaped nav criteria
   * max height on the remove icon
   * improve the colours on the annotation dictionary
@@ -17,7 +14,7 @@ This repo also includes a web server for storing annotations in local postgres i
   * the ability to click p and project by some criteria (tag+structure, classname). this will populate the array and you can label them and include them in one click.
 
   popup.html
-  * style the popup.html so I can see when its disabled.  close icon in the corner prob (can I dismiss popup programatically)
+  * style the popup.html so I can see when its disabled.  no effect close button
   * does clear button do anything?
 
   * Final label list

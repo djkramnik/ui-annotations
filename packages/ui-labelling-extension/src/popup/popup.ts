@@ -12,14 +12,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const exportBtn = document.getElementById('export-btn')
   const clearBtn = document.getElementById('clear-btn')
   const startBtn = document.getElementById('start-btn')
+  const endBtn = document.getElementById('end-btn')
 
-  if (!exportBtn || !clearBtn || !startBtn) {
+  if (!exportBtn || !clearBtn || !startBtn || !endBtn) {
     console.error('cannot get dom objects')
     return
   }
 
   exportBtn.addEventListener('click', async () => {
-
+    window.close()
     // clear the overlay, reset global state to initial
     await getMessagePromise('clean')
     exportBtn.setAttribute('disabled', 'disabled')
@@ -39,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (response.ok) {
           console.log('successful export', response)
           sendMessage('exportSuccess')
+          chrome.storage.local.clear()
           return
         }
         throw `Bad status: ${response.status}`
@@ -52,16 +54,24 @@ document.addEventListener('DOMContentLoaded', () => {
   })
 
   clearBtn.addEventListener('click', async () => {
+    window.close()
     clearBtn.setAttribute('disabled', 'disabled')
     await chrome.storage.local.clear()
+    sendMessage('clearAnnnotations')
     clearBtn.removeAttribute('disabled')
   })
 
   startBtn.addEventListener('click', async () => {
+    window.close()
     startBtn.setAttribute('disabled', 'disabled')
     sendMessage('startMain', () => {
       startBtn.removeAttribute('disabled')
     })
+  })
+
+  endBtn.addEventListener('click', async () => {
+    window.close()
+    sendMessage('turnOffExtension')
   })
 })
 

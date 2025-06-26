@@ -1,5 +1,5 @@
-console.log('Hello from background script!')
-
-chrome.runtime.onInstalled.addListener(() => {
-  console.log('Extension installed')
-})
+chrome.runtime.onMessage.addListener((msg, sender) => {
+  if (msg.cmd === 'hard-refresh' && sender.tab?.id !== undefined) {
+    chrome.tabs.reload(sender.tab.id, { bypassCache: true });
+  }
+});
