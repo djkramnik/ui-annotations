@@ -650,7 +650,7 @@ type GlobalState = {
     inner.textContent           = message;
 
     inner.style.opacity = '1';
-    setTimeout(() => { inner.style.opacity = '0'; }, 1); // 1 ms tick → CSS transition
+    setTimeout(() => { inner.style.opacity = '0'; }, 5000); // 1 ms tick → CSS transition
   }
 
   let globalsRef: null | GlobalState = null
