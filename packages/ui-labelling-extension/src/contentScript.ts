@@ -590,15 +590,71 @@ type GlobalState = {
         Math.abs(bb1.bottom - bb2.bottom) < tolerance
     }
 
-
     // END OF SO CALLED UTILS
     return globals
   }
 
-  // do the thing
+  function showToast({
+    overlayId,
+    type,
+    message
+  }: {
+    overlayId: string
+    type: 'error' | 'success'
+    message: string
+  }): void {
+    const overlay = document.getElementById(overlayId);
+    if (!overlay) {
+      console.warn(`[showToast] Missing overlay #${overlayId}`);
+      return;
+    }
 
+    // ── Ensure wrapper + inner exist exactly once ────────────────────────────────
+    let wrapper = overlay.querySelector<HTMLDivElement>('#ui-annotation-toast');
+
+    if (!wrapper) {
+      // build new DOM
+      wrapper = document.createElement('div');
+      wrapper.id = 'ui-annotation-toast';
+      wrapper.style.cssText = `
+        pointer-events: none;
+        position: absolute;
+        z-index: 1;
+        top: 0;
+        width: 100vw;
+        height: 50px;
+        display: flex;
+      `;
+
+      const _inner = document.createElement('div');
+      _inner.id = 'ui-annotation-toast-inner';
+      _inner.style.cssText = `
+        width: 200px;
+        height: 100%;
+        color: white;
+        margin: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 1s;
+        opacity: 0;
+      `;
+
+      wrapper.appendChild(_inner);
+      overlay.appendChild(wrapper);
+    }
+
+    const inner = wrapper.querySelector<HTMLDivElement>('#ui-annotation-toast-inner')!;
+
+    inner.style.backgroundColor = type === 'success' ? 'limegreen' : 'red';
+    inner.textContent           = message;
+
+    inner.style.opacity = '1';
+    setTimeout(() => { inner.style.opacity = '0'; }, 1); // 1 ms tick → CSS transition
+  }
 
   let globalsRef: null | GlobalState = null
+
   chrome.runtime.onMessage.addListener((message: { type?: string }) => {
     log.info('content script received message', message)
     if (typeof message?.type !== 'string') {
@@ -607,6 +663,17 @@ type GlobalState = {
     }
 
     switch(message.type) {
+      case 'exportFailed':
+        if (globalsRef === null) {
+          log.warn("how could we have no globals ref after export")
+          return
+        }
+        showToast({
+          type: 'error',
+          message: 'EXPORT FAILED',
+          overlayId: globalsRef.overlayId,
+        })
+        break
       case 'exportSuccess':
         // among other things, show a toast and clear annotations
         if (globalsRef === null) {
@@ -614,6 +681,11 @@ type GlobalState = {
           return
         }
         globalsRef.annotations = []
+        showToast({
+          type: 'success',
+          message: 'EXPORTED SUCCEEDED',
+          overlayId: globalsRef.overlayId
+        })
         break
       case 'clean':
         if (globalsRef === null) {
