@@ -4,18 +4,23 @@ Primarily a chrome browser extension to help me quickly annotate UI elements on 
 This repo also includes a web server for storing annotations in local postgres instance, and a small frontend for viewing them.
 
 #### TODO
+  * the ability to click p and project by some criteria (tag+structure, classname). this will populate the array and you can label them and include them in one click.
+    * support for array of annotations to add
+    * the array of annotations is only present after projecting.  If you then click something it will resolve back into one candidate
+    * projection form, with preview, submit and cancel options
+    * after that clicking enter brings up confirm as usual.  the label gets applied to all annotations
+
+  * innerText shenanigans.  If annotating a heading, I don't want the spacing around it just the text itself
+
   #### Buggos / QOL
 
   * unable to nav to 'Find A Store' on the starbucks.com page. Maybe this is due to the differently shaped nav criteria
   * max height on the remove icon
   * improve the colours on the annotation dictionary
   * the styling of the extension popup should be site style agnostic.
-  * the conversion of currEl in the extension from a single node to an array...
-  * the ability to click p and project by some criteria (tag+structure, classname). this will populate the array and you can label them and include them in one click.
 
-  popup.html
-  * style the popup.html so I can see when its disabled.  no effect close button
-  * does clear button do anything?
+
+  #### Final straw
 
   * Final label list
   * Collect data
