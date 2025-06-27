@@ -6,3 +6,13 @@ export enum ExtensionMessage {
   exportFailed = 'exportFailed',
   clearAnnotations = 'clearAnnotations'
 }
+
+
+export type SimilarUiOptions = {
+  matchTag?: boolean
+  matchClass: boolean
+  exact?: boolean // per
+  tolerance?: number
+  max?: number
+  keys: string[]
+}
