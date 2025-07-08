@@ -4,6 +4,7 @@ Primarily a chrome browser extension to help me quickly annotate UI elements on 
 This repo also includes a web server for storing annotations in local postgres instance, and a small frontend for viewing them.
 
 #### TODO
+  * cancel button on extension label confirmation popup does nothing?
   * the ability to click p and project by some criteria (tag+structure, classname). this will populate the array and you can label them and include them in one click.
     * support for array of annotations to add
     * the array of annotations is only present after projecting.  If you then click something it will resolve back into one candidate
