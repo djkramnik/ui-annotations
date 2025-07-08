@@ -6,17 +6,11 @@ This repo also includes a web server for storing annotations in local postgres i
 #### TODO
   * cancel button on extension label confirmation popup does nothing?
 
-  * project form has preview button as well.  applies the current projection and removes the form.  any keypress => restore form
+  * project form has preview button as well.  applies the current projection and removes the form.  any keypress => restore form, with all state preserved.
 
-  * add the label directly to the projection form. when you click submit it submits all the projected elements as annotations under that label
+  * add the label dropdown directly to the projection form. when you click submit it submits all the projected elements as annotations under that label
 
-  * the ability to click p and project by some criteria (tag+structure, classname). this will populate the array and you can label them and include them in one click.
-    * support for array of annotations to add
-    * the array of annotations is only present after projecting.  If you then click something it will resolve back into one candidate
-    * projection form, with preview, submit and cancel options
-    * after that clicking enter brings up confirm as usual.  the label gets applied to all annotations
-
-  * innerText shenanigans.  If annotating a heading, I don't want the spacing around it just the text itself
+  * innerText shenanigans.  If annotating a heading, I don't want the spacing around it just the text itself.  but for navigation purposes we should know we start from the element containing the innerText...
 
   #### Buggos / QOL
 
