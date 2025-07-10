@@ -1,4 +1,56 @@
+import { annotationLabels } from "ui-labelling-shared";
 import { SALIENT_VISUAL_PROPS, ProjectionType } from "./types";
+
+export function buildForm({
+  heading,
+  handleSubmit,
+  children,
+}: {
+  heading: string
+  handleSubmit: (event: SubmitEvent) => void
+  children: DocumentFragment
+}): HTMLFormElement {
+  const form = document.createElement('form')
+  form.style.backgroundColor = 'rgba(255, 255, 255, 0.8)'
+  form.style.borderRadius = '8px'
+  form.style.padding = '40px'
+  const formHeading = document.createElement('h3')
+  formHeading.style.color = '#333'
+  formHeading.innerText = heading
+  form.appendChild(formHeading)
+  form.appendChild(children)
+  form.addEventListener('submit', handleSubmit)
+  return form
+}
+
+export function buildAnnotationForm(): DocumentFragment {
+  const fragment = document.createDocumentFragment();
+  const container = document.createElement('div')
+  container.className = 'annotation-form'
+
+  const annotationSelect = document.createElement('select')
+  container.appendChild(annotationSelect)
+
+  Object.keys(annotationLabels).forEach((s: string) => {
+    const option = document.createElement('option')
+    option.value = s
+    option.innerText = s
+    annotationSelect.appendChild(option)
+  })
+
+  const submitButton = document.createElement('button')
+  submitButton.innerText = 'submit'
+  submitButton.setAttribute('type', 'submit')
+  container.appendChild(submitButton)
+
+  const cancelButton = document.createElement('button')
+  cancelButton.innerText = 'cancel'
+  cancelButton.setAttribute('type', 'button')
+  container.appendChild(cancelButton)
+
+  fragment.append(container)
+  return fragment
+}
 
 export function buildProjectionForm(): DocumentFragment {
   const frag: DocumentFragment = document.createDocumentFragment();

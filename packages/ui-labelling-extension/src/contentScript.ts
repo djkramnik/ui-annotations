@@ -1,6 +1,6 @@
 import { AnnotationLabel, annotationLabels } from 'ui-labelling-shared'
-import { ExtensionMessage } from './types';
-import { buildProjectionForm } from './dom-building';
+import { ExtensionMessage, SALIENT_VISUAL_PROPS } from './types';
+import { buildAnnotationForm, buildForm, buildProjectionForm } from './dom-building';
 
 type ExtensionState =
 | 'dormant'
@@ -141,63 +141,47 @@ type GlobalState = {
     formOverlay.style.width = '100%'
     formOverlay.style.height = '100%'
 
-    const projectionForm = document.createElement('form')
-    projectionForm.style.backgroundColor = 'rgba(255, 255, 255, 0.8)'
-    projectionForm.style.borderRadius = '8px'
-    projectionForm.style.padding = '40px'
-    const projectionFormHeading = document.createElement('h3')
-    projectionFormHeading.style.color = '#333'
-    projectionFormHeading.innerText = 'Project Element'
-    projectionForm.appendChild(projectionFormHeading)
-    projectionForm.appendChild(buildProjectionForm())
+    const projectionForm = buildForm({
+      heading: 'Project Element',
+      children: buildProjectionForm(),
+      handleSubmit: event => {
+        event.preventDefault()
+        const form = event.target as HTMLFormElement
+        const formData = Object.fromEntries(new FormData(form).entries())
+
+        console.log('projection type', formData['projectionType'])
+        console.log('max', formData['max'])
+        SALIENT_VISUAL_PROPS.forEach((prop) => {
+          console.log('visual style', prop, formData[`visual_${prop}`])
+        })
+        console.log('distance', formData['distance'])
+      }
+    })
     projectionForm.style.display = 'none'
 
-    const annotationForm = document.createElement('form')
-    annotationForm.style.backgroundColor = 'rgba(255, 255, 255, 0.8)'
-    annotationForm.style.borderRadius = '8px'
-    annotationForm.style.padding = '40px'
-    const formHeading = document.createElement('h3')
-    formHeading.style.color = '#333'
-    formHeading.innerText = 'Set Label'
-    annotationForm.appendChild(formHeading)
-    const annotationSelect = document.createElement('select')
-    annotationForm.appendChild(annotationSelect)
+    const annotationForm = buildForm({
+      heading: 'Set Label',
+      children: buildAnnotationForm(),
+      handleSubmit: (event) => {
+        event.preventDefault()
+        const annotationSelect = (event.target as HTMLFormElement).querySelector('select')!
+        log.info(annotationSelect.value)
+        if (!annotationSelect.value) {
+          log.warn('no label selected?')
+        }
 
-    annotationForm.addEventListener('submit', event => {
-      event.preventDefault()
-      log.info(annotationSelect.value)
-      if (!annotationSelect.value) {
-        log.warn('no label selected?')
+        if (globals.currEl !== null) {
+          globals.annotations = globals.annotations.concat({
+            id: String(new Date().getTime()),
+            ref: globals.currEl,
+            rect: globals.currEl.getBoundingClientRect(),
+            label: annotationSelect.value as AnnotationLabel
+          })
+        }
+
+        globals.state = 'initial'
       }
-
-      if (globals.currEl !== null) {
-        globals.annotations = globals.annotations.concat({
-          id: String(new Date().getTime()),
-          ref: globals.currEl,
-          rect: globals.currEl.getBoundingClientRect(),
-          label: annotationSelect.value as AnnotationLabel
-        })
-      }
-
-      globals.state = 'initial'
     })
-
-    Object.keys(annotationLabels).forEach((s: string) => {
-      const option = document.createElement('option')
-      option.value = s
-      option.innerText = s
-      annotationSelect.appendChild(option)
-    })
-
-    const submitButton = document.createElement('button')
-    submitButton.innerText = 'submit'
-    submitButton.setAttribute('type', 'submit')
-    annotationForm.appendChild(submitButton)
-
-    const cancelButton = document.createElement('button')
-    cancelButton.innerText = 'cancel'
-    cancelButton.setAttribute('type', 'button')
-    annotationForm.appendChild(cancelButton)
 
     formOverlay.appendChild(annotationForm)
     formOverlay.appendChild(projectionForm)
