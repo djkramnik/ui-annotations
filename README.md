@@ -4,7 +4,9 @@ Primarily a chrome browser extension to help me quickly annotate UI elements on 
 This repo also includes a web server for storing annotations in local postgres instance, and a small frontend for viewing them.
 
 #### TODO
-  * cancel button on extension label confirmation popup does nothing?
+  * manage the 'projection' state.  make it accessible via a button on the navigation popup
+
+  * green rectangle having an array as state backing instead of solitary element
 
   * project form has preview button as well.  applies the current projection and removes the form.  any keypress => restore form, with all state preserved.
 

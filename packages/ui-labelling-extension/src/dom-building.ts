@@ -23,7 +23,7 @@ export function buildForm({
   return form
 }
 
-export function buildAnnotationForm(): DocumentFragment {
+export function buildAnnotationForm(handleCancel: () => void): DocumentFragment {
   const fragment = document.createDocumentFragment();
   const container = document.createElement('div')
   container.className = 'annotation-form'
@@ -46,6 +46,7 @@ export function buildAnnotationForm(): DocumentFragment {
   const cancelButton = document.createElement('button')
   cancelButton.innerText = 'cancel'
   cancelButton.setAttribute('type', 'button')
+  cancelButton.addEventListener('click', handleCancel)
   container.appendChild(cancelButton)
 
   fragment.append(container)

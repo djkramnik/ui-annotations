@@ -144,7 +144,7 @@ type GlobalState = {
     const projectionForm = buildForm({
       heading: 'Project Element',
       children: buildProjectionForm(),
-      handleSubmit: event => {
+      handleSubmit: (event) => {
         event.preventDefault()
         const form = event.target as HTMLFormElement
         const formData = Object.fromEntries(new FormData(form).entries())
@@ -161,7 +161,9 @@ type GlobalState = {
 
     const annotationForm = buildForm({
       heading: 'Set Label',
-      children: buildAnnotationForm(),
+      children: buildAnnotationForm(() => {
+        globals.state = 'initial'
+      }),
       handleSubmit: (event) => {
         event.preventDefault()
         const annotationSelect = (event.target as HTMLFormElement).querySelector('select')!
