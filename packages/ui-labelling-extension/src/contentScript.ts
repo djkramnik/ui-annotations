@@ -19,6 +19,7 @@ type GlobalState = {
   showAnnotations: boolean
   state: ExtensionState
   currEl: null | HTMLElement
+  projections: null | HTMLElement[]
   overlayId: string
   annotations: ({
     id: string
@@ -46,6 +47,7 @@ type GlobalState = {
       rect: DOMRect
       label: AnnotationLabel
     }[]) = []
+    let projections: HTMLElement[] | null = null
     let currEl: HTMLElement | null = null
     let showAnnotations: boolean = false
 
@@ -54,8 +56,16 @@ type GlobalState = {
       annotations,
       overlayId,
       currEl,
-      showAnnotations
+      showAnnotations,
+      projections,
     }
+    Object.defineProperty(obj, 'projections', {
+      set: (value) => {
+        cb('projections', value)
+        projections = value
+      },
+      get: () => projections
+    })
     Object.defineProperty(obj, 'state', {
       set: (value) => {
         cb('state', value)
@@ -93,8 +103,6 @@ type GlobalState = {
 
   const trashCanUrl = chrome.runtime.getURL('/assets/trash-can.svg')
   log.info('asset', trashCanUrl)
-
-
 
   function main() {
     const globals = GlobalState(handleGlobalChange)
@@ -197,6 +205,18 @@ type GlobalState = {
     // janky redux style state handling mega function
     function handleGlobalChange(key: keyof GlobalState, value: any) {
       switch(key) {
+        case 'projections':
+          if (globals.state === 'projection' && Array.isArray(value)) {
+            removeRects()
+            value.forEach(v => {
+              drawCandidate({
+                element: v as HTMLElement,
+                parent: overlay
+              })
+            })
+          }
+          log.info('update to projections', value)
+          break
         case 'annotations':
           chrome.storage.local.set({
             [StorageKeys.annotations]: JSON.stringify(value)
@@ -222,6 +242,8 @@ type GlobalState = {
             removeRects()
             overlay.addEventListener('mousedown', _handleMouseWrap)
             log.info('added mousedown listener')
+          } else if (value === 'projection') {
+            showProjectionPopup()
           } else if (value === 'navigation') {
             window.addEventListener('keypress', handleNavigationKeyPress)
           } else if (value === 'confirmation') {
@@ -276,6 +298,14 @@ type GlobalState = {
 
     function showConfirmationPopup() {
       formOverlay.style.display = 'flex'
+      annotationForm.style.display = 'initial'
+      projectionForm.style.display = 'none'
+    }
+
+    function showProjectionPopup() {
+      formOverlay.style.display = 'flex'
+      annotationForm.style.display = 'none'
+      projectionForm.style.display = 'initial'
     }
 
     function _handleMouseWrap(event: MouseEvent) {
