@@ -184,7 +184,7 @@ type GlobalState = {
       heading: 'Set Label',
       children: buildAnnotationForm({
         handleCancel: () => { globals.state = 'initial' },
-        handlePreview: () => { globals.state = 'projection' }
+        handleProjection: () => { globals.state = 'projection' }
       }),
       handleSubmit: (event) => {
         event.preventDefault()

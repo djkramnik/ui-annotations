@@ -58,10 +58,10 @@ export function buildForm({
 
 export function buildAnnotationForm({
   handleCancel,
-  handlePreview,
+  handleProjection,
 }: {
   handleCancel: () => void
-  handlePreview: () => void
+  handleProjection: () => void
 }): DocumentFragment {
   const fragment = document.createDocumentFragment();
   const container = document.createElement('div')
@@ -88,11 +88,11 @@ export function buildAnnotationForm({
   cancelButton.addEventListener('click', handleCancel)
   container.appendChild(cancelButton)
 
-  const previewButton = document.createElement('button')
-  previewButton.innerText = 'preview'
-  previewButton.setAttribute('type', 'button')
-  previewButton.addEventListener('click', handlePreview)
-  container.appendChild(previewButton)
+  const projectionButton = document.createElement('button')
+  projectionButton.innerText = 'projection'
+  projectionButton.setAttribute('type', 'button')
+  projectionButton.addEventListener('click', handleProjection)
+  container.appendChild(projectionButton)
 
   fragment.append(container)
   return fragment
