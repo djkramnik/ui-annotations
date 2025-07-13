@@ -1,6 +1,25 @@
 import { annotationLabels } from "ui-labelling-shared";
 import { SALIENT_VISUAL_PROPS, ProjectionType } from "./types";
 
+const trashCanUrl = chrome.runtime.getURL('/assets/trash-can.svg')
+
+// this assumes that the parent must be relatively positioned!!
+export function getRemoveIcon(handler?: (event: MouseEvent) => void): HTMLImageElement {
+  const removeIcon = document.createElement('img')
+  removeIcon.setAttribute('src', trashCanUrl)
+  removeIcon.style.position = 'absolute'
+  removeIcon.style.right = '0'
+  removeIcon.style.height = '100%'
+  removeIcon.style.maxHeight = '30px'
+  removeIcon.style.cursor = 'pointer'
+  removeIcon.style.zIndex = '2'
+  if (typeof handler === 'function') {
+    removeIcon.addEventListener('mousedown', handler)
+  }
+
+  return removeIcon
+}
+
 export function buildForm({
   heading,
   handleSubmit,

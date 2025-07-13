@@ -4,9 +4,8 @@ Primarily a chrome browser extension to help me quickly annotate UI elements on 
 This repo also includes a web server for storing annotations in local postgres instance, and a small frontend for viewing them.
 
 #### TODO
-  * manage the 'projection' state.  make it accessible via a button on the navigation popup
 
-  * green rectangle having an array as state backing instead of solitary element
+  * projected rectangles have a remove feature
 
   * project form has preview button as well.  applies the current projection and removes the form.  any keypress => restore form, with all state preserved.
 
@@ -16,8 +15,9 @@ This repo also includes a web server for storing annotations in local postgres i
 
   #### Buggos / QOL
 
+  * reddit countermeasure? (visibility:initial !important?)
+  *
   * unable to nav to 'Find A Store' on the starbucks.com page. Maybe this is due to the differently shaped nav criteria
-  * max height on the remove icon
   * improve the colours on the annotation dictionary
   * the styling of the extension popup should be site style agnostic.
 

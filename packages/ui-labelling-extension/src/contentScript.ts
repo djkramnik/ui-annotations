@@ -1,6 +1,6 @@
 import { AnnotationLabel, annotationLabels } from 'ui-labelling-shared'
 import { ExtensionMessage, SALIENT_VISUAL_PROPS } from './types';
-import { buildAnnotationForm, buildForm, buildProjectionForm } from './dom-building';
+import { buildAnnotationForm, buildForm, buildProjectionForm, getRemoveIcon } from './dom-building';
 import { isInViewport } from './util';
 
 type ExtensionState =
@@ -101,9 +101,6 @@ type GlobalState = {
 
     return obj
   }
-
-  const trashCanUrl = chrome.runtime.getURL('/assets/trash-can.svg')
-  log.info('asset', trashCanUrl)
 
   function main() {
     const globals = GlobalState(handleGlobalChange)
@@ -285,20 +282,16 @@ type GlobalState = {
           if (value) {
             globals.annotations.forEach(({ id, ref, label }) => {
               const c = annotationLabels[label]
-              const removeIcon = document.createElement('img')
-              removeIcon.setAttribute('src', trashCanUrl)
-              removeIcon.style.position = 'absolute'
-              removeIcon.style.right = '0'
-              removeIcon.style.height = '100%'
-              removeIcon.style.cursor = 'pointer'
-              removeIcon.style.zIndex = '2'
-              removeIcon.addEventListener('mousedown', (event) => {
-                event.stopPropagation()
-                // filter annotation out of the global state var
-                globals.annotations = globals.annotations.filter(a => a.id !== id)
-                // fragile
-                removeIcon.parentElement?.remove()
-              })
+
+              const removeIcon = getRemoveIcon(
+                (event) => {
+                  event.stopPropagation()
+                  // filter annotation out of the global state var
+                  globals.annotations = globals.annotations.filter(a => a.id !== id)
+                  // fragile
+                  removeIcon.parentElement?.remove()
+                }
+              )
               drawRect({
                 id,
                 element: ref,
