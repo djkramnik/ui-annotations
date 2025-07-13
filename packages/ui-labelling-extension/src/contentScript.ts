@@ -1,6 +1,6 @@
 import { AnnotationLabel, annotationLabels } from 'ui-labelling-shared'
 import { ExtensionMessage, SALIENT_VISUAL_PROPS } from './types';
-import { buildAnnotationForm, buildForm, buildProjectionForm, getRemoveIcon } from './dom-building';
+import { buildAnnotationForm, buildForm, buildProjectionForm, getFormOverlay, getRemoveIcon } from './dom-building';
 import { isInViewport } from './util';
 
 type ExtensionState =
@@ -137,15 +137,7 @@ type GlobalState = {
 
     document.body.appendChild(overlay)
 
-    const formOverlay = document.createElement('div')
-    formOverlay.style.position = 'absolute'
-    formOverlay.style.display = 'none'
-    formOverlay.style.alignItems = 'center'
-    formOverlay.style.justifyContent = 'center'
-    formOverlay.style.top = '0'
-    formOverlay.style.left = '0'
-    formOverlay.style.width = '100%'
-    formOverlay.style.height = '100%'
+    const formOverlay = getFormOverlay()
 
     const projectionForm = buildForm({
       heading: 'Project Element',
@@ -597,8 +589,10 @@ type GlobalState = {
       if (!parent) {
         return []
       }
-      return Array.from(parent.children)
+      return (
+        Array.from(parent.children)
         .filter(element => element !== el && element instanceof HTMLElement) as HTMLElement[]
+      ).concat(el)
     }
 
     function traverseUp(el: HTMLElement, tolerance: number = 2): HTMLElement | null {

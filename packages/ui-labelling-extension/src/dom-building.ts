@@ -3,6 +3,20 @@ import { SALIENT_VISUAL_PROPS, ProjectionType } from "./types";
 
 const trashCanUrl = chrome.runtime.getURL('/assets/trash-can.svg')
 
+export function getFormOverlay() {
+  const formOverlay = document.createElement('div')
+  formOverlay.style.position = 'absolute'
+  formOverlay.style.display = 'none'
+  formOverlay.style.alignItems = 'center'
+  formOverlay.style.justifyContent = 'center'
+  formOverlay.style.top = '0'
+  formOverlay.style.left = '0'
+  formOverlay.style.width = '100%'
+  formOverlay.style.height = '100%'
+  formOverlay.style.visibility = 'initial !important';
+  return formOverlay
+}
+
 // this assumes that the parent must be relatively positioned!!
 export function getRemoveIcon(handler?: (event: MouseEvent) => void): HTMLImageElement {
   const removeIcon = document.createElement('img')
