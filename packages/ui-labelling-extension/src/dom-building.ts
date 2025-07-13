@@ -23,7 +23,13 @@ export function buildForm({
   return form
 }
 
-export function buildAnnotationForm(handleCancel: () => void): DocumentFragment {
+export function buildAnnotationForm({
+  handleCancel,
+  handlePreview,
+}: {
+  handleCancel: () => void
+  handlePreview: () => void
+}): DocumentFragment {
   const fragment = document.createDocumentFragment();
   const container = document.createElement('div')
   container.className = 'annotation-form'
@@ -48,6 +54,12 @@ export function buildAnnotationForm(handleCancel: () => void): DocumentFragment 
   cancelButton.setAttribute('type', 'button')
   cancelButton.addEventListener('click', handleCancel)
   container.appendChild(cancelButton)
+
+  const previewButton = document.createElement('button')
+  previewButton.innerText = 'preview'
+  previewButton.setAttribute('type', 'button')
+  previewButton.addEventListener('click', handlePreview)
+  container.appendChild(previewButton)
 
   fragment.append(container)
   return fragment
@@ -100,7 +112,7 @@ export function buildProjectionForm(): DocumentFragment {
   maxLabel.appendChild(maxInput);
   container.appendChild(maxLabel);
 
-  /* ---------- submit & cancel ---------- */
+  /* ---------- buttons ---------- */
   const submitBtn: HTMLButtonElement = document.createElement('button');
   submitBtn.type = 'submit';
   submitBtn.textContent = 'Submit';

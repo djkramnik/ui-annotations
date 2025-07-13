@@ -169,8 +169,9 @@ type GlobalState = {
 
     const annotationForm = buildForm({
       heading: 'Set Label',
-      children: buildAnnotationForm(() => {
-        globals.state = 'initial'
+      children: buildAnnotationForm({
+        handleCancel: () => { globals.state = 'initial' },
+        handlePreview: () => { globals.state = 'projection' }
       }),
       handleSubmit: (event) => {
         event.preventDefault()
