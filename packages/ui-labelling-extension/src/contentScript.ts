@@ -230,10 +230,21 @@ type GlobalState = {
         case 'projections':
           if (globals.state === 'projection' && Array.isArray(value)) {
             removeRects()
-            value.forEach(v => {
-              drawCandidate({
+            value.forEach((v, index) => {
+              drawRect({
                 element: v as HTMLElement,
-                parent: overlay
+                parent: overlay,
+                child: getRemoveIcon((event) => {
+                  if (!globals.projections) {
+                    log.error('impossible state error within projection removal callback')
+                    return
+                  }
+                  // seems flaky but it should work
+                  globals.projections = globals.projections.filter((p, pIndex) => {
+                    return index !== pIndex
+                  })
+                })
+
               })
             })
           }
