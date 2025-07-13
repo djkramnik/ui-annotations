@@ -1,6 +1,7 @@
 import { AnnotationLabel, annotationLabels } from 'ui-labelling-shared'
 import { ExtensionMessage, SALIENT_VISUAL_PROPS } from './types';
 import { buildAnnotationForm, buildForm, buildProjectionForm } from './dom-building';
+import { isInViewport } from './util';
 
 type ExtensionState =
 | 'dormant'
@@ -158,13 +159,34 @@ type GlobalState = {
         event.preventDefault()
         const form = event.target as HTMLFormElement
         const formData = Object.fromEntries(new FormData(form).entries())
+        if (!globals.currEl) {
+          log.error('somehow we are projecting but have no currEl ref')
+          return
+        }
+        // console.log('projection type', formData['projectionType'])
+        // console.log('max', formData['max'])
+        // SALIENT_VISUAL_PROPS.forEach((prop) => {
+        //   console.log('visual style', prop, formData[`visual_${prop}`])
+        // })
+        // console.log('distance', formData['distance'])
+        const projectionType = formData['projectionType']
+        let task: ((el: HTMLElement) => HTMLElement[]) | null = null
 
-        console.log('projection type', formData['projectionType'])
-        console.log('max', formData['max'])
-        SALIENT_VISUAL_PROPS.forEach((prop) => {
-          console.log('visual style', prop, formData[`visual_${prop}`])
-        })
-        console.log('distance', formData['distance'])
+        switch(projectionType) {
+          case 'siblings':
+            task = getSibs
+            break
+          default:
+            break
+        }
+
+        if (!task) {
+          log.info('no projection task!')
+          return
+        }
+
+        globals.projections = task(globals.currEl)
+          .filter(el => isInViewport({ target: el }))
       }
     })
     projectionForm.style.display = 'none'
