@@ -65,7 +65,11 @@ export function buildAnnotationForm({
   return fragment
 }
 
-export function buildProjectionForm(): DocumentFragment {
+export function buildProjectionForm({
+  handleCancel
+}: {
+  handleCancel: () => void
+}): DocumentFragment {
   const frag: DocumentFragment = document.createDocumentFragment();
   const container: HTMLDivElement = document.createElement('div');
   container.className = 'projection-form';
@@ -120,6 +124,7 @@ export function buildProjectionForm(): DocumentFragment {
   const cancelBtn: HTMLButtonElement = document.createElement('button');
   cancelBtn.type = 'button';
   cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', handleCancel)
 
   container.append(submitBtn, cancelBtn);
 

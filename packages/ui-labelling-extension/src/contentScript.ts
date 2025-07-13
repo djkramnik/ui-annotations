@@ -151,7 +151,9 @@ type GlobalState = {
 
     const projectionForm = buildForm({
       heading: 'Project Element',
-      children: buildProjectionForm(),
+      children: buildProjectionForm({
+        handleCancel: () => { globals.state = 'initial' }
+      }),
       handleSubmit: (event) => {
         event.preventDefault()
         const form = event.target as HTMLFormElement
