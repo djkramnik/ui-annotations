@@ -5,7 +5,7 @@ This repo also includes a web server for storing annotations in local postgres i
 
 #### TODO
 
-  * projected rectangles have a remove feature
+  * implement the remainder of the projection methods...
 
   * project form has preview button.  applies the current projection and removes the form.  any keypress => restore form, with all state preserved.
 
