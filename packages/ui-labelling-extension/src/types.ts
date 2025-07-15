@@ -38,7 +38,7 @@ export const SALIENT_VISUAL_PROPS: readonly string[] = [
 
 export type SimilarUiOptions = {
   matchTag?: boolean
-  matchClass: boolean
+  matchClass?: boolean
   exact?: boolean // per
   tolerance?: number
   max?: number

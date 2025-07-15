@@ -8,10 +8,9 @@ function hasIntersection(arr1: any[], arr2: any[]) {
 export const findSimilarUi = (
   options: SimilarUiOptions,
   target: HTMLElement,
-  candidates: HTMLElement[]
 ): HTMLElement[] => {
   const {
-    matchTag,
+    matchTag = true,
     matchClass,
     exact,
     tolerance,
@@ -20,11 +19,13 @@ export const findSimilarUi = (
   } = options
   const targetStyle = window.getComputedStyle(target)
 
-  return candidates.filter(c => {
-    if (matchTag && c.tagName !== target.tagName) {
+  return Array.from(document.querySelectorAll(
+    matchTag ? target.tagName : '*'
+  )).filter(c => {
+    if (!(c instanceof HTMLElement)) {
       return false
     }
-    if (matchClass) {
+    if (matchClass && !exact) {
       if (exact && c.className !== target.className) {
         return false
       }
@@ -33,6 +34,10 @@ export const findSimilarUi = (
         return false
       }
     }
+    if (!isInViewport({ target: c})) {
+      return false
+    }
+
     let slack = Math.abs(tolerance ?? 0)
     const candidateStyle = window.getComputedStyle(c)
 
@@ -40,7 +45,7 @@ export const findSimilarUi = (
       const match = (candidateStyle.getPropertyValue(k) === targetStyle.getPropertyValue(k)) || ((--slack) >= 0)
       return match
     })
-  }).slice(0, max ?? 20)
+  }).slice(0, max ?? 100) as HTMLElement[]
 }
 
 export function isInViewport({

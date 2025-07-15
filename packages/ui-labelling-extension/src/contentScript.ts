@@ -1,7 +1,7 @@
 import { AnnotationLabel, annotationLabels } from 'ui-labelling-shared'
 import { ExtensionMessage, SALIENT_VISUAL_PROPS } from './types';
 import { buildAnnotationForm, buildForm, buildProjectionForm, getFormOverlay, getRemoveIcon } from './dom-building';
-import { isInViewport } from './util';
+import { findSimilarUi, getCousins, isInViewport } from './util';
 
 type ExtensionState =
 | 'dormant'
@@ -154,18 +154,39 @@ type GlobalState = {
         }
         // console.log('projection type', formData['projectionType'])
         // console.log('max', formData['max'])
-        // SALIENT_VISUAL_PROPS.forEach((prop) => {
-        //   console.log('visual style', prop, formData[`visual_${prop}`])
-        // })
+        SALIENT_VISUAL_PROPS.forEach((prop) => {
+          console.log('visual style', prop, formData[`visual_${prop}`])
+        })
         // console.log('distance', formData['distance'])
         const projectionType = formData['projectionType']
+        const distance = parseInt(String(formData['distance']), 10)
+        const max = parseInt(String(formData['max']), 10)
         let task: ((el: HTMLElement) => HTMLElement[]) | null = null
 
         switch(projectionType) {
           case 'siblings':
             task = getSibs
             break
+          case 'cousins':
+            task = (el: HTMLElement) => {
+              return getCousins({
+                target: el,
+                distance: Number.isNaN(distance)
+                  ? 0
+                  : distance
+              })
+            }
+            break
+          case 'visual':
+            task = (el: HTMLElement) => {
+              return findSimilarUi({
+                max,
+                keys: []
+              }, el)
+            }
+            break
           default:
+            log.warn('unsupported projection type?', projectionType)
             break
         }
 
@@ -176,6 +197,7 @@ type GlobalState = {
 
         globals.projections = task(globals.currEl)
           .filter(el => isInViewport({ target: el }))
+          .slice(0, Number.isNaN(max) ? undefined : max)
       }
     })
     projectionForm.style.display = 'none'
