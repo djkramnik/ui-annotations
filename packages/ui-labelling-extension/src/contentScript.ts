@@ -181,7 +181,11 @@ type GlobalState = {
             task = (el: HTMLElement) => {
               return findSimilarUi({
                 max,
-                keys: []
+                keys: (
+                  SALIENT_VISUAL_PROPS.filter(s => {
+                    return formData[`visual_${s}`] === s
+                  })
+                )
               }, el)
             }
             break
