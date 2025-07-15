@@ -5,7 +5,9 @@ This repo also includes a web server for storing annotations in local postgres i
 
 #### TODO
 
-  * implement the remainder of the projection methods...
+  * test the projection methods
+
+  * refactor the visual style projection to be asynchronous
 
   * project form has preview button.  applies the current projection and removes the form.  any keypress => restore form, with all state preserved.
 
@@ -16,7 +18,6 @@ This repo also includes a web server for storing annotations in local postgres i
   #### Buggos / QOL
 
   * reddit countermeasure? (visibility:initial !important?)
-  *
   * unable to nav to 'Find A Store' on the starbucks.com page. Maybe this is due to the differently shaped nav criteria
   * improve the colours on the annotation dictionary
   * the styling of the extension popup should be site style agnostic.
