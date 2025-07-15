@@ -161,7 +161,7 @@ export function getCousins({
 
   const aunts = getLegitimizedChildren(grandMa)
 
-  const reverseCrumbs = breadcrumbs!.slice(-1).reverse()
+  const reverseCrumbs = breadcrumbs!.slice(0, -1).reverse()
 
   return aunts.map(auntie => {
     return traverseDown({ origin: auntie, indexes: reverseCrumbs })
