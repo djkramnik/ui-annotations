@@ -10,7 +10,8 @@
     "watch:extension": "npm run -w ui-labelling-extension watch",
     "build:server": "npm run -w ui-labelling-server build",
     "watch:server": "npm run -w ui-labelling-server watch",
-    "start:server": "nodemon packages/server/dist/index.js"
+    "start:server": "nodemon packages/server/dist/index.js",
+    "start:test-site": "http-server test-site"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +22,7 @@
     "packages/*"
   ],
   "devDependencies": {
+    "http-server": "^14.1.1",
     "nodemon": "^3.1.9"
   }
 }

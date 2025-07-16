@@ -144,8 +144,8 @@ export function buildProjectionForm({
   maxLabel.style.display = 'block';
   maxLabel.textContent = 'max ';
   const maxInput: HTMLInputElement = document.createElement('input');
-  maxInput.type = 'number';
   maxInput.name = 'max';
+  maxInput.value = '10';
   maxLabel.appendChild(maxInput);
   container.appendChild(maxLabel);
 
@@ -174,7 +174,7 @@ export function buildProjectionForm({
         const distInput: HTMLInputElement = document.createElement('input');
         distInput.type = 'number';
         distInput.name = 'distance';
-        distInput.value = '1';
+        distInput.value = '2';
         distLabel.appendChild(distInput);
         dynamicSection.appendChild(distLabel);
         break

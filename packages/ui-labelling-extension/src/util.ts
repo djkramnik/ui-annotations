@@ -9,6 +9,7 @@ export const findSimilarUi = (
   options: SimilarUiOptions,
   target: HTMLElement,
 ): HTMLElement[] => {
+  console.log('hiya', options, target)
   const {
     matchTag = true,
     matchClass,
