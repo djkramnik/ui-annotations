@@ -4,8 +4,7 @@ Primarily a chrome browser extension to help me quickly annotate UI elements on 
 This repo also includes a web server for storing annotations in local postgres instance, and a small frontend for viewing them.
 
 #### TODO
-
-  * test the projection methods
+  * test visual projection further.  need match tag, match class and exact checkboxes
 
   * refactor the visual style projection to be asynchronous
 
@@ -17,11 +16,11 @@ This repo also includes a web server for storing annotations in local postgres i
 
   #### Buggos / QOL
 
+  * the styling of the extension popup should be site style agnostic.
+  * the popup forms on the overlay get blocked by the annotations / siblings.  higher zindex?
   * reddit countermeasure? (visibility:initial !important?)
   * unable to nav to 'Find A Store' on the starbucks.com page. Maybe this is due to the differently shaped nav criteria
   * improve the colours on the annotation dictionary
-  * the styling of the extension popup should be site style agnostic.
-
 
   #### Final straw
 
