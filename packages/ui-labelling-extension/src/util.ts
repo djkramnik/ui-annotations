@@ -43,6 +43,8 @@ export const findSimilarUi = (
     const candidateStyle = window.getComputedStyle(c)
 
     return keys.every(k => {
+      console.log(`target for ${k}`, targetStyle.getPropertyValue(k))
+      console.log(`candidate for ${k}`, candidateStyle.getPropertyValue(k))
       const match = (candidateStyle.getPropertyValue(k) === targetStyle.getPropertyValue(k)) || ((--slack) >= 0)
       return match
     })
