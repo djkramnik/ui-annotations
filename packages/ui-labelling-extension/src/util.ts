@@ -11,7 +11,7 @@ export const findSimilarUi = (
 ): HTMLElement[] => {
   console.log('hiya', options, target)
   const {
-    matchTag = true,
+    matchTag,
     matchClass,
     exact,
     tolerance,
@@ -172,4 +172,26 @@ export function getCousins({
   return aunts.map(auntie => {
     return traverseDown({ origin: auntie, indexes: reverseCrumbs })
   }).filter(couz => couz instanceof HTMLElement)
+}
+
+// will split list into len equalish parts.  Any remainder gets tacked on the end
+export function splitArray<T>({
+  list,
+  len,
+}: {
+  list: T[]
+  len: number
+}): Array<T[]> {
+  const chunk = Math.floor(list.length / len)
+
+  return Array(len).fill(null).reduce((acc, _, index) => {
+    return acc.concat([
+      list.slice(
+        index * chunk,
+        index + 1 < len
+          ? (index * chunk) + chunk
+          : undefined
+      )]
+    )
+  }, [])
 }

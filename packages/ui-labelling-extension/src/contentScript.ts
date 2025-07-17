@@ -180,6 +180,9 @@ type GlobalState = {
           case 'visual':
             task = (el: HTMLElement) => {
               return findSimilarUi({
+                matchTag: formData['match_tag'] === 'on',
+                matchClass: formData['match_class'] === 'on',
+                exact: formData['exact'] === 'on',
                 max: Number.isNaN(max) ? 10 : Math.max(1, max),
                 keys: (
                   SALIENT_VISUAL_PROPS.filter(s => {

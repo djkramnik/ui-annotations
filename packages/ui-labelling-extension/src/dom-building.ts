@@ -1,5 +1,6 @@
 import { annotationLabels } from "ui-labelling-shared";
 import { SALIENT_VISUAL_PROPS, ProjectionType } from "./types";
+import { splitArray } from "./util";
 
 const trashCanUrl = chrome.runtime.getURL('/assets/trash-can.svg')
 
@@ -47,6 +48,7 @@ export function buildForm({
   form.style.backgroundColor = 'rgba(255, 255, 255, 0.8)'
   form.style.borderRadius = '8px'
   form.style.padding = '40px'
+  form.style.border = '1px solid black'
   const formHeading = document.createElement('h3')
   formHeading.style.color = '#333'
   formHeading.innerText = heading
@@ -203,23 +205,34 @@ export function buildProjectionForm({
 }
 
 function buildProjectionCheckboxGroup(visualProps?: string[]): DocumentFragment {
-  const props = visualProps ?? SALIENT_VISUAL_PROPS
+  const props = visualProps ?? SALIENT_VISUAL_PROPS.slice(0)
   const frag      = document.createDocumentFragment();
   const container = document.createElement('div');
   container.className = 'salient-controls';
 
+  const containerInner = document.createElement('div')
+  containerInner.style.display = 'flex'
+  containerInner.style.gap = '8px'
+  container.appendChild(containerInner)
+  const splitProps = splitArray<string>({ list: props, len: 4 })
   // checkboxes + labels
-  props.forEach(prop => {
-    const label = document.createElement('label');
-    const cb    = Object.assign(document.createElement('input'), {
-      type : 'checkbox',
-      name : `visual_${prop}`,
-      value: prop,
-    });
-    cb.className = 'visual-style'
-    label.style.display = 'block';
-    label.append(cb, ` ${prop}`);
-    container.appendChild(label);
+  splitProps.forEach(group => {
+    const groupContainer = document.createElement('div')
+    groupContainer.style.display = 'flex'
+    groupContainer.style.flexDirection = 'column'
+    group.forEach(prop => {
+      const label = document.createElement('label');
+      const cb    = Object.assign(document.createElement('input'), {
+        type : 'checkbox',
+        name : `visual_${prop}`,
+        value: prop,
+      });
+      cb.className = 'visual-style'
+      label.style.display = 'block';
+      label.append(cb, ` ${prop}`);
+      groupContainer.appendChild(label);
+    })
+    containerInner.appendChild(groupContainer)
   });
 
   // action buttons
@@ -233,13 +246,13 @@ function buildProjectionCheckboxGroup(visualProps?: string[]): DocumentFragment 
 
   // wire up
   checkAllBtn.addEventListener('click', () => {
-    container.querySelectorAll('input.visual-style').forEach(cb => {
+    containerInner.querySelectorAll('input.visual-style').forEach(cb => {
       (cb as HTMLInputElement).checked = true
     })
   })
 
   clearAllBtn.addEventListener('click', () => {
-    container.querySelectorAll('input.visual-style').forEach(cb => {
+    containerInner.querySelectorAll('input.visual-style').forEach(cb => {
       (cb as HTMLInputElement).checked = false
     })
   });
@@ -270,8 +283,7 @@ function buildProjectionCheckboxGroup(visualProps?: string[]): DocumentFragment 
   )
   matchingRulesContainer.appendChild(
     buildCheckboxInput({
-      name: 'exact',
-      checked: true,
+      name: 'match_exact',
       label: 'Exact'
     })
   )
@@ -292,6 +304,7 @@ function buildCheckboxInput({
 }) {
   const checkboxInputContainer = document.createElement('div')
   const labelEl = document.createElement('label')
+  labelEl.textContent = label
   labelEl.setAttribute('htmlFor', name)
   const inputEl = document.createElement('input')
   inputEl.setAttribute('id', name)
