@@ -214,8 +214,9 @@ function buildProjectionCheckboxGroup(visualProps?: string[]): DocumentFragment 
     const cb    = Object.assign(document.createElement('input'), {
       type : 'checkbox',
       name : `visual_${prop}`,
-      value: prop
+      value: prop,
     });
+    cb.className = 'visual-style'
     label.style.display = 'block';
     label.append(cb, ` ${prop}`);
     container.appendChild(label);
@@ -232,18 +233,73 @@ function buildProjectionCheckboxGroup(visualProps?: string[]): DocumentFragment 
 
   // wire up
   checkAllBtn.addEventListener('click', () => {
-    container.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    container.querySelectorAll('input.visual-style').forEach(cb => {
       (cb as HTMLInputElement).checked = true
     })
   })
 
   clearAllBtn.addEventListener('click', () => {
-    container.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    container.querySelectorAll('input.visual-style').forEach(cb => {
       (cb as HTMLInputElement).checked = false
     })
   });
 
-  container.append(checkAllBtn, clearAllBtn);
+  const buttonContainer = document.createElement('div')
+  buttonContainer.style.display = 'flex'
+  buttonContainer.style.justifyContent = 'space-around'
+  buttonContainer.append(checkAllBtn, clearAllBtn)
+  container.append(buttonContainer)
+
+  container.append(document.createElement('hr'))
+
+  const matchingRulesContainer = document.createElement('div')
+  matchingRulesContainer.style.display = 'flex'
+  matchingRulesContainer.style.gap = '8px'
+  matchingRulesContainer.appendChild(
+    buildCheckboxInput({
+      name: 'match_tag',
+      checked: true,
+      label: 'Tag'
+    })
+  )
+  matchingRulesContainer.appendChild(
+    buildCheckboxInput({
+      name: 'match_class',
+      label: 'Class'
+    })
+  )
+  matchingRulesContainer.appendChild(
+    buildCheckboxInput({
+      name: 'exact',
+      checked: true,
+      label: 'Exact'
+    })
+  )
+  container.append(matchingRulesContainer)
+
   frag.appendChild(container);
   return frag;
+}
+
+function buildCheckboxInput({
+  name,
+  checked,
+  label,
+}: {
+  name: string
+  checked?: boolean
+  label: string
+}) {
+  const checkboxInputContainer = document.createElement('div')
+  const labelEl = document.createElement('label')
+  labelEl.setAttribute('htmlFor', name)
+  const inputEl = document.createElement('input')
+  inputEl.setAttribute('id', name)
+  inputEl.setAttribute('type', 'checkbox')
+  inputEl.setAttribute('name', name)
+  if (checked) {
+    inputEl.setAttribute('checked', 'checked')
+  }
+  checkboxInputContainer.append(labelEl, inputEl)
+  return checkboxInputContainer
 }
