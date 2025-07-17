@@ -15,6 +15,7 @@ export function getFormOverlay() {
   formOverlay.style.width = '100%'
   formOverlay.style.height = '100%'
   formOverlay.style.visibility = 'initial !important';
+  formOverlay.style.zIndex = '10'
   return formOverlay
 }
 
@@ -26,6 +27,7 @@ export function getRemoveIcon(handler?: (event: MouseEvent) => void): HTMLImageE
   removeIcon.style.right = '0'
   removeIcon.style.height = '100%'
   removeIcon.style.maxHeight = '30px'
+  removeIcon.style.minHeight = '15px'
   removeIcon.style.cursor = 'pointer'
   removeIcon.style.zIndex = '2'
   if (typeof handler === 'function') {

@@ -5,6 +5,10 @@ function hasIntersection(arr1: any[], arr2: any[]) {
   return arr1.some(element => set2.has(element))
 }
 
+function hasText(el: HTMLElement) {
+  return (el.textContent?.replaceAll(/\s+/g, '') ?? '').length > 0
+}
+
 export const findSimilarUi = (
   options: SimilarUiOptions,
   target: HTMLElement,
@@ -41,8 +45,14 @@ export const findSimilarUi = (
 
     let slack = Math.abs(tolerance ?? 0)
     const candidateStyle = window.getComputedStyle(c)
+    const targetHasText = hasText(target)
 
     return keys.every(k => {
+      // has to see if this causes issues
+      const candidateHasText = hasText(c)
+      if (candidateHasText !== targetHasText) {
+        return false
+      }
       console.log(`target for ${k}`, targetStyle.getPropertyValue(k))
       console.log(`candidate for ${k}`, candidateStyle.getPropertyValue(k))
       const match = (candidateStyle.getPropertyValue(k) === targetStyle.getPropertyValue(k)) || ((--slack) >= 0)
