@@ -30,8 +30,9 @@ export const findSimilarUi = (
     if (!(c instanceof HTMLElement)) {
       return false
     }
-    if (matchClass && !exact) {
+    if (matchClass) {
       if (exact && c.className !== target.className) {
+        console.log('exact class situ', target.className, c.className)
         return false
       }
       if (target.classList.length > 0 &&

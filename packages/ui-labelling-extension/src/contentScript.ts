@@ -182,7 +182,7 @@ type GlobalState = {
               return findSimilarUi({
                 matchTag: formData['match_tag'] === 'on',
                 matchClass: formData['match_class'] === 'on',
-                exact: formData['exact'] === 'on',
+                exact: formData['match_exact'] === 'on',
                 max: Number.isNaN(max) ? 10 : Math.max(1, max),
                 keys: (
                   SALIENT_VISUAL_PROPS.filter(s => {
