@@ -4,8 +4,6 @@ Primarily a chrome browser extension to help me quickly annotate UI elements on 
 This repo also includes a web server for storing annotations in local postgres instance, and a small frontend for viewing them.
 
 #### TODO
-  * visual projection: need match tag, match class and exact checkboxes
-
   * refactor the visual style projection to be asynchronous
 
   * project form has preview button.  applies the current projection and removes the form.  any keypress => restore form, with all state preserved.
