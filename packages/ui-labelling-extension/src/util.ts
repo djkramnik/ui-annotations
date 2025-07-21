@@ -1,11 +1,11 @@
 import { SimilarUiOptions } from "./types";
 
-function hasIntersection(arr1: any[], arr2: any[]) {
+export function hasIntersection(arr1: any[], arr2: any[]) {
   const set2 = new Set(arr2)
   return arr1.some(element => set2.has(element))
 }
 
-function hasText(el: HTMLElement) {
+export function hasText(el: HTMLElement) {
   return (el.textContent?.replaceAll(/\s+/g, '') ?? '').length > 0
 }
 
