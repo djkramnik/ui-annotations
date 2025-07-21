@@ -4,7 +4,9 @@ Primarily a chrome browser extension to help me quickly annotate UI elements on 
 This repo also includes a web server for storing annotations in local postgres instance, and a small frontend for viewing them.
 
 #### TODO
-  * refactor the visual style projection to be asynchronous
+
+  * basebones projection improvement
+  * test asynchronous visual projection.. show progress bar / percent. make sure to disable submit button
 
   * project form has preview button.  applies the current projection and removes the form.  any keypress => restore form, with all state preserved.
 

@@ -1,20 +1,17 @@
 import { SimilarUiOptions } from "./types";
 import { hasIntersection, hasText, isInViewport, snooze } from './util'
 
-type GeneratorResponse =
+export type FindSimilarUiResponse =
   { done: boolean } & (
   | { percentComplete: number }
-  | { elements: HTMLElement[] }
+  | { results: HTMLElement[] }
 )
 
 export async function* findSimilarUiAsync(
   options: SimilarUiOptions,
   target: HTMLElement,
   signal?: AbortSignal
-): AsyncGenerator<
-  | { percentProcessed: number; done: false }
-  | { results: HTMLElement[]; done: true }
-  > {
+): AsyncGenerator<FindSimilarUiResponse> {
   const {
     matchTag,
     matchClass,
@@ -80,17 +77,17 @@ export async function* findSimilarUiAsync(
     }
 
     yield({
-      percentProcessed: (index / totalCandidates) * 100,
+      percentComplete: (index / totalCandidates) * 100,
       done: false
     })
     await snooze()
   }
 
   yield({
-    percentProcessed: 100,
+    percentComplete: 100,
     done: false
   })
-
+  await snooze()
   yield {
     results,
     done: true
