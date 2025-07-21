@@ -1,10 +1,9 @@
 import { SimilarUiOptions } from "./types";
 import { hasIntersection, hasText, isInViewport, snooze } from './util'
 
-export type FindSimilarUiResponse =
-  { done: boolean } & (
-  | { percentComplete: number }
-  | { results: HTMLElement[] }
+export type FindSimilarUiResponse = (
+  | { percentComplete: number; done: false }
+  | { results: HTMLElement[]; done: true }
 )
 
 export async function* findSimilarUiAsync(

@@ -2,6 +2,7 @@ import { AnnotationLabel, annotationLabels } from 'ui-labelling-shared'
 import { ExtensionMessage, SALIENT_VISUAL_PROPS } from './types';
 import { buildAnnotationForm, buildForm, buildProjectionForm, getFormOverlay, getRemoveIcon } from './dom-building';
 import { findSimilarUi, getCousins, isInViewport } from './util';
+import { findSimilarUiAsync } from './find-similar-ui';
 
 type ExtensionState =
 | 'dormant'
@@ -161,35 +162,42 @@ type GlobalState = {
         const projectionType = formData['projectionType']
         const distance = parseInt(String(formData['distance']), 10)
         const max = parseInt(String(formData['max']), 10)
-        let task: ((el: HTMLElement) => HTMLElement[]) | null = null
+        let task: ((el: HTMLElement) => Promise<HTMLElement[]>) | null = null
 
         switch(projectionType) {
           case 'siblings':
-            task = getSibs
+            task = (el: HTMLElement) => Promise.resolve(getSibs(el))
             break
           case 'cousins':
             task = (el: HTMLElement) => {
-              return getCousins({
+              return Promise.resolve(getCousins({
                 target: el,
                 distance: Number.isNaN(distance)
                   ? 0
                   : distance
-              })
+              }))
             }
             break
           case 'visual':
-            task = (el: HTMLElement) => {
-              return findSimilarUi({
-                matchTag: formData['match_tag'] === 'on',
-                matchClass: formData['match_class'] === 'on',
-                exact: formData['match_exact'] === 'on',
-                max: Number.isNaN(max) ? 10 : Math.max(1, max),
-                keys: (
-                  SALIENT_VISUAL_PROPS.filter(s => {
-                    return formData[`visual_${s}`] === s
-                  })
-                )
-              }, el)
+            const props = {
+              matchTag: formData['match_tag'] === 'on',
+              matchClass: formData['match_class'] === 'on',
+              exact: formData['match_exact'] === 'on',
+              max: Number.isNaN(max) ? 10 : Math.max(1, max),
+              keys: (
+                SALIENT_VISUAL_PROPS.filter(s => {
+                  return formData[`visual_${s}`] === s
+                })
+              )
+            }
+            task = async (el: HTMLElement) => {
+              for await (const update of findSimilarUiAsync(props, el)) {
+                if (update.done) {
+                  return update.results
+                }
+                log.info('progress: ', update.percentComplete)
+              }
+              return []
             }
             break
           default:
@@ -202,9 +210,13 @@ type GlobalState = {
           return
         }
 
-        globals.projections = task(globals.currEl)
-          .filter(el => isInViewport({ target: el }))
-          .slice(0, Number.isNaN(max) ? undefined : max)
+        // disable the submit button... finally restore the submit button
+        task(globals.currEl)
+          .then((results: HTMLElement[]) => {
+            globals.projections = results
+              .filter(el => isInViewport({ target: el }))
+              .slice(0, Number.isNaN(max) ? undefined : max)
+          })
       }
     })
     projectionForm.style.display = 'none'
