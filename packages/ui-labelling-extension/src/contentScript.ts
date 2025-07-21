@@ -1,7 +1,7 @@
 import { AnnotationLabel, annotationLabels } from 'ui-labelling-shared'
 import { ExtensionMessage, SALIENT_VISUAL_PROPS } from './types';
 import { buildAnnotationForm, buildForm, buildProjectionForm, getFormOverlay, getRemoveIcon } from './dom-building';
-import { findSimilarUi, getCousins, isInViewport } from './util';
+import { getCousins, isInViewport } from './util';
 import { findSimilarUiAsync } from './find-similar-ui';
 
 type ExtensionState =
@@ -148,6 +148,12 @@ type GlobalState = {
       handleSubmit: (event) => {
         event.preventDefault()
         const form = event.target as HTMLFormElement
+        const submitBtn = form.querySelector('#submitBtn') as HTMLButtonElement
+        const cancelBtn = form.querySelector('#cancelBtn') as HTMLButtonElement
+        const percentDisplay = form.querySelector('#percentDisplay') as HTMLButtonElement
+        submitBtn.disabled = true
+        cancelBtn.disabled = true
+
         const formData = Object.fromEntries(new FormData(form).entries())
         if (!globals.currEl) {
           log.error('somehow we are projecting but have no currEl ref')
@@ -196,6 +202,7 @@ type GlobalState = {
                   return update.results
                 }
                 log.info('progress: ', update.percentComplete)
+                percentDisplay.innerText = update.percentComplete + '%'
               }
               return []
             }
@@ -209,6 +216,8 @@ type GlobalState = {
           log.info('no projection task!')
           return
         }
+        submitBtn.style.backgroundColor = '#eee'
+        cancelBtn.style.backgroundColor = '#eee'
 
         // disable the submit button... finally restore the submit button
         task(globals.currEl)
@@ -216,6 +225,13 @@ type GlobalState = {
             globals.projections = results
               .filter(el => isInViewport({ target: el }))
               .slice(0, Number.isNaN(max) ? undefined : max)
+          })
+          .finally(() => {
+            submitBtn.disabled = false
+            cancelBtn.disabled = false
+            submitBtn.style.backgroundColor = 'green'
+            cancelBtn.style.backgroundColor = '#A0C6FC'
+            percentDisplay.innerText = '0%'
           })
       }
     })

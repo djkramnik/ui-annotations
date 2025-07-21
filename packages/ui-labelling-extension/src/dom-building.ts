@@ -4,6 +4,22 @@ import { splitArray } from "./util";
 
 const trashCanUrl = chrome.runtime.getURL('/assets/trash-can.svg')
 
+export function getButton(primary?: boolean) {
+  const button = document.createElement('button')
+  button.style.outline = 'none'
+  button.style.border = 'none'
+  button.style.minWidth = '140px'
+  button.style.fontSize = '16px'
+  button.style.padding = '6px'
+  button.style.borderRadius = '8px'
+  button.style.cursor = 'pointer'
+  button.style.backgroundColor = primary
+    ? 'green'
+    : '#A0C6FC'
+  button.style.color = 'white'
+  return button
+}
+
 export function getFormOverlay() {
   const formOverlay = document.createElement('div')
   formOverlay.style.position = 'absolute'
@@ -81,22 +97,28 @@ export function buildAnnotationForm({
     annotationSelect.appendChild(option)
   })
 
-  const submitButton = document.createElement('button')
+  const buttonContainer = document.createElement('div')
+  buttonContainer.style.display = 'flex'
+  buttonContainer.style.gap = '8px'
+  container.appendChild(document.createElement('hr'))
+  container.appendChild(buttonContainer)
+
+  const submitButton = getButton(true)
   submitButton.innerText = 'submit'
   submitButton.setAttribute('type', 'submit')
-  container.appendChild(submitButton)
+  buttonContainer.appendChild(submitButton)
 
-  const cancelButton = document.createElement('button')
+  const cancelButton = getButton()
   cancelButton.innerText = 'cancel'
   cancelButton.setAttribute('type', 'button')
   cancelButton.addEventListener('click', handleCancel)
-  container.appendChild(cancelButton)
+  buttonContainer.appendChild(cancelButton)
 
-  const projectionButton = document.createElement('button')
+  const projectionButton = getButton()
   projectionButton.innerText = 'projection'
   projectionButton.setAttribute('type', 'button')
   projectionButton.addEventListener('click', handleProjection)
-  container.appendChild(projectionButton)
+  buttonContainer.appendChild(projectionButton)
 
   fragment.append(container)
   return fragment
@@ -141,6 +163,7 @@ export function buildProjectionForm({
   /* ---------- dynamic section ---------- */
   const dynamicSection: HTMLDivElement = document.createElement('div');
   dynamicSection.className = 'projection-dynamic';
+  container.appendChild(document.createElement('hr'))
   container.appendChild(dynamicSection);
 
   /* ---------- max input ---------- */
@@ -154,16 +177,30 @@ export function buildProjectionForm({
   container.appendChild(maxLabel);
 
   /* ---------- buttons ---------- */
-  const submitBtn: HTMLButtonElement = document.createElement('button');
+  const buttonContainer = document.createElement('div')
+  buttonContainer.style.display = 'flex'
+  buttonContainer.style.gap = '8px'
+
+  const submitBtn: HTMLButtonElement = getButton(true);
+  submitBtn.setAttribute('id', 'submitBtn')
   submitBtn.type = 'submit';
   submitBtn.textContent = 'Submit';
+  buttonContainer.appendChild(submitBtn)
 
-  const cancelBtn: HTMLButtonElement = document.createElement('button');
+  const cancelBtn: HTMLButtonElement = getButton();
+  cancelBtn.setAttribute('id', 'cancelBtn')
   cancelBtn.type = 'button';
   cancelBtn.textContent = 'Cancel';
   cancelBtn.addEventListener('click', handleCancel)
+  buttonContainer.appendChild(cancelBtn)
 
-  container.append(submitBtn, cancelBtn);
+  const percentDisplay = document.createElement('p')
+  percentDisplay.setAttribute('id', 'percentDisplay')
+  percentDisplay.innerText = '0%'
+  buttonContainer.appendChild(percentDisplay)
+
+  container.appendChild(document.createElement('hr'))
+  container.append(buttonContainer);
 
   /* ---------- dynamic render ---------- */
   const renderDynamic = (value: ProjectionType): void => {
@@ -238,11 +275,11 @@ function buildProjectionCheckboxGroup(visualProps?: string[]): DocumentFragment 
   });
 
   // action buttons
-  const checkAllBtn = document.createElement('button');
+  const checkAllBtn = getButton();
   checkAllBtn.type = 'button';
   checkAllBtn.textContent = 'Check All';
 
-  const clearAllBtn = document.createElement('button');
+  const clearAllBtn = getButton();
   clearAllBtn.type = 'button';
   clearAllBtn.textContent = 'Clear All';
 
@@ -261,7 +298,7 @@ function buildProjectionCheckboxGroup(visualProps?: string[]): DocumentFragment 
 
   const buttonContainer = document.createElement('div')
   buttonContainer.style.display = 'flex'
-  buttonContainer.style.justifyContent = 'space-around'
+  buttonContainer.style.gap = '8px'
   buttonContainer.append(checkAllBtn, clearAllBtn)
   container.append(buttonContainer)
 
