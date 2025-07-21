@@ -7,8 +7,6 @@ This repo also includes a web server for storing annotations in local postgres i
 
   * when projecting, keep the original target distinguishable
 
-  * test asynchronous visual projection.. show progress bar / percent. make sure to disable submit button
-
   * project form has preview button.  applies the current projection and removes the form.  any keypress => restore form, with all state preserved.
 
   * add the label dropdown directly to the projection form. when you click submit it submits all the projected elements as annotations under that label
