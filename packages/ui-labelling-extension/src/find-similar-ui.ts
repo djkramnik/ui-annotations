@@ -47,8 +47,7 @@ export async function* findSimilarUiAsync(
     const endIndex = Math.min(index + CHUNK_SIZE, nodeList.length)
     for(; index < endIndex; index += 1) {
       const el = nodeList[index] as HTMLElement
-
-      const invalid = !isInViewport({ target: el }) || !(el instanceof HTMLElement)
+      const invalid = el === target || !isInViewport({ target: el }) || !(el instanceof HTMLElement)
       if (invalid) {
         continue
       }

@@ -5,8 +5,6 @@ This repo also includes a web server for storing annotations in local postgres i
 
 #### TODO
 
-  * when projecting, keep the original target distinguishable
-
   * project form has preview button.  applies the current projection and removes the form.  any keypress => restore form, with all state preserved.
 
   * add the label dropdown directly to the projection form. when you click submit it submits all the projected elements as annotations under that label

@@ -1,7 +1,7 @@
 import { AnnotationLabel, annotationLabels } from 'ui-labelling-shared'
 import { ExtensionMessage, SALIENT_VISUAL_PROPS } from './types';
 import { buildAnnotationForm, buildForm, buildProjectionForm, getFormOverlay, getRemoveIcon } from './dom-building';
-import { getCousins, isInViewport } from './util';
+import { getCousins, getSibs, isInViewport } from './util';
 import { findSimilarUiAsync } from './find-similar-ui';
 
 type ExtensionState =
@@ -172,16 +172,22 @@ type GlobalState = {
 
         switch(projectionType) {
           case 'siblings':
-            task = (el: HTMLElement) => Promise.resolve(getSibs(el))
+            task = (el: HTMLElement) => {
+              const sibs = getSibs(el)
+              console.log('siblings??', sibs)
+              return Promise.resolve(sibs)
+            }
             break
           case 'cousins':
             task = (el: HTMLElement) => {
-              return Promise.resolve(getCousins({
+              const cousins = getCousins({
                 target: el,
                 distance: Number.isNaN(distance)
                   ? 0
                   : distance
-              }))
+              })
+              console.log('cousins??', cousins)
+              return Promise.resolve(cousins)
             }
             break
           case 'visual':
@@ -277,6 +283,7 @@ type GlobalState = {
     function handleGlobalChange(key: keyof GlobalState, value: any) {
       switch(key) {
         case 'projections':
+          console.log('projections...', value)
           if (globals.state === 'projection' && Array.isArray(value)) {
             removeRects()
             value.forEach((v, index) => {
@@ -295,6 +302,15 @@ type GlobalState = {
                 })
 
               })
+            })
+          }
+          if (globals.currEl) {
+            drawRect({
+              element: globals.currEl,
+              parent: overlay,
+              styles: {
+                border: '2px solid blue'
+              }
             })
           }
           log.info('update to projections', value)
@@ -640,17 +656,6 @@ type GlobalState = {
     // END CALLBACK SOUP
 
     // SO CALLED UTILS
-
-    function getSibs(el: HTMLElement): HTMLElement[] {
-      const parent = el.parentElement
-      if (!parent) {
-        return []
-      }
-      return (
-        Array.from(parent.children)
-        .filter(element => element !== el && element instanceof HTMLElement) as HTMLElement[]
-      ).concat(el)
-    }
 
     function traverseUp(el: HTMLElement, tolerance: number = 2): HTMLElement | null {
       if (el === document.body) {

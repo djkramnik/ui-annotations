@@ -1,5 +1,3 @@
-import { SimilarUiOptions } from "./types";
-
 export function hasIntersection(arr1: any[], arr2: any[]) {
   const set2 = new Set(arr2)
   return arr1.some(element => set2.has(element))
@@ -7,59 +5,6 @@ export function hasIntersection(arr1: any[], arr2: any[]) {
 
 export function hasText(el: HTMLElement) {
   return (el.textContent?.replaceAll(/\s+/g, '') ?? '').length > 0
-}
-
-export const findSimilarUi = (
-  options: SimilarUiOptions,
-  target: HTMLElement,
-): HTMLElement[] => {
-  console.log('hiya', options, target)
-  const {
-    matchTag,
-    matchClass,
-    exact,
-    tolerance,
-    max,
-    keys,
-  } = options
-  const targetStyle = window.getComputedStyle(target)
-
-  return Array.from(document.querySelectorAll(
-    matchTag ? target.tagName : '*'
-  )).filter(c => {
-    if (!(c instanceof HTMLElement)) {
-      return false
-    }
-    if (matchClass) {
-      if (exact && c.className !== target.className) {
-        console.log('exact class situ', target.className, c.className)
-        return false
-      }
-      if (target.classList.length > 0 &&
-          !hasIntersection(Array.from(c.classList), Array.from(target.classList))) {
-        return false
-      }
-    }
-    if (!isInViewport({ target: c})) {
-      return false
-    }
-
-    let slack = Math.abs(tolerance ?? 0)
-    const candidateStyle = window.getComputedStyle(c)
-    const targetHasText = hasText(target)
-
-    return keys.every(k => {
-      // has to see if this causes issues
-      const candidateHasText = hasText(c)
-      if (candidateHasText !== targetHasText) {
-        return false
-      }
-      console.log(`target for ${k}`, targetStyle.getPropertyValue(k))
-      console.log(`candidate for ${k}`, candidateStyle.getPropertyValue(k))
-      const match = (candidateStyle.getPropertyValue(k) === targetStyle.getPropertyValue(k)) || ((--slack) >= 0)
-      return match
-    })
-  }).slice(0, max ?? 100) as HTMLElement[]
 }
 
 export function isInViewport({
@@ -96,6 +41,16 @@ export function isInViewport({
 function getLegitimizedChildren(parent: HTMLElement): HTMLElement[] {
   return Array.from(parent.children).filter(el => el instanceof HTMLElement)
 }
+
+// does not return self
+export function getSibs(target: HTMLElement): HTMLElement[] {
+  if (!target.parentElement) {
+    return []
+  }
+  return getLegitimizedChildren(target.parentElement)
+    .filter(el => el !== target)
+}
+
 
 // another version of this sits in contentScript but it has some non reusable shit in there
 // breadcrumbs saves the index of the element at each step so we may later
@@ -144,13 +99,7 @@ function traverseDown({
   return traverseDown({ origin: next, indexes: indexes.slice(1) })
 }
 
-export function getSibs(target: HTMLElement): HTMLElement[] {
-  if (!target.parentElement) {
-    return [ target ]
-  }
-  return getLegitimizedChildren(target.parentElement)
-}
-
+// excludes target from return array
 export function getCousins({
   target,
   distance,
@@ -184,7 +133,7 @@ export function getCousins({
 
   return aunts.map(auntie => {
     return traverseDown({ origin: auntie, indexes: reverseCrumbs })
-  }).filter(couz => couz instanceof HTMLElement)
+  }).filter(couz => couz instanceof HTMLElement && couz !== target) as HTMLElement[]
 }
 
 // will split list into len equalish parts.  Any remainder gets tacked on the end

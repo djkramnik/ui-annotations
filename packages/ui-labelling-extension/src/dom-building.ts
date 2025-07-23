@@ -63,7 +63,7 @@ export function buildForm({
   children: DocumentFragment
 }): HTMLFormElement {
   const form = document.createElement('form')
-  form.style.backgroundColor = 'rgba(255, 255, 255, 0.8)'
+  form.style.backgroundColor = 'rgba(255, 255, 255)'
   form.style.borderRadius = '8px'
   form.style.padding = '40px'
   form.style.border = '1px solid black'
