@@ -4,7 +4,7 @@ Primarily a chrome browser extension to help me quickly annotate UI elements on 
 This repo also includes a web server for storing annotations in local postgres instance, and a small frontend for viewing them.
 
 #### TODO
-
+  * showAnnotations mode => also show the legend
   * innerText shenanigans.  If annotating a heading, I don't want the spacing around it just the text itself.  but for navigation purposes we should know we start from the element containing the innerText...
 
   #### Buggos / QOL
