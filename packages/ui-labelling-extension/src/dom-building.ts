@@ -87,15 +87,8 @@ export function buildAnnotationForm({
   const container = document.createElement('div')
   container.className = 'annotation-form'
 
-  const annotationSelect = document.createElement('select')
+  const annotationSelect = buildLabelSelect()
   container.appendChild(annotationSelect)
-
-  Object.keys(annotationLabels).forEach((s: string) => {
-    const option = document.createElement('option')
-    option.value = s
-    option.innerText = s
-    annotationSelect.appendChild(option)
-  })
 
   const buttonContainer = document.createElement('div')
   buttonContainer.style.display = 'flex'
@@ -209,6 +202,10 @@ export function buildProjectionForm({
 
   container.appendChild(document.createElement('hr'))
   container.append(buttonContainer);
+  container.appendChild(document.createElement('hr'))
+  container.append(
+    buildLabelSelect()
+  )
 
   /* ---------- dynamic render ---------- */
   const renderDynamic = (value: ProjectionType): void => {
@@ -362,4 +359,15 @@ function buildCheckboxInput({
   }
   checkboxInputContainer.append(labelEl, inputEl)
   return checkboxInputContainer
+}
+
+function buildLabelSelect(labels: Record<string, string> = annotationLabels) {
+  const select = document.createElement('select')
+  Object.keys(labels).forEach((s: string) => {
+    const option = document.createElement('option')
+    option.value = s
+    option.innerText = s
+    select.appendChild(option)
+  })
+  return select
 }

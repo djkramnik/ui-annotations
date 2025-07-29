@@ -255,7 +255,6 @@ type GlobalState = {
             type: 'success',
             message: 'Preview Mode. Press any key to end preview',
             overlayId: globals.overlayId,
-            persist: 3, // wait 3 seconds before fading out
           })
           window.addEventListener('keypress', function endPreview() {
             form.style.display = 'initial'
@@ -264,8 +263,47 @@ type GlobalState = {
         },
       }),
       handleSubmit: (event) => {
-        window.alert('quivering in their bodies')
         event.preventDefault()
+        if (!Array.isArray(globals.projections) || globals.projections.length < 1) {
+          showToast({
+            type: 'error',
+            message: 'No projections to submit!',
+            overlayId: globals.overlayId
+          })
+          return
+        }
+
+        const annotationSelect = (
+          event.target as HTMLFormElement
+        ).querySelector('select')!
+
+        if (!annotationSelect.value) {
+          log.warn('no label selected?')
+          showToast({
+            type: 'error',
+            message: 'No label selected',
+            overlayId: globals.overlayId
+          })
+          return
+        }
+
+        const newAnnotations = globals.projections.map(p => ({
+          id: String(new Date().getTime()),
+          ref: p,
+          rect: p.getBoundingClientRect(),
+          label: annotationSelect.value as AnnotationLabel,
+        })).concat(globals.currEl !== null
+          ? {
+            id: String(new Date().getTime()),
+            ref: globals.currEl,
+            rect: globals.currEl.getBoundingClientRect(),
+            label: annotationSelect.value as AnnotationLabel,
+          }
+          : []
+        )
+
+        globals.annotations = globals.annotations.concat(newAnnotations)
+        globals.state = 'initial'
       },
     })
     projectionForm.style.display = 'none'

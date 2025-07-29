@@ -5,10 +5,6 @@ This repo also includes a web server for storing annotations in local postgres i
 
 #### TODO
 
-  * project form has preview button.  applies the current projection and removes the form.  any keypress => restore form, with all state preserved.
-
-  * add the label dropdown directly to the projection form. when you click submit it submits all the projected elements as annotations under that label
-
   * innerText shenanigans.  If annotating a heading, I don't want the spacing around it just the text itself.  but for navigation purposes we should know we start from the element containing the innerText...
 
   #### Buggos / QOL
