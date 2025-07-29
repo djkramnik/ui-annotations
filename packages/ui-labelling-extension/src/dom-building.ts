@@ -174,7 +174,7 @@ export function buildProjectionForm({
   maxLabel.textContent = 'max ';
   const maxInput: HTMLInputElement = document.createElement('input');
   maxInput.name = 'max';
-  maxInput.value = '10';
+  maxInput.value = '40';
   maxLabel.appendChild(maxInput);
   container.appendChild(maxLabel);
 

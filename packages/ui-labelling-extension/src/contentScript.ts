@@ -258,6 +258,7 @@ type GlobalState = {
             persist: 3, // wait 3 seconds before fading out
           })
           window.addEventListener('keypress', function endPreview() {
+            form.style.display = 'initial'
             window.removeEventListener('keypress', endPreview)
           })
         },
