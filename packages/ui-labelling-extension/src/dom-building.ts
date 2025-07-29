@@ -125,8 +125,10 @@ export function buildAnnotationForm({
 }
 
 export function buildProjectionForm({
-  handleCancel
+  handleCancel,
+  handlePreview,
 }: {
+  handlePreview: () => void
   handleCancel: () => void
 }): DocumentFragment {
   const frag: DocumentFragment = document.createDocumentFragment();
@@ -180,6 +182,12 @@ export function buildProjectionForm({
   const buttonContainer = document.createElement('div')
   buttonContainer.style.display = 'flex'
   buttonContainer.style.gap = '8px'
+
+  const previewButton = getButton(true)
+  previewButton.innerText = 'preview'
+  previewButton.setAttribute('type', 'button')
+  previewButton.addEventListener('click', handlePreview)
+  buttonContainer.appendChild(previewButton)
 
   const submitBtn: HTMLButtonElement = getButton(true);
   submitBtn.setAttribute('id', 'submitBtn')

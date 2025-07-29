@@ -1,20 +1,26 @@
 import { AnnotationLabel, annotationLabels } from 'ui-labelling-shared'
-import { ExtensionMessage, SALIENT_VISUAL_PROPS } from './types';
-import { buildAnnotationForm, buildForm, buildProjectionForm, getFormOverlay, getRemoveIcon } from './dom-building';
-import { getCousins, getSibs, isInViewport } from './util';
-import { findSimilarUiAsync } from './find-similar-ui';
+import { ExtensionMessage, SALIENT_VISUAL_PROPS } from './types'
+import {
+  buildAnnotationForm,
+  buildForm,
+  buildProjectionForm,
+  getFormOverlay,
+  getRemoveIcon,
+} from './dom-building'
+import { getCousins, getSibs, isInViewport } from './util'
+import { findSimilarUiAsync } from './find-similar-ui'
 
 type ExtensionState =
-| 'dormant'
-| 'initial'
-| 'navigation'
-| 'confirmation'
-| 'projection'
+  | 'dormant'
+  | 'initial'
+  | 'navigation'
+  | 'confirmation'
+  | 'projection'
 
 enum StorageKeys {
   annotations = 'annotations',
   screenshot = 'screenshot',
-  meta = 'meta'
+  meta = 'meta',
 }
 
 type GlobalState = {
@@ -23,14 +29,13 @@ type GlobalState = {
   currEl: null | HTMLElement
   projections: null | HTMLElement[]
   overlayId: string
-  annotations: ({
+  annotations: {
     id: string
     ref: HTMLElement
     rect: DOMRect
     label: AnnotationLabel
-  }[])
+  }[]
 }
-
 ;(function () {
   const logPrefix = '[UI-LABELLER] '
   const overlayId = 'ui-labelling-overlay'
@@ -38,17 +43,17 @@ type GlobalState = {
   const log = {
     warn: (...args: any[]) => console.warn(logPrefix, ...args),
     info: (...args: any[]) => console.log(logPrefix, ...args),
-    error: (...args: any[]) => console.error(logPrefix, ...args)
+    error: (...args: any[]) => console.error(logPrefix, ...args),
   }
 
   function GlobalState(cb: (key: keyof GlobalState, value: any) => void) {
     let state: ExtensionState = 'dormant'
-    let annotations: ({
+    let annotations: {
       id: string
       ref: HTMLElement
       rect: DOMRect
       label: AnnotationLabel
-    }[]) = []
+    }[] = []
     let projections: HTMLElement[] | null = null
     let currEl: HTMLElement | null = null
     let showAnnotations: boolean = false
@@ -66,38 +71,38 @@ type GlobalState = {
         cb('projections', value)
         projections = value
       },
-      get: () => projections
+      get: () => projections,
     })
     Object.defineProperty(obj, 'state', {
       set: (value) => {
         cb('state', value)
         state = value
       },
-      get: () => state
-    });
+      get: () => state,
+    })
     Object.defineProperty(obj, 'annotations', {
       set: (value) => {
         cb('annotations', value)
         annotations = value
       },
-      get: () => annotations
-    });
+      get: () => annotations,
+    })
     Object.defineProperty(obj, 'overlayId', {
-      get: () => overlayId
-    });
+      get: () => overlayId,
+    })
     Object.defineProperty(obj, 'currEl', {
       set: (value) => {
         cb('currEl', value)
         currEl = value
       },
-      get: () => currEl
+      get: () => currEl,
     })
     Object.defineProperty(obj, 'showAnnotations', {
       set: (value) => {
         cb('showAnnotations', value)
         showAnnotations = value
       },
-      get: () => showAnnotations
+      get: () => showAnnotations,
     })
 
     return obj
@@ -110,20 +115,22 @@ type GlobalState = {
       [StorageKeys.meta]: {
         url: window.location.href,
         date: new Date().toLocaleString('en-US', {
-          timeZone: 'America/New_York'
+          timeZone: 'America/New_York',
         }),
         window: {
           scrollY: window.scrollY,
           width: window.innerWidth,
-          height: window.innerHeight
-        }
-      }
+          height: window.innerHeight,
+        },
+      },
     })
 
     log.info('saved metadata')
 
     if (document.getElementById(globals.overlayId)) {
-      log.warn('overlay already present during initialization.  Aborting everything!')
+      log.warn(
+        'overlay already present during initialization.  Aborting everything!',
+      )
       return null
     }
     const overlay = document.createElement(globals.overlayId)
@@ -143,115 +150,140 @@ type GlobalState = {
     const projectionForm = buildForm({
       heading: 'Project Element',
       children: buildProjectionForm({
-        handleCancel: () => { globals.state = 'initial' }
+        handleCancel: () => {
+          globals.state = 'initial'
+        },
+        handlePreview: () => {
+          const form = projectionForm
+          const submitBtn = form.querySelector(
+            '#submitBtn',
+          ) as HTMLButtonElement
+          const cancelBtn = form.querySelector(
+            '#cancelBtn',
+          ) as HTMLButtonElement
+          const percentDisplay = form.querySelector(
+            '#percentDisplay',
+          ) as HTMLButtonElement
+          submitBtn.disabled = true
+          cancelBtn.disabled = true
+
+          const formData = Object.fromEntries(new FormData(form).entries())
+          if (!globals.currEl) {
+            log.error('somehow we are projecting but have no currEl ref')
+            return
+          }
+          // console.log('projection type', formData['projectionType'])
+          // console.log('max', formData['max'])
+          SALIENT_VISUAL_PROPS.forEach((prop) => {
+            console.log('visual style', prop, formData[`visual_${prop}`])
+          })
+          // console.log('distance', formData['distance'])
+          const projectionType = formData['projectionType']
+          const distance = parseInt(String(formData['distance']), 10)
+          const max = parseInt(String(formData['max']), 10)
+          let task: ((el: HTMLElement) => Promise<HTMLElement[]>) | null = null
+
+          switch (projectionType) {
+            case 'siblings':
+              task = (el: HTMLElement) => {
+                const sibs = getSibs(el)
+                console.log('siblings??', sibs)
+                return Promise.resolve(sibs)
+              }
+              break
+            case 'cousins':
+              task = (el: HTMLElement) => {
+                const cousins = getCousins({
+                  target: el,
+                  distance: Number.isNaN(distance) ? 0 : distance,
+                })
+                console.log('cousins??', cousins)
+                return Promise.resolve(cousins)
+              }
+              break
+            case 'visual':
+              const props = {
+                matchTag: formData['match_tag'] === 'on',
+                matchClass: formData['match_class'] === 'on',
+                exact: formData['match_exact'] === 'on',
+                max: Number.isNaN(max) ? 10 : Math.max(1, max),
+                keys: SALIENT_VISUAL_PROPS.filter((s) => {
+                  return formData[`visual_${s}`] === s
+                }),
+              }
+              task = async (el: HTMLElement) => {
+                for await (const update of findSimilarUiAsync(props, el)) {
+                  if (update.done) {
+                    return update.results
+                  }
+                  log.info('progress: ', update.percentComplete)
+                  percentDisplay.innerText = update.percentComplete + '%'
+                }
+                return []
+              }
+              break
+            default:
+              log.warn('unsupported projection type?', projectionType)
+              break
+          }
+
+          if (!task) {
+            log.info('no projection task!')
+            return
+          }
+          submitBtn.style.backgroundColor = '#eee'
+          cancelBtn.style.backgroundColor = '#eee'
+
+          // disable the submit button... finally restore the submit button
+          task(globals.currEl)
+            .then((results: HTMLElement[]) => {
+              globals.projections = results
+                .filter((el) => isInViewport({ target: el }))
+                .slice(0, Number.isNaN(max) ? undefined : max)
+            })
+            .finally(() => {
+              submitBtn.disabled = false
+              cancelBtn.disabled = false
+              submitBtn.style.backgroundColor = 'green'
+              cancelBtn.style.backgroundColor = '#A0C6FC'
+              percentDisplay.innerText = '0%'
+            })
+
+          // hide form until key is pressed
+          form.style.display = 'none'
+          showToast({
+            type: 'success',
+            message: 'Preview Mode. Press any key to end preview',
+            overlayId: globals.overlayId,
+            persist: 3, // wait 3 seconds before fading out
+          })
+          window.addEventListener('keypress', function endPreview() {
+            window.removeEventListener('keypress', endPreview)
+          })
+        },
       }),
       handleSubmit: (event) => {
+        window.alert('quivering in their bodies')
         event.preventDefault()
-        const form = event.target as HTMLFormElement
-        const submitBtn = form.querySelector('#submitBtn') as HTMLButtonElement
-        const cancelBtn = form.querySelector('#cancelBtn') as HTMLButtonElement
-        const percentDisplay = form.querySelector('#percentDisplay') as HTMLButtonElement
-        submitBtn.disabled = true
-        cancelBtn.disabled = true
-
-        const formData = Object.fromEntries(new FormData(form).entries())
-        if (!globals.currEl) {
-          log.error('somehow we are projecting but have no currEl ref')
-          return
-        }
-        // console.log('projection type', formData['projectionType'])
-        // console.log('max', formData['max'])
-        SALIENT_VISUAL_PROPS.forEach((prop) => {
-          console.log('visual style', prop, formData[`visual_${prop}`])
-        })
-        // console.log('distance', formData['distance'])
-        const projectionType = formData['projectionType']
-        const distance = parseInt(String(formData['distance']), 10)
-        const max = parseInt(String(formData['max']), 10)
-        let task: ((el: HTMLElement) => Promise<HTMLElement[]>) | null = null
-
-        switch(projectionType) {
-          case 'siblings':
-            task = (el: HTMLElement) => {
-              const sibs = getSibs(el)
-              console.log('siblings??', sibs)
-              return Promise.resolve(sibs)
-            }
-            break
-          case 'cousins':
-            task = (el: HTMLElement) => {
-              const cousins = getCousins({
-                target: el,
-                distance: Number.isNaN(distance)
-                  ? 0
-                  : distance
-              })
-              console.log('cousins??', cousins)
-              return Promise.resolve(cousins)
-            }
-            break
-          case 'visual':
-            const props = {
-              matchTag: formData['match_tag'] === 'on',
-              matchClass: formData['match_class'] === 'on',
-              exact: formData['match_exact'] === 'on',
-              max: Number.isNaN(max) ? 10 : Math.max(1, max),
-              keys: (
-                SALIENT_VISUAL_PROPS.filter(s => {
-                  return formData[`visual_${s}`] === s
-                })
-              )
-            }
-            task = async (el: HTMLElement) => {
-              for await (const update of findSimilarUiAsync(props, el)) {
-                if (update.done) {
-                  return update.results
-                }
-                log.info('progress: ', update.percentComplete)
-                percentDisplay.innerText = update.percentComplete + '%'
-              }
-              return []
-            }
-            break
-          default:
-            log.warn('unsupported projection type?', projectionType)
-            break
-        }
-
-        if (!task) {
-          log.info('no projection task!')
-          return
-        }
-        submitBtn.style.backgroundColor = '#eee'
-        cancelBtn.style.backgroundColor = '#eee'
-
-        // disable the submit button... finally restore the submit button
-        task(globals.currEl)
-          .then((results: HTMLElement[]) => {
-            globals.projections = results
-              .filter(el => isInViewport({ target: el }))
-              .slice(0, Number.isNaN(max) ? undefined : max)
-          })
-          .finally(() => {
-            submitBtn.disabled = false
-            cancelBtn.disabled = false
-            submitBtn.style.backgroundColor = 'green'
-            cancelBtn.style.backgroundColor = '#A0C6FC'
-            percentDisplay.innerText = '0%'
-          })
-      }
+      },
     })
     projectionForm.style.display = 'none'
 
     const annotationForm = buildForm({
       heading: 'Set Label',
       children: buildAnnotationForm({
-        handleCancel: () => { globals.state = 'initial' },
-        handleProjection: () => { globals.state = 'projection' }
+        handleCancel: () => {
+          globals.state = 'initial'
+        },
+        handleProjection: () => {
+          globals.state = 'projection'
+        },
       }),
       handleSubmit: (event) => {
         event.preventDefault()
-        const annotationSelect = (event.target as HTMLFormElement).querySelector('select')!
+        const annotationSelect = (
+          event.target as HTMLFormElement
+        ).querySelector('select')!
         log.info(annotationSelect.value)
         if (!annotationSelect.value) {
           log.warn('no label selected?')
@@ -262,12 +294,12 @@ type GlobalState = {
             id: String(new Date().getTime()),
             ref: globals.currEl,
             rect: globals.currEl.getBoundingClientRect(),
-            label: annotationSelect.value as AnnotationLabel
+            label: annotationSelect.value as AnnotationLabel,
           })
         }
 
         globals.state = 'initial'
-      }
+      },
     })
 
     formOverlay.appendChild(annotationForm)
@@ -281,7 +313,7 @@ type GlobalState = {
 
     // janky redux style state handling mega function
     function handleGlobalChange(key: keyof GlobalState, value: any) {
-      switch(key) {
+      switch (key) {
         case 'projections':
           console.log('projections...', value)
           if (globals.state === 'projection' && Array.isArray(value)) {
@@ -292,15 +324,18 @@ type GlobalState = {
                 parent: overlay,
                 child: getRemoveIcon((event) => {
                   if (!globals.projections) {
-                    log.error('impossible state error within projection removal callback')
+                    log.error(
+                      'impossible state error within projection removal callback',
+                    )
                     return
                   }
                   // seems flaky but it should work
-                  globals.projections = globals.projections.filter((p, pIndex) => {
-                    return index !== pIndex
-                  })
-                })
-
+                  globals.projections = globals.projections.filter(
+                    (p, pIndex) => {
+                      return index !== pIndex
+                    },
+                  )
+                }),
               })
             })
           }
@@ -309,15 +344,15 @@ type GlobalState = {
               element: globals.currEl,
               parent: overlay,
               styles: {
-                border: '2px solid blue'
-              }
+                border: '2px solid blue',
+              },
             })
           }
           log.info('update to projections', value)
           break
         case 'annotations':
           chrome.storage.local.set({
-            [StorageKeys.annotations]: JSON.stringify(value)
+            [StorageKeys.annotations]: JSON.stringify(value),
           })
           log.info('update to annotations', value)
           break
@@ -326,7 +361,7 @@ type GlobalState = {
             removeRects()
             drawCandidate({
               element: value as HTMLElement,
-              parent: overlay
+              parent: overlay,
             })
           }
           log.info('update to currEl', value)
@@ -352,22 +387,22 @@ type GlobalState = {
           break
         case 'showAnnotations':
           log.info('show annotations handler', value)
-          globals.annotations.forEach(
-            ({ id }) => document.getElementById(id)?.remove()
+          globals.annotations.forEach(({ id }) =>
+            document.getElementById(id)?.remove(),
           )
           if (value) {
             globals.annotations.forEach(({ id, ref, label }) => {
               const c = annotationLabels[label]
 
-              const removeIcon = getRemoveIcon(
-                (event) => {
-                  event.stopPropagation()
-                  // filter annotation out of the global state var
-                  globals.annotations = globals.annotations.filter(a => a.id !== id)
-                  // fragile
-                  removeIcon.parentElement?.remove()
-                }
-              )
+              const removeIcon = getRemoveIcon((event) => {
+                event.stopPropagation()
+                // filter annotation out of the global state var
+                globals.annotations = globals.annotations.filter(
+                  (a) => a.id !== id,
+                )
+                // fragile
+                removeIcon.parentElement?.remove()
+              })
               drawRect({
                 id,
                 element: ref,
@@ -378,7 +413,7 @@ type GlobalState = {
                   opacity: '0.6',
                   zIndex: '2',
                 },
-                child: removeIcon
+                child: removeIcon,
               })
             })
           }
@@ -409,7 +444,7 @@ type GlobalState = {
       setTimeout(() => {
         try {
           handleMouseDown(event, overlay)
-        } catch(err) {
+        } catch (err) {
           log.error(err)
         } finally {
           overlay.style.pointerEvents = 'initial'
@@ -431,14 +466,20 @@ type GlobalState = {
 
       log.info('real target?', realTarget)
 
-      if (!realTarget || typeof realTarget.getBoundingClientRect !== 'function') {
+      if (
+        !realTarget ||
+        typeof realTarget.getBoundingClientRect !== 'function'
+      ) {
         log.warn('no real target found', realTarget)
         overlay.addEventListener('mousedown', _handleMouseWrap)
         return
       }
 
       // prevent overly big annotations
-      if (realTarget.clientWidth > (overlay.clientWidth * 0.9) && realTarget.clientHeight > (overlay.clientHeight * 0.9)) {
+      if (
+        realTarget.clientWidth > overlay.clientWidth * 0.9 &&
+        realTarget.clientHeight > overlay.clientHeight * 0.9
+      ) {
         log.warn('annotation too big. skipping', realTarget)
         overlay.addEventListener('mousedown', _handleMouseWrap)
         return
@@ -452,8 +493,9 @@ type GlobalState = {
     }
 
     function removeRects(selector: string = '[id*="candidate_annotation_"]') {
-      Array.from(document.querySelectorAll(selector))
-        .forEach(el => el.remove())
+      Array.from(document.querySelectorAll(selector)).forEach((el) =>
+        el.remove(),
+      )
     }
 
     function drawRect({
@@ -473,7 +515,10 @@ type GlobalState = {
       const bbox = element.getBoundingClientRect()
       const { top, left, width, height } = bbox
 
-      annotation.setAttribute('id', id ?? `${'candidate_annotation_'}${new Date().getTime()}`)
+      annotation.setAttribute(
+        'id',
+        id ?? `${'candidate_annotation_'}${new Date().getTime()}`,
+      )
       annotation.style.position = 'fixed'
       annotation.style.width = width + 'px'
       annotation.style.height = height + 'px'
@@ -483,13 +528,12 @@ type GlobalState = {
 
       // override styles if any
       if (styles) {
-        Object.entries(styles)
-          .forEach(([k, v]) => {
-            // @ts-ignore
-            annotation.style[k] = v
-          })
+        Object.entries(styles).forEach(([k, v]) => {
+          // @ts-ignore
+          annotation.style[k] = v
+        })
       } else {
-        annotation.style.border= `2px solid #0FFF50`
+        annotation.style.border = `2px solid #0FFF50`
       }
 
       // custom child element if any
@@ -531,8 +575,8 @@ type GlobalState = {
           parent,
           styles: {
             border: `2px solid #D3D3D370`,
-            backgroundColor: '#D3D3D330'
-          }
+            backgroundColor: '#D3D3D330',
+          },
         })
       })
 
@@ -557,7 +601,7 @@ type GlobalState = {
       }
       const parent: HTMLElement | null = globals.currEl.parentElement
       const siblings: HTMLElement[] = parent
-        ? Array.from(parent.children) as HTMLElement[]
+        ? (Array.from(parent.children) as HTMLElement[])
         : []
       const currIndex: number | null = parent
         ? Array.from(parent.children).indexOf(globals.currEl)
@@ -566,7 +610,7 @@ type GlobalState = {
       let newIndex
       log.info('keypressed', event.key)
 
-      switch(event.key) {
+      switch (event.key) {
         // quit navigation mode and return to initial
         case 'q':
           globals.state = 'initial'
@@ -603,7 +647,10 @@ type GlobalState = {
           globals.currEl = siblings[newIndex] as HTMLElement
           break
         case 'i':
-          if (!globals.currEl.parentElement || globals.currEl.parentElement === document.body) {
+          if (
+            !globals.currEl.parentElement ||
+            globals.currEl.parentElement === document.body
+          ) {
             log.warn('arrowup', 'no parent node')
             break
           }
@@ -645,7 +692,7 @@ type GlobalState = {
     // this is always active, regardless of the global state value.
     // TODO some kind of type system to prevent event key collision on keypress handling...
     function handleKeyPress(event: KeyboardEvent) {
-      switch(event.key) {
+      switch (event.key) {
         case 'a':
           log.info('toggling annotations')
           globals.showAnnotations = !globals.showAnnotations
@@ -657,7 +704,10 @@ type GlobalState = {
 
     // SO CALLED UTILS
 
-    function traverseUp(el: HTMLElement, tolerance: number = 2): HTMLElement | null {
+    function traverseUp(
+      el: HTMLElement,
+      tolerance: number = 2,
+    ): HTMLElement | null {
       if (el === document.body) {
         return null
       }
@@ -665,7 +715,11 @@ type GlobalState = {
       if (!parent) {
         return null
       }
-      const boxesMatch = boxesTheSame(el.getBoundingClientRect(), parent.getBoundingClientRect(), tolerance)
+      const boxesMatch = boxesTheSame(
+        el.getBoundingClientRect(),
+        parent.getBoundingClientRect(),
+        tolerance,
+      )
       if (boxesMatch) {
         return traverseUp(parent, tolerance)
       }
@@ -681,34 +735,44 @@ type GlobalState = {
       if (!parent) {
         return el
       }
-      const boxesMatch = boxesTheSame(el.getBoundingClientRect(), parent.getBoundingClientRect())
+      const boxesMatch = boxesTheSame(
+        el.getBoundingClientRect(),
+        parent.getBoundingClientRect(),
+      )
       if (boxesMatch) {
         return findHighestSharedShape(parent)
       }
       return el // the difference
     }
 
-    function traverseDown(el: HTMLElement, tolerance: number = 2): HTMLElement | null {
+    function traverseDown(
+      el: HTMLElement,
+      tolerance: number = 2,
+    ): HTMLElement | null {
       if (el.children.length < 1) {
         return null
       }
       const bbox = el.getBoundingClientRect()
-      const firstDifferentlyShapedChild = Array.from(el.children)
-        .find(c => !boxesTheSame(
-          bbox,
-          c.getBoundingClientRect(),
-          tolerance))
+      const firstDifferentlyShapedChild = Array.from(el.children).find(
+        (c) => !boxesTheSame(bbox, c.getBoundingClientRect(), tolerance),
+      )
       if (firstDifferentlyShapedChild) {
         return firstDifferentlyShapedChild as HTMLElement
       }
       return traverseDown(el.children[0] as HTMLElement, tolerance)
     }
 
-    function boxesTheSame (bb1: DOMRect, bb2: DOMRect, tolerance: number = 2): boolean {
-      return Math.abs(bb1.top - bb2.top) < tolerance &&
+    function boxesTheSame(
+      bb1: DOMRect,
+      bb2: DOMRect,
+      tolerance: number = 2,
+    ): boolean {
+      return (
+        Math.abs(bb1.top - bb2.top) < tolerance &&
         Math.abs(bb1.left - bb2.left) < tolerance &&
         Math.abs(bb1.right - bb2.right) < tolerance &&
         Math.abs(bb1.bottom - bb2.bottom) < tolerance
+      )
     }
 
     // END OF SO CALLED UTILS
@@ -719,26 +783,26 @@ type GlobalState = {
     overlayId,
     type,
     message,
-    persist
+    persist,
   }: {
     overlayId: string
     type: 'error' | 'success'
     message: string
     persist?: number
   }): void {
-    const overlay = document.getElementById(overlayId);
+    const overlay = document.getElementById(overlayId)
     if (!overlay) {
-      console.warn(`[showToast] Missing overlay #${overlayId}`);
-      return;
+      console.warn(`[showToast] Missing overlay #${overlayId}`)
+      return
     }
 
     // ── Ensure wrapper + inner exist exactly once ────────────────────────────────
-    let wrapper = overlay.querySelector<HTMLDivElement>('#ui-annotation-toast');
+    let wrapper = overlay.querySelector<HTMLDivElement>('#ui-annotation-toast')
 
     if (!wrapper) {
       // build new DOM
-      wrapper = document.createElement('div');
-      wrapper.id = 'ui-annotation-toast';
+      wrapper = document.createElement('div')
+      wrapper.id = 'ui-annotation-toast'
       wrapper.style.cssText = `
         pointer-events: none;
         position: absolute;
@@ -747,10 +811,10 @@ type GlobalState = {
         width: 100vw;
         height: 50px;
         display: flex;
-      `;
+      `
 
-      const _inner = document.createElement('div');
-      _inner.id = 'ui-annotation-toast-inner';
+      const _inner = document.createElement('div')
+      _inner.id = 'ui-annotation-toast-inner'
       _inner.style.cssText = `
         width: 200px;
         height: 100%;
@@ -761,46 +825,53 @@ type GlobalState = {
         justify-content: center;
         transition: opacity 1s;
         opacity: 0;
-      `;
+      `
 
-      wrapper.appendChild(_inner);
-      overlay.appendChild(wrapper);
+      wrapper.appendChild(_inner)
+      overlay.appendChild(wrapper)
     }
 
-    const inner = wrapper.querySelector<HTMLDivElement>('#ui-annotation-toast-inner')!;
+    const inner = wrapper.querySelector<HTMLDivElement>(
+      '#ui-annotation-toast-inner',
+    )!
 
-    inner.style.backgroundColor = type === 'success' ? 'limegreen' : 'red';
-    inner.textContent           = message;
+    inner.style.backgroundColor = type === 'success' ? 'limegreen' : 'red'
+    inner.textContent = message
 
-    inner.style.opacity = '1';
-    setTimeout(() => { inner.style.opacity = '0'; }, (persist ?? 5) * 1000); // persist for n seconds then fade out
+    inner.style.opacity = '1'
+    setTimeout(
+      () => {
+        inner.style.opacity = '0'
+      },
+      (persist ?? 5) * 1000,
+    ) // persist for n seconds then fade out
   }
 
   // scroll disable and enable
-  let scrollY = 0;
+  let scrollY = 0
 
   function lockScroll() {
     // save the current position
-    scrollY = window.scrollY;
+    scrollY = window.scrollY
 
     // fix the body in place
-    document.body.style.position = 'fixed';
-    document.body.style.top      = `-${scrollY}px`;
-    document.body.style.left     = '0';
-    document.body.style.right    = '0';
-    document.body.style.overflow = 'hidden';  // extra belt & suspenders
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.left = '0'
+    document.body.style.right = '0'
+    document.body.style.overflow = 'hidden' // extra belt & suspenders
   }
 
   function unlockScroll() {
     // restore styles
-    document.body.style.position = '';
-    document.body.style.top      = '';
-    document.body.style.left     = '';
-    document.body.style.right    = '';
-    document.body.style.overflow = '';
+    document.body.style.position = ''
+    document.body.style.top = ''
+    document.body.style.left = ''
+    document.body.style.right = ''
+    document.body.style.overflow = ''
 
     // pop back to where the user was
-    window.scrollTo(0, scrollY);
+    window.scrollTo(0, scrollY)
   }
   // end scroll locking
 
@@ -814,10 +885,10 @@ type GlobalState = {
       return
     }
 
-    switch(message.type) {
+    switch (message.type) {
       case ExtensionMessage.exportFailed:
         if (globalsRef === null) {
-          log.warn("how could we have no globals ref after export")
+          log.warn('how could we have no globals ref after export')
           return
         }
         showToast({
@@ -828,19 +899,19 @@ type GlobalState = {
         break
       case ExtensionMessage.exportSuccess:
         if (globalsRef === null) {
-          log.warn("how could we have no globals ref after export")
+          log.warn('how could we have no globals ref after export')
           return
         }
         globalsRef.annotations = []
         showToast({
           type: 'success',
           message: 'EXPORTED SUCCEEDED',
-          overlayId: globalsRef.overlayId
+          overlayId: globalsRef.overlayId,
         })
         break
       case ExtensionMessage.clean:
         if (globalsRef === null) {
-          log.warn("request for clean up but we have no global state")
+          log.warn('request for clean up but we have no global state')
           return
         }
         globalsRef.state = 'initial' // this will trigger a removal of all the decorations from the overlay
@@ -855,7 +926,9 @@ type GlobalState = {
         const overlay = document.querySelector('ui-labelling-overlay')
         if (overlay) {
           // TODO.  clean up here instead of running away
-          log.warn('request to run main but overlay already present on this page.')
+          log.warn(
+            'request to run main but overlay already present on this page.',
+          )
           return
         }
         globalsRef = main()

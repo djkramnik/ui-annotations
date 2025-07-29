@@ -11,7 +11,8 @@
     "build:server": "npm run -w ui-labelling-server build",
     "watch:server": "npm run -w ui-labelling-server watch",
     "start:server": "nodemon packages/server/dist/index.js",
-    "start:test-site": "http-server test-site"
+    "start:test-site": "http-server test-site",
+    "format": "prettier --write"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +24,7 @@
   ],
   "devDependencies": {
     "http-server": "^14.1.1",
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "prettier": "^3.6.2"
   }
 }
