@@ -2,6 +2,7 @@ import { AnnotationLabel, annotationLabels } from 'ui-labelling-shared'
 import { ExtensionMessage, SALIENT_VISUAL_PROPS } from './types'
 import {
   buildAnnotationForm,
+  buildColorLegend,
   buildForm,
   buildProjectionForm,
   getFormOverlay,
@@ -345,6 +346,17 @@ type GlobalState = {
     formOverlay.appendChild(projectionForm)
     overlay.appendChild(formOverlay)
 
+    // more soup for ya: annotation legend, to show up along with the removable annotations
+    // whenever annotation mode is toggled on
+    const legend = buildColorLegend(annotationLabels, {
+      position: 'absolute',
+      top: '12px',
+      right: '12px',
+      display: 'none',
+      pointerEvents: 'none',
+    })
+    overlay.appendChild(legend)
+
     globals.state = 'initial'
 
     // state independent keypress events that should always be active
@@ -352,9 +364,12 @@ type GlobalState = {
 
     // janky redux style state handling mega function
     function handleGlobalChange(key: keyof GlobalState, value: any) {
+      // we do not have a good way to cleanup the effects of the previous state change
+      // we should define a default state, and then make sure at the start of every side effect change we first
+      // return to the default state perhaps?
+
       switch (key) {
         case 'projections':
-          console.log('projections...', value)
           if (globals.state === 'projection' && Array.isArray(value)) {
             removeRects()
             value.forEach((v, index) => {
@@ -426,10 +441,12 @@ type GlobalState = {
           break
         case 'showAnnotations':
           log.info('show annotations handler', value)
+          legend.style.display = 'none'
           globals.annotations.forEach(({ id }) =>
             document.getElementById(id)?.remove(),
           )
           if (value) {
+            legend.style.display = 'initial'
             globals.annotations.forEach(({ id, ref, label }) => {
               const c = annotationLabels[label]
 
