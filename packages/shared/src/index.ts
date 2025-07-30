@@ -8,10 +8,10 @@ export enum AnnotationLabel {
 }
 
 export const annotationLabels: Record<AnnotationLabel, string> = {
-  button:       '#85a3a2',
-  link:         '#a3a28c',
-  logo:         '#92a38e',
-  heading:      '#a387a2',
-  copy:         '#a39487',
-  iconLocation: '#9a5252'
+  button:       '#a8d1d0',
+  link:         '#e3e39a',
+  logo:         '#b1d1b3',
+  heading:      '#e3b1e3',
+  copy:         '#e3d1b1',
+  iconLocation: '#e3a1a1',
 }

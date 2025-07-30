@@ -201,9 +201,9 @@ export function buildProjectionForm({
   buttonContainer.appendChild(percentDisplay)
 
   container.appendChild(document.createElement('hr'))
-  container.append(buttonContainer)
-  container.appendChild(document.createElement('hr'))
   container.append(buildLabelSelect())
+  container.appendChild(document.createElement('hr'))
+  container.append(buttonContainer)
 
   /* ---------- dynamic render ---------- */
   const renderDynamic = (value: ProjectionType): void => {
@@ -378,7 +378,11 @@ export function buildColorLegend(
 ): HTMLDivElement {
   // Card container
   const card = document.createElement('div')
-  Object.assign(card, containerStyles ?? {})
+
+  Object.entries((containerStyles ?? [])).forEach(([k, v]) => {
+    card.style[k as any] = v
+  })
+
   card.classList.add('legend')
 
   // Table with fixed layout and equal-width columns

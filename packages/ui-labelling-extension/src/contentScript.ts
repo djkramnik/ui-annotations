@@ -354,6 +354,7 @@ type GlobalState = {
       right: '12px',
       display: 'none',
       pointerEvents: 'none',
+      width: '200px'
     })
     overlay.appendChild(legend)
 
@@ -466,7 +467,7 @@ type GlobalState = {
                 styles: {
                   border: '2px solid ' + c,
                   backgroundColor: c,
-                  opacity: '0.6',
+                  opacity: '0.9',
                   zIndex: '2',
                 },
                 child: removeIcon,
