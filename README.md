@@ -14,7 +14,7 @@ This repo also includes a web server for storing annotations in local postgres i
   * unable to nav to 'Find A Store' on the starbucks.com page. Maybe this is due to the differently shaped nav criteria
   * improve the colours on the annotation dictionary
 
-  #### Gathering
+  #### Data The Gathering
 
   * Highly granular label list -- max accuracy
   * Broader yet still granular label list
