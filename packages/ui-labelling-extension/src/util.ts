@@ -38,10 +38,6 @@ export function isInViewport({
   );
 }
 
-function getLegitimizedChildren(parent: HTMLElement): HTMLElement[] {
-  return Array.from(parent.children).filter(el => el instanceof HTMLElement)
-}
-
 // does not return self
 export function getSibs(target: HTMLElement): HTMLElement[] {
   if (!target.parentElement) {
@@ -49,54 +45,6 @@ export function getSibs(target: HTMLElement): HTMLElement[] {
   }
   return getLegitimizedChildren(target.parentElement)
     .filter(el => el !== target)
-}
-
-
-// another version of this sits in contentScript but it has some non reusable shit in there
-// breadcrumbs saves the index of the element at each step so we may later
-// traverse down by the same path..
-function traverseUp({
-  origin,
-  distance,
-  breadcrumbs,
-}: {
-  origin: HTMLElement
-  distance: number
-  breadcrumbs?: number[]
-}): {
-  ancestor: HTMLElement | null
-  breadcrumbs?: number[]
- } {
-  if (distance <= 0) {
-    return { ancestor: origin, breadcrumbs }
-  }
-  if (!origin.parentElement) {
-    return { ancestor: null, breadcrumbs }
-  }
-  return traverseUp({
-    origin: origin.parentElement,
-    distance: distance - 1,
-    breadcrumbs: breadcrumbs
-      ? breadcrumbs.concat([getLegitimizedChildren(origin.parentElement).indexOf(origin)])
-      : undefined
-  })
-}
-
-function traverseDown({
-  origin,
-  indexes,
-}: {
-  origin: HTMLElement,
-  indexes: number[]
-}): HTMLElement | null {
-  if (indexes.length < 1) {
-    return origin
-  }
-  const next = getLegitimizedChildren(origin)[indexes[0]]
-  if (!next) {
-    return null
-  }
-  return traverseDown({ origin: next, indexes: indexes.slice(1) })
 }
 
 // excludes target from return array
@@ -160,4 +108,61 @@ export function splitArray<T>({
 
 export function snooze(ms?: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms ?? 16))
+}
+
+export function getBoundingBoxOfText(node: Text): DOMRect {
+  const range = document.createRange();
+  range.selectNodeContents(node);
+  return range.getBoundingClientRect();
+}
+
+function getLegitimizedChildren(parent: HTMLElement): HTMLElement[] {
+  return Array.from(parent.children).filter(el => el instanceof HTMLElement)
+}
+
+// another version of this sits in contentScript but it has some non reusable shit in there
+// breadcrumbs saves the index of the element at each step so we may later
+// traverse down by the same path..
+function traverseUp({
+  origin,
+  distance,
+  breadcrumbs,
+}: {
+  origin: HTMLElement
+  distance: number
+  breadcrumbs?: number[]
+}): {
+  ancestor: HTMLElement | null
+  breadcrumbs?: number[]
+ } {
+  if (distance <= 0) {
+    return { ancestor: origin, breadcrumbs }
+  }
+  if (!origin.parentElement) {
+    return { ancestor: null, breadcrumbs }
+  }
+  return traverseUp({
+    origin: origin.parentElement,
+    distance: distance - 1,
+    breadcrumbs: breadcrumbs
+      ? breadcrumbs.concat([getLegitimizedChildren(origin.parentElement).indexOf(origin)])
+      : undefined
+  })
+}
+
+function traverseDown({
+  origin,
+  indexes,
+}: {
+  origin: HTMLElement,
+  indexes: number[]
+}): HTMLElement | null {
+  if (indexes.length < 1) {
+    return origin
+  }
+  const next = getLegitimizedChildren(origin)[indexes[0]]
+  if (!next) {
+    return null
+  }
+  return traverseDown({ origin: next, indexes: indexes.slice(1) })
 }
