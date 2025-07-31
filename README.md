@@ -4,11 +4,13 @@ Primarily a chrome browser extension to help me quickly annotate UI elements on 
 This repo also includes a web server for storing annotations in local postgres instance, and a small frontend for viewing them.
 
 #### TODO
-
-  * innerText shenanigans.  If annotating a heading, I don't want the spacing around it just the text itself.  but for navigation purposes we should know we start from the element containing the innerText...
+  * if you submit in projection mode, show a confirm prompt.  if confirmed go forward, create the projections on the fly...
 
   #### Buggos / QOL
-
+  * projections cannot be removed
+  * shown annotations that cannot be toggled away (after removing one of them)
+  * when you have overlapping annotations, in the show annotation view you cannot delete annotations that are occluded by other annotations
+    * in show annotation view, have a list of the annotations.. with remove options there.. (holy shit)
   * the styling of the extension popup should be site style agnostic.
   * reddit countermeasure? (visibility:initial !important?)
   * unable to nav to 'Find A Store' on the starbucks.com page. Maybe this is due to the differently shaped nav criteria

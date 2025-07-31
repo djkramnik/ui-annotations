@@ -29,6 +29,7 @@ type GlobalState = {
   state: ExtensionState
   currEl: null | HTMLElement
   projections: null | HTMLElement[]
+  projectTextNode: boolean
   overlayId: string
   annotations: {
     id: string
@@ -56,6 +57,7 @@ type GlobalState = {
       rect: DOMRect
       label: AnnotationLabel
     }[] = []
+    let projectTextNode: boolean = false
     let projections: HTMLElement[] | null = null
     let currEl: HTMLElement | null = null
     let showAnnotations: boolean = false
@@ -67,25 +69,33 @@ type GlobalState = {
       currEl,
       showAnnotations,
       projections,
+      projectTextNode,
     }
+    Object.defineProperty(obj, 'projectTextNode', {
+      set: (value) => {
+        projectTextNode = value
+        cb('projectTextNode', value)
+      },
+      get: () => projectTextNode,
+    })
     Object.defineProperty(obj, 'projections', {
       set: (value) => {
-        cb('projections', value)
         projections = value
+        cb('projections', value)
       },
       get: () => projections,
     })
     Object.defineProperty(obj, 'state', {
       set: (value) => {
-        cb('state', value)
         state = value
+        cb('state', value)
       },
       get: () => state,
     })
     Object.defineProperty(obj, 'annotations', {
       set: (value) => {
-        cb('annotations', value)
         annotations = value
+        cb('annotations', value)
       },
       get: () => annotations,
     })
@@ -94,15 +104,15 @@ type GlobalState = {
     })
     Object.defineProperty(obj, 'currEl', {
       set: (value) => {
-        cb('currEl', value)
         currEl = value
+        cb('currEl', value)
       },
       get: () => currEl,
     })
     Object.defineProperty(obj, 'showAnnotations', {
       set: (value) => {
-        cb('showAnnotations', value)
         showAnnotations = value
+        cb('showAnnotations', value)
       },
       get: () => showAnnotations,
     })
@@ -152,6 +162,9 @@ type GlobalState = {
     const projectionForm = buildForm({
       heading: 'Project Element',
       children: buildProjectionForm({
+        handleToggleProjectText: (checked) => {
+          globals.projectTextNode = checked
+        },
         handleCancel: () => {
           globals.state = 'initial'
         },
@@ -266,11 +279,14 @@ type GlobalState = {
       }),
       handleSubmit: (event) => {
         event.preventDefault()
-        if (!Array.isArray(globals.projections) || globals.projections.length < 1) {
+        if (
+          !Array.isArray(globals.projections) ||
+          globals.projections.length < 1
+        ) {
           showToast({
             type: 'error',
             message: 'No projections to submit!',
-            overlayId: globals.overlayId
+            overlayId: globals.overlayId,
           })
           return
         }
@@ -284,25 +300,30 @@ type GlobalState = {
           showToast({
             type: 'error',
             message: 'No label selected',
-            overlayId: globals.overlayId
+            overlayId: globals.overlayId,
           })
           return
         }
 
-        const newAnnotations = globals.projections.map(p => ({
-          id: String(new Date().getTime()),
-          ref: p,
-          rect: p.getBoundingClientRect(),
-          label: annotationSelect.value as AnnotationLabel,
-        })).concat(globals.currEl !== null
-          ? {
+        const newAnnotations = globals.projections
+          .map((p) => ({
             id: String(new Date().getTime()),
-            ref: globals.currEl,
-            rect: globals.currEl.getBoundingClientRect(),
+            ref: p,
+            rect: p.getBoundingClientRect(),
             label: annotationSelect.value as AnnotationLabel,
-          }
-          : []
-        )
+            useTextNode: globals.projectTextNode
+          }))
+          .concat(
+            globals.currEl !== null
+              ? {
+                  id: String(new Date().getTime()),
+                  ref: globals.currEl,
+                  rect: globals.currEl.getBoundingClientRect(),
+                  label: annotationSelect.value as AnnotationLabel,
+                  useTextNode: globals.projectTextNode
+                }
+              : [],
+          )
 
         globals.annotations = globals.annotations.concat(newAnnotations)
         globals.state = 'initial'
@@ -332,7 +353,9 @@ type GlobalState = {
         }
 
         if (globals.currEl !== null) {
-          const useTextNode = (form.querySelector('#usetextnode_cb') as HTMLInputElement).checked === true
+          const useTextNode =
+            (form.querySelector('#usetextnode_cb') as HTMLInputElement)
+              .checked === true
           globals.annotations = globals.annotations.concat({
             id: String(new Date().getTime()),
             ref: globals.currEl,
@@ -358,7 +381,7 @@ type GlobalState = {
       right: '12px',
       display: 'none',
       pointerEvents: 'none',
-      width: '200px'
+      width: '200px',
     })
     overlay.appendChild(legend)
 
@@ -372,41 +395,42 @@ type GlobalState = {
       // we do not have a good way to cleanup the effects of the previous state change
       // we should define a default state, and then make sure at the start of every side effect change we first
       // return to the default state perhaps?
-
       switch (key) {
+        case 'projectTextNode':
+          if (globals.state !== 'projection') {
+            return
+          }
+          // if this toggles *via user action* we should be in projection mode.
+          // we want to redraw all the projections if there are any, so we will just update the ref
+          // changing nothing else
+          if (!Array.isArray(globals.projections)) {
+            return
+          }
+          // this will trigger the case directly below us
+          handleGlobalChange('projections', globals.projections)
+          break
         case 'projections':
           if (globals.state === 'projection' && Array.isArray(value)) {
             removeRects()
             value.forEach((v, index) => {
               drawRect({
+                useTextNode: globals.projectTextNode,
                 element: v as HTMLElement,
                 parent: overlay,
-                child: getRemoveIcon((event) => {
-                  if (!globals.projections) {
-                    log.error(
-                      'impossible state error within projection removal callback',
-                    )
-                    return
-                  }
-                  // seems flaky but it should work
-                  globals.projections = globals.projections.filter(
-                    (p, pIndex) => {
-                      return index !== pIndex
-                    },
-                  )
-                }),
               })
             })
+            if (globals.currEl) {
+              drawRect({
+                useTextNode: globals.projectTextNode,
+                element: globals.currEl,
+                parent: overlay,
+                styles: {
+                  border: '2px solid blue',
+                },
+              })
+            }
           }
-          if (globals.currEl) {
-            drawRect({
-              element: globals.currEl,
-              parent: overlay,
-              styles: {
-                border: '2px solid blue',
-              },
-            })
-          }
+
           log.info('update to projections', value)
           break
         case 'annotations':
@@ -432,6 +456,8 @@ type GlobalState = {
 
           if (value === 'initial') {
             removeRects()
+            globals.projectTextNode = false
+            ;(projectionForm.querySelector('#usetextnodeprojection_cb') as HTMLInputElement).checked = false // beyond good and evil
             overlay.addEventListener('mousedown', _handleMouseWrap)
             log.info('added mousedown listener')
           } else if (value === 'projection') {
@@ -447,25 +473,24 @@ type GlobalState = {
         case 'showAnnotations':
           log.info('show annotations handler', value)
           legend.style.display = 'none'
-          globals.annotations.forEach(({ id }) =>
-            document.getElementById(id)?.remove(),
-          )
           if (value) {
             legend.style.display = 'initial'
-            globals.annotations.forEach(({ id, ref, label, useTextNode }) => {
+            console.log('globals.annotations??', globals.annotations)
+            globals.annotations.forEach((anno) => {
+              const { id, ref, label, useTextNode } = anno
               const c = annotationLabels[label]
 
               const removeIcon = getRemoveIcon((event) => {
                 event.stopPropagation()
                 // filter annotation out of the global state var
                 globals.annotations = globals.annotations.filter(
-                  (a) => a.id !== id,
+                  (a) => a !== anno
                 )
                 // fragile
                 removeIcon.parentElement?.remove()
               })
               drawRect({
-                id,
+                id: 'annotation_' + id,
                 element: ref,
                 parent: overlay,
                 styles: {
@@ -475,9 +500,11 @@ type GlobalState = {
                   zIndex: '2',
                 },
                 child: removeIcon,
-                useTextNode
+                useTextNode,
               })
             })
+          } else {
+            removeRects('[id^="annotation_"]')
           }
           break
         default:
@@ -566,7 +593,7 @@ type GlobalState = {
       styles,
       id,
       child,
-      useTextNode
+      useTextNode,
     }: {
       element: HTMLElement
       parent: HTMLElement

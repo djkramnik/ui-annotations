@@ -4,7 +4,7 @@ import { splitArray } from './util'
 
 const trashCanUrl = chrome.runtime.getURL('/assets/trash-can.svg')
 
-export function getButton(primary?: boolean) {
+export function getButton(label: string, primary?: boolean) {
   const button = document.createElement('button')
   button.style.outline = 'none'
   button.style.border = 'none'
@@ -15,6 +15,7 @@ export function getButton(primary?: boolean) {
   button.style.cursor = 'pointer'
   button.style.backgroundColor = primary ? 'green' : '#A0C6FC'
   button.style.color = 'white'
+  button.textContent = label
   return button
 }
 
@@ -101,19 +102,16 @@ export function buildAnnotationForm({
   container.appendChild(document.createElement('hr'))
   container.appendChild(buttonContainer)
 
-  const submitButton = getButton(true)
-  submitButton.innerText = 'submit'
+  const submitButton = getButton('submit', true)
   submitButton.setAttribute('type', 'submit')
   buttonContainer.appendChild(submitButton)
 
-  const cancelButton = getButton()
-  cancelButton.innerText = 'cancel'
+  const cancelButton = getButton('cancel')
   cancelButton.setAttribute('type', 'button')
   cancelButton.addEventListener('click', handleCancel)
   buttonContainer.appendChild(cancelButton)
 
-  const projectionButton = getButton()
-  projectionButton.innerText = 'projection'
+  const projectionButton = getButton('projection')
   projectionButton.setAttribute('type', 'button')
   projectionButton.addEventListener('click', handleProjection)
   buttonContainer.appendChild(projectionButton)
@@ -125,9 +123,11 @@ export function buildAnnotationForm({
 export function buildProjectionForm({
   handleCancel,
   handlePreview,
+  handleToggleProjectText,
 }: {
   handlePreview: () => void
   handleCancel: () => void
+  handleToggleProjectText: (checked: boolean) => void
 }): DocumentFragment {
   const frag: DocumentFragment = document.createDocumentFragment()
   const container: HTMLDivElement = document.createElement('div')
@@ -181,22 +181,19 @@ export function buildProjectionForm({
   buttonContainer.style.display = 'flex'
   buttonContainer.style.gap = '8px'
 
-  const previewButton = getButton(true)
-  previewButton.innerText = 'preview'
+  const previewButton = getButton('preview', true)
   previewButton.setAttribute('type', 'button')
   previewButton.addEventListener('click', handlePreview)
   buttonContainer.appendChild(previewButton)
 
-  const submitBtn: HTMLButtonElement = getButton(true)
+  const submitBtn: HTMLButtonElement = getButton('submit', true)
   submitBtn.setAttribute('id', 'submitBtn')
   submitBtn.type = 'submit'
-  submitBtn.textContent = 'Submit'
   buttonContainer.appendChild(submitBtn)
 
-  const cancelBtn: HTMLButtonElement = getButton()
+  const cancelBtn: HTMLButtonElement = getButton('cancel')
   cancelBtn.setAttribute('id', 'cancelBtn')
   cancelBtn.type = 'button'
-  cancelBtn.textContent = 'Cancel'
   cancelBtn.addEventListener('click', handleCancel)
   buttonContainer.appendChild(cancelBtn)
 
@@ -206,7 +203,22 @@ export function buildProjectionForm({
   buttonContainer.appendChild(percentDisplay)
 
   container.appendChild(document.createElement('hr'))
-  container.append(buildLabelSelect())
+
+  // misc section
+  const misc = document.createElement('div')
+  misc.style.display = 'flex'
+  misc.style.gap = '8px'
+  misc.appendChild(buildLabelSelect())
+  const toggleTextNode = buildCheckboxInput({
+    name: 'usetextnodeprojection_cb',
+    label: 'Toggle Text',
+    checked: false
+  })
+  toggleTextNode.addEventListener('change',
+    (e) => handleToggleProjectText(((e.target as HTMLInputElement)?.checked)))
+  misc.appendChild(toggleTextNode)
+  container.append(misc)
+
   container.appendChild(document.createElement('hr'))
   container.append(buttonContainer)
 
@@ -285,13 +297,11 @@ function buildProjectionCheckboxGroup(
   })
 
   // action buttons
-  const checkAllBtn = getButton()
+  const checkAllBtn = getButton('Check All')
   checkAllBtn.type = 'button'
-  checkAllBtn.textContent = 'Check All'
 
-  const clearAllBtn = getButton()
+  const clearAllBtn = getButton('Clear All')
   clearAllBtn.type = 'button'
-  clearAllBtn.textContent = 'Clear All'
 
   // wire up
   checkAllBtn.addEventListener('click', () => {
