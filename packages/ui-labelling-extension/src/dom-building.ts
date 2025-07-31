@@ -90,6 +90,11 @@ export function buildAnnotationForm({
   const annotationSelect = buildLabelSelect()
   container.appendChild(annotationSelect)
 
+  container.appendChild(buildCheckboxInput({
+    name: 'usetextnode_cb',
+    label: 'Shrink box to Text Node?'
+  }))
+
   const buttonContainer = document.createElement('div')
   buttonContainer.style.display = 'flex'
   buttonContainer.style.gap = '8px'

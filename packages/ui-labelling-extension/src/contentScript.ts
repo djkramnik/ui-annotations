@@ -8,7 +8,7 @@ import {
   getFormOverlay,
   getRemoveIcon,
 } from './dom-building'
-import { getCousins, getSibs, isInViewport } from './util'
+import { getBoundingBoxOfText, getCousins, getSibs, isInViewport } from './util'
 import { findSimilarUiAsync } from './find-similar-ui'
 
 type ExtensionState =
@@ -35,6 +35,7 @@ type GlobalState = {
     ref: HTMLElement
     rect: DOMRect
     label: AnnotationLabel
+    useTextNode?: boolean
   }[]
 }
 ;(function () {
@@ -321,6 +322,7 @@ type GlobalState = {
       }),
       handleSubmit: (event) => {
         event.preventDefault()
+        const form = event.target as HTMLFormElement
         const annotationSelect = (
           event.target as HTMLFormElement
         ).querySelector('select')!
@@ -330,11 +332,13 @@ type GlobalState = {
         }
 
         if (globals.currEl !== null) {
+          const useTextNode = (form.querySelector('#usetextnode_cb') as HTMLInputElement).checked === true
           globals.annotations = globals.annotations.concat({
             id: String(new Date().getTime()),
             ref: globals.currEl,
             rect: globals.currEl.getBoundingClientRect(),
             label: annotationSelect.value as AnnotationLabel,
+            useTextNode,
           })
         }
 
@@ -448,7 +452,7 @@ type GlobalState = {
           )
           if (value) {
             legend.style.display = 'initial'
-            globals.annotations.forEach(({ id, ref, label }) => {
+            globals.annotations.forEach(({ id, ref, label, useTextNode }) => {
               const c = annotationLabels[label]
 
               const removeIcon = getRemoveIcon((event) => {
@@ -471,6 +475,7 @@ type GlobalState = {
                   zIndex: '2',
                 },
                 child: removeIcon,
+                useTextNode
               })
             })
           }
@@ -561,15 +566,21 @@ type GlobalState = {
       styles,
       id,
       child,
+      useTextNode
     }: {
       element: HTMLElement
       parent: HTMLElement
       styles?: Partial<Record<keyof CSSStyleDeclaration, string>>
       id?: string
       child?: HTMLElement
+      useTextNode?: boolean
     }) {
       const annotation = document.createElement('div')
-      const bbox = element.getBoundingClientRect()
+      const bbox = useTextNode
+        ? getBoundingBoxOfText(element)
+        : element.getBoundingClientRect()
+
+      element.getBoundingClientRect()
       const { top, left, width, height } = bbox
 
       annotation.setAttribute(

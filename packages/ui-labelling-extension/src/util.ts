@@ -110,7 +110,12 @@ export function snooze(ms?: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms ?? 16))
 }
 
-export function getBoundingBoxOfText(node: Text): DOMRect {
+export function getBoundingBoxOfText(element: HTMLElement): DOMRect {
+  const node = Array.from(element.childNodes).find(n => n.nodeType === Node.TEXT_NODE)
+  if (!node) {
+    console.warn("could not find text node within element.  falling back to element bbox", element)
+    return element.getBoundingClientRect()
+  }
   const range = document.createRange();
   range.selectNodeContents(node);
   return range.getBoundingClientRect();
