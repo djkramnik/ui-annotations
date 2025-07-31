@@ -121,6 +121,10 @@ export function getBoundingBoxOfText(element: HTMLElement): DOMRect {
   return range.getBoundingClientRect();
 }
 
+export function uuidv4() {
+  return crypto.randomUUID()
+}
+
 function getLegitimizedChildren(parent: HTMLElement): HTMLElement[] {
   return Array.from(parent.children).filter(el => el instanceof HTMLElement)
 }

@@ -7,8 +7,6 @@ This repo also includes a web server for storing annotations in local postgres i
   * if you submit in projection mode, show a confirm prompt.  if confirmed go forward, create the projections on the fly...
 
   #### Buggos / QOL
-  * projections cannot be removed
-  * shown annotations that cannot be toggled away (after removing one of them)
   * when you have overlapping annotations, in the show annotation view you cannot delete annotations that are occluded by other annotations
     * in show annotation view, have a list of the annotations.. with remove options there.. (holy shit)
   * the styling of the extension popup should be site style agnostic.

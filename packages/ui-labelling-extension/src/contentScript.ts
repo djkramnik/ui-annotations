@@ -8,7 +8,7 @@ import {
   getFormOverlay,
   getRemoveIcon,
 } from './dom-building'
-import { getBoundingBoxOfText, getCousins, getSibs, isInViewport } from './util'
+import { getBoundingBoxOfText, getCousins, getSibs, isInViewport, uuidv4 } from './util'
 import { findSimilarUiAsync } from './find-similar-ui'
 
 type ExtensionState =
@@ -307,7 +307,7 @@ type GlobalState = {
 
         const newAnnotations = globals.projections
           .map((p) => ({
-            id: String(new Date().getTime()),
+            id: uuidv4(),
             ref: p,
             rect: p.getBoundingClientRect(),
             label: annotationSelect.value as AnnotationLabel,
@@ -316,7 +316,7 @@ type GlobalState = {
           .concat(
             globals.currEl !== null
               ? {
-                  id: String(new Date().getTime()),
+                  id: uuidv4(),
                   ref: globals.currEl,
                   rect: globals.currEl.getBoundingClientRect(),
                   label: annotationSelect.value as AnnotationLabel,
@@ -357,7 +357,7 @@ type GlobalState = {
             (form.querySelector('#usetextnode_cb') as HTMLInputElement)
               .checked === true
           globals.annotations = globals.annotations.concat({
-            id: String(new Date().getTime()),
+            id: uuidv4(),
             ref: globals.currEl,
             rect: globals.currEl.getBoundingClientRect(),
             label: annotationSelect.value as AnnotationLabel,
