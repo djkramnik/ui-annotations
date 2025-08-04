@@ -4,8 +4,6 @@ Primarily a chrome browser extension to help me quickly annotate UI elements on 
 This repo also includes a web server for storing annotations in local postgres instance, and a small frontend for viewing them.
 
 #### TODO
-  * if you submit in projection mode, show a confirm prompt.  if confirmed go forward, create the projections on the fly...
-
   #### Buggos / QOL
   * when you have overlapping annotations, in the show annotation view you cannot delete annotations that are occluded by other annotations
     * in show annotation view, have a list of the annotations.. with remove options there.. (holy shit)

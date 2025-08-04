@@ -8,7 +8,13 @@ import {
   getFormOverlay,
   getRemoveIcon,
 } from './dom-building'
-import { getBoundingBoxOfText, getCousins, getSibs, isInViewport, uuidv4 } from './util'
+import {
+  getBoundingBoxOfText,
+  getCousins,
+  getSibs,
+  isInViewport,
+  uuidv4,
+} from './util'
 import { findSimilarUiAsync } from './find-similar-ui'
 
 type ExtensionState =
@@ -168,127 +174,27 @@ type GlobalState = {
         handleCancel: () => {
           globals.state = 'initial'
         },
-        handlePreview: () => {
-          const form = projectionForm
-          const submitBtn = form.querySelector(
-            '#submitBtn',
-          ) as HTMLButtonElement
-          const cancelBtn = form.querySelector(
-            '#cancelBtn',
-          ) as HTMLButtonElement
-          const percentDisplay = form.querySelector(
-            '#percentDisplay',
-          ) as HTMLButtonElement
-          submitBtn.disabled = true
-          cancelBtn.disabled = true
-
-          const formData = Object.fromEntries(new FormData(form).entries())
-          if (!globals.currEl) {
-            log.error('somehow we are projecting but have no currEl ref')
-            return
-          }
-          // console.log('projection type', formData['projectionType'])
-          // console.log('max', formData['max'])
-          SALIENT_VISUAL_PROPS.forEach((prop) => {
-            console.log('visual style', prop, formData[`visual_${prop}`])
-          })
-          // console.log('distance', formData['distance'])
-          const projectionType = formData['projectionType']
-          const distance = parseInt(String(formData['distance']), 10)
-          const max = parseInt(String(formData['max']), 10)
-          let task: ((el: HTMLElement) => Promise<HTMLElement[]>) | null = null
-
-          switch (projectionType) {
-            case 'siblings':
-              task = (el: HTMLElement) => {
-                const sibs = getSibs(el)
-                console.log('siblings??', sibs)
-                return Promise.resolve(sibs)
-              }
-              break
-            case 'cousins':
-              task = (el: HTMLElement) => {
-                const cousins = getCousins({
-                  target: el,
-                  distance: Number.isNaN(distance) ? 0 : distance,
-                })
-                console.log('cousins??', cousins)
-                return Promise.resolve(cousins)
-              }
-              break
-            case 'visual':
-              const props = {
-                matchTag: formData['match_tag'] === 'on',
-                matchClass: formData['match_class'] === 'on',
-                exact: formData['match_exact'] === 'on',
-                max: Number.isNaN(max) ? 10 : Math.max(1, max),
-                keys: SALIENT_VISUAL_PROPS.filter((s) => {
-                  return formData[`visual_${s}`] === s
-                }),
-              }
-              task = async (el: HTMLElement) => {
-                for await (const update of findSimilarUiAsync(props, el)) {
-                  if (update.done) {
-                    return update.results
-                  }
-                  log.info('progress: ', update.percentComplete)
-                  percentDisplay.innerText = update.percentComplete + '%'
-                }
-                return []
-              }
-              break
-            default:
-              log.warn('unsupported projection type?', projectionType)
-              break
-          }
-
-          if (!task) {
-            log.info('no projection task!')
-            return
-          }
-          submitBtn.style.backgroundColor = '#eee'
-          cancelBtn.style.backgroundColor = '#eee'
-
-          // disable the submit button... finally restore the submit button
-          task(globals.currEl)
-            .then((results: HTMLElement[]) => {
-              globals.projections = results
-                .filter((el) => isInViewport({ target: el }))
-                .slice(0, Number.isNaN(max) ? undefined : max)
-            })
-            .finally(() => {
-              submitBtn.disabled = false
-              cancelBtn.disabled = false
-              submitBtn.style.backgroundColor = 'green'
-              cancelBtn.style.backgroundColor = '#A0C6FC'
-              percentDisplay.innerText = '0%'
-            })
-
-          // hide form until key is pressed
-          form.style.display = 'none'
-          showToast({
-            type: 'success',
-            message: 'Preview Mode. Press any key to end preview',
-            overlayId: globals.overlayId,
-          })
-          window.addEventListener('keypress', function endPreview() {
-            form.style.display = 'initial'
-            window.removeEventListener('keypress', endPreview)
-          })
-        },
+        handlePreview: () => createProjections(projectionForm),
       }),
-      handleSubmit: (event) => {
+      handleSubmit: async (event) => {
         event.preventDefault()
+        const submitBtn = projectionForm.querySelector(
+          '#submitBtn',
+        ) as HTMLButtonElement
+        const cancelBtn = projectionForm.querySelector(
+          '#cancelBtn',
+        ) as HTMLButtonElement
+        submitBtn.disabled = true
+        cancelBtn.disabled = true
         if (
           !Array.isArray(globals.projections) ||
           globals.projections.length < 1
         ) {
-          showToast({
-            type: 'error',
-            message: 'No projections to submit!',
-            overlayId: globals.overlayId,
-          })
-          return
+          const proceed = window.confirm('Continue without previewing?')
+          if (!proceed) {
+            return
+          }
+          await createProjections(projectionForm, true /**submitting */)
         }
 
         const annotationSelect = (
@@ -305,13 +211,13 @@ type GlobalState = {
           return
         }
 
-        const newAnnotations = globals.projections
+        const newAnnotations = (globals.projections ?? [])
           .map((p) => ({
             id: uuidv4(),
             ref: p,
             rect: p.getBoundingClientRect(),
             label: annotationSelect.value as AnnotationLabel,
-            useTextNode: globals.projectTextNode
+            useTextNode: globals.projectTextNode,
           }))
           .concat(
             globals.currEl !== null
@@ -320,12 +226,14 @@ type GlobalState = {
                   ref: globals.currEl,
                   rect: globals.currEl.getBoundingClientRect(),
                   label: annotationSelect.value as AnnotationLabel,
-                  useTextNode: globals.projectTextNode
+                  useTextNode: globals.projectTextNode,
                 }
               : [],
           )
 
         globals.annotations = globals.annotations.concat(newAnnotations)
+        submitBtn.disabled = false
+        cancelBtn.disabled = false
         globals.state = 'initial'
       },
     })
@@ -456,8 +364,13 @@ type GlobalState = {
 
           if (value === 'initial') {
             removeRects()
+            globals.projections = []
             globals.projectTextNode = false
-            ;(projectionForm.querySelector('#usetextnodeprojection_cb') as HTMLInputElement).checked = false // beyond good and evil
+            ;(
+              projectionForm.querySelector(
+                '#usetextnodeprojection_cb',
+              ) as HTMLInputElement
+            ).checked = false // beyond good and evil
             overlay.addEventListener('mousedown', _handleMouseWrap)
             log.info('added mousedown listener')
           } else if (value === 'projection') {
@@ -484,7 +397,7 @@ type GlobalState = {
                 event.stopPropagation()
                 // filter annotation out of the global state var
                 globals.annotations = globals.annotations.filter(
-                  (a) => a !== anno
+                  (a) => a !== anno,
                 )
                 // fragile
                 removeIcon.parentElement?.remove()
@@ -513,6 +426,112 @@ type GlobalState = {
     }
 
     // CALLBACK SOUP
+
+    function createProjections(form: HTMLFormElement, submitting?: boolean) {
+      const submitBtn = form.querySelector('#submitBtn') as HTMLButtonElement
+      const cancelBtn = form.querySelector('#cancelBtn') as HTMLButtonElement
+      const percentDisplay = form.querySelector(
+        '#percentDisplay',
+      ) as HTMLButtonElement
+      submitBtn.disabled = true
+      cancelBtn.disabled = true
+
+      const formData = Object.fromEntries(new FormData(form).entries())
+      if (!globals.currEl) {
+        log.error('somehow we are projecting but have no currEl ref')
+        return
+      }
+      // console.log('projection type', formData['projectionType'])
+      // console.log('max', formData['max'])
+      SALIENT_VISUAL_PROPS.forEach((prop) => {
+        console.log('visual style', prop, formData[`visual_${prop}`])
+      })
+      // console.log('distance', formData['distance'])
+      const projectionType = formData['projectionType']
+      const distance = parseInt(String(formData['distance']), 10)
+      const max = parseInt(String(formData['max']), 10)
+      let task: ((el: HTMLElement) => Promise<HTMLElement[]>) | null = null
+
+      switch (projectionType) {
+        case 'siblings':
+          task = (el: HTMLElement) => {
+            const sibs = getSibs(el)
+            console.log('siblings??', sibs)
+            return Promise.resolve(sibs)
+          }
+          break
+        case 'cousins':
+          task = (el: HTMLElement) => {
+            const cousins = getCousins({
+              target: el,
+              distance: Number.isNaN(distance) ? 0 : distance,
+            })
+            console.log('cousins??', cousins)
+            return Promise.resolve(cousins)
+          }
+          break
+        case 'visual':
+          const props = {
+            matchTag: formData['match_tag'] === 'on',
+            matchClass: formData['match_class'] === 'on',
+            exact: formData['match_exact'] === 'on',
+            max: Number.isNaN(max) ? 10 : Math.max(1, max),
+            keys: SALIENT_VISUAL_PROPS.filter((s) => {
+              return formData[`visual_${s}`] === s
+            }),
+          }
+          task = async (el: HTMLElement) => {
+            for await (const update of findSimilarUiAsync(props, el)) {
+              if (update.done) {
+                return update.results
+              }
+              log.info('progress: ', update.percentComplete)
+              percentDisplay.innerText = update.percentComplete + '%'
+            }
+            return []
+          }
+          break
+        default:
+          log.warn('unsupported projection type?', projectionType)
+          break
+      }
+
+      if (!task) {
+        log.info('no projection task!')
+        return
+      }
+      submitBtn.style.backgroundColor = '#eee'
+      cancelBtn.style.backgroundColor = '#eee'
+
+      // disable the submit button... finally restore the submit button
+      return task(globals.currEl)
+        .then((results: HTMLElement[]) => {
+          globals.projections = results
+            .filter((el) => isInViewport({ target: el }))
+            .slice(0, Number.isNaN(max) ? undefined : max)
+
+          if (!submitting) {
+            // hide form until key is pressed
+            form.style.display = 'none'
+            showToast({
+              type: 'success',
+              message: 'Preview Mode. Press any key to end preview',
+              overlayId: globals.overlayId,
+            })
+            window.addEventListener('keypress', function endPreview() {
+              form.style.display = 'initial'
+              window.removeEventListener('keypress', endPreview)
+            })
+          }
+        })
+        .finally(() => {
+          submitBtn.disabled = false
+          cancelBtn.disabled = false
+          submitBtn.style.backgroundColor = 'green'
+          cancelBtn.style.backgroundColor = '#A0C6FC'
+          percentDisplay.innerText = '0%'
+        })
+    }
 
     function showConfirmationPopup() {
       formOverlay.style.display = 'flex'
