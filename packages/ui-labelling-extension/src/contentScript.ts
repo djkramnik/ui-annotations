@@ -1,5 +1,13 @@
 import { AnnotationLabel, annotationLabels } from 'ui-labelling-shared'
-import { ExtensionMessage, SALIENT_VISUAL_PROPS } from './types'
+import {
+  _GlobalState,
+  ExtensionMessage,
+  GlobalState,
+  log,
+  overlayId,
+  SALIENT_VISUAL_PROPS,
+  StorageKeys,
+} from './types'
 import {
   buildAnnotationForm,
   buildColorLegend,
@@ -16,118 +24,9 @@ import {
   uuidv4,
 } from './util'
 import { findSimilarUiAsync } from './find-similar-ui'
-
-type ExtensionState =
-  | 'dormant'
-  | 'initial'
-  | 'navigation'
-  | 'confirmation'
-  | 'projection'
-
-enum StorageKeys {
-  annotations = 'annotations',
-  screenshot = 'screenshot',
-  meta = 'meta',
-}
-
-type GlobalState = {
-  showAnnotations: boolean
-  state: ExtensionState
-  currEl: null | HTMLElement
-  projections: null | HTMLElement[]
-  projectTextNode: boolean
-  overlayId: string
-  annotations: {
-    id: string
-    ref: HTMLElement
-    rect: DOMRect
-    label: AnnotationLabel
-    useTextNode?: boolean
-  }[]
-}
 ;(function () {
-  const logPrefix = '[UI-LABELLER] '
-  const overlayId = 'ui-labelling-overlay'
-
-  const log = {
-    warn: (...args: any[]) => console.warn(logPrefix, ...args),
-    info: (...args: any[]) => console.log(logPrefix, ...args),
-    error: (...args: any[]) => console.error(logPrefix, ...args),
-  }
-
-  function GlobalState(cb: (key: keyof GlobalState, value: any) => void) {
-    let state: ExtensionState = 'dormant'
-    let annotations: {
-      id: string
-      ref: HTMLElement
-      rect: DOMRect
-      label: AnnotationLabel
-    }[] = []
-    let projectTextNode: boolean = false
-    let projections: HTMLElement[] | null = null
-    let currEl: HTMLElement | null = null
-    let showAnnotations: boolean = false
-
-    const obj: GlobalState = {
-      state,
-      annotations,
-      overlayId,
-      currEl,
-      showAnnotations,
-      projections,
-      projectTextNode,
-    }
-    Object.defineProperty(obj, 'projectTextNode', {
-      set: (value) => {
-        projectTextNode = value
-        cb('projectTextNode', value)
-      },
-      get: () => projectTextNode,
-    })
-    Object.defineProperty(obj, 'projections', {
-      set: (value) => {
-        projections = value
-        cb('projections', value)
-      },
-      get: () => projections,
-    })
-    Object.defineProperty(obj, 'state', {
-      set: (value) => {
-        state = value
-        cb('state', value)
-      },
-      get: () => state,
-    })
-    Object.defineProperty(obj, 'annotations', {
-      set: (value) => {
-        annotations = value
-        cb('annotations', value)
-      },
-      get: () => annotations,
-    })
-    Object.defineProperty(obj, 'overlayId', {
-      get: () => overlayId,
-    })
-    Object.defineProperty(obj, 'currEl', {
-      set: (value) => {
-        currEl = value
-        cb('currEl', value)
-      },
-      get: () => currEl,
-    })
-    Object.defineProperty(obj, 'showAnnotations', {
-      set: (value) => {
-        showAnnotations = value
-        cb('showAnnotations', value)
-      },
-      get: () => showAnnotations,
-    })
-
-    return obj
-  }
-
   function main() {
-    const globals = GlobalState(handleGlobalChange)
+    const globals = _GlobalState(handleGlobalChange)
 
     chrome.storage.local.set({
       [StorageKeys.meta]: {

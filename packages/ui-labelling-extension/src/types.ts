@@ -1,10 +1,12 @@
+import { AnnotationLabel } from 'ui-labelling-shared'
+
 export enum ExtensionMessage {
   startMain = 'startMain',
   turnOffExtension = 'turnOffExtension',
   clean = 'clean',
   exportSuccess = 'exportSuccess',
   exportFailed = 'exportFailed',
-  clearAnnotations = 'clearAnnotations'
+  clearAnnotations = 'clearAnnotations',
 }
 
 export const SALIENT_VISUAL_PROPS: readonly string[] = [
@@ -33,8 +35,8 @@ export const SALIENT_VISUAL_PROPS: readonly string[] = [
   'box-shadow',
   'cursor',
   'list-style-type',
-  'list-style-image'
-] as const;
+  'list-style-image',
+] as const
 
 export type SimilarUiOptions = {
   matchTag?: boolean
@@ -45,5 +47,113 @@ export type SimilarUiOptions = {
   keys: string[]
 }
 
-export type ProjectionType =
-  | 'siblings' | 'cousins' | 'visual'
+export type ProjectionType = 'siblings' | 'cousins' | 'visual'
+
+export type ExtensionState =
+  | 'dormant'
+  | 'initial'
+  | 'navigation'
+  | 'confirmation'
+  | 'projection'
+
+export enum StorageKeys {
+  annotations = 'annotations',
+  screenshot = 'screenshot',
+  meta = 'meta',
+}
+
+export type GlobalState = {
+  showAnnotations: boolean
+  state: ExtensionState
+  currEl: null | HTMLElement
+  projections: null | HTMLElement[]
+  projectTextNode: boolean
+  overlayId: string
+  annotations: {
+    id: string
+    ref: HTMLElement
+    rect: DOMRect
+    label: AnnotationLabel
+    useTextNode?: boolean
+  }[]
+}
+
+export const logPrefix = '[UI-LABELLER] '
+export const overlayId = 'ui-labelling-overlay'
+
+export const log = {
+  warn: (...args: any[]) => console.warn(logPrefix, ...args),
+  info: (...args: any[]) => console.log(logPrefix, ...args),
+  error: (...args: any[]) => console.error(logPrefix, ...args),
+}
+
+export function _GlobalState(cb: (key: keyof GlobalState, value: any) => void) {
+  let state: ExtensionState = 'dormant'
+  let annotations: {
+    id: string
+    ref: HTMLElement
+    rect: DOMRect
+    label: AnnotationLabel
+  }[] = []
+  let projectTextNode: boolean = false
+  let projections: HTMLElement[] | null = null
+  let currEl: HTMLElement | null = null
+  let showAnnotations: boolean = false
+
+  const obj: GlobalState = {
+    state,
+    annotations,
+    overlayId,
+    currEl,
+    showAnnotations,
+    projections,
+    projectTextNode,
+  }
+  Object.defineProperty(obj, 'projectTextNode', {
+    set: (value) => {
+      projectTextNode = value
+      cb('projectTextNode', value)
+    },
+    get: () => projectTextNode,
+  })
+  Object.defineProperty(obj, 'projections', {
+    set: (value) => {
+      projections = value
+      cb('projections', value)
+    },
+    get: () => projections,
+  })
+  Object.defineProperty(obj, 'state', {
+    set: (value) => {
+      state = value
+      cb('state', value)
+    },
+    get: () => state,
+  })
+  Object.defineProperty(obj, 'annotations', {
+    set: (value) => {
+      annotations = value
+      cb('annotations', value)
+    },
+    get: () => annotations,
+  })
+  Object.defineProperty(obj, 'overlayId', {
+    get: () => overlayId,
+  })
+  Object.defineProperty(obj, 'currEl', {
+    set: (value) => {
+      currEl = value
+      cb('currEl', value)
+    },
+    get: () => currEl,
+  })
+  Object.defineProperty(obj, 'showAnnotations', {
+    set: (value) => {
+      showAnnotations = value
+      cb('showAnnotations', value)
+    },
+    get: () => showAnnotations,
+  })
+
+  return obj
+}
