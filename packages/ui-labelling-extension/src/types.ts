@@ -62,6 +62,14 @@ export enum StorageKeys {
   meta = 'meta',
 }
 
+export type Annotation = {
+    id: string
+    ref: HTMLElement
+    rect: DOMRect
+    label: AnnotationLabel
+    useTextNode?: boolean
+  }
+
 export type GlobalState = {
   showAnnotations: boolean
   state: ExtensionState
@@ -69,13 +77,7 @@ export type GlobalState = {
   projections: null | HTMLElement[]
   projectTextNode: boolean
   overlayId: string
-  annotations: {
-    id: string
-    ref: HTMLElement
-    rect: DOMRect
-    label: AnnotationLabel
-    useTextNode?: boolean
-  }[]
+  annotations: Annotation[]
 }
 
 export const logPrefix = '[UI-LABELLER] '

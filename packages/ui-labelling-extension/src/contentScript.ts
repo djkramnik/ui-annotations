@@ -1,6 +1,7 @@
 import { AnnotationLabel, annotationLabels } from 'ui-labelling-shared'
 import {
   _GlobalState,
+  Annotation,
   ExtensionMessage,
   GlobalState,
   log,
@@ -10,11 +11,13 @@ import {
 } from './types'
 import {
   buildAnnotationForm,
+  buildAnnotationList,
   buildColorLegend,
   buildForm,
   buildProjectionForm,
   getFormOverlay,
   getRemoveIcon,
+  populateAnnotationList,
 } from './dom-building'
 import {
   getBoundingBoxOfText,
@@ -24,6 +27,7 @@ import {
   uuidv4,
 } from './util'
 import { findSimilarUiAsync } from './find-similar-ui'
+
 ;(function () {
   function main() {
     const globals = _GlobalState(handleGlobalChange)
@@ -191,6 +195,9 @@ import { findSimilarUiAsync } from './find-similar-ui'
       width: '200px',
     })
     overlay.appendChild(legend)
+    const [annotationList, annotationListInner] = buildAnnotationList()
+    annotationList.style.display = 'none'
+    overlay.appendChild(annotationList)
 
     globals.state = 'initial'
 
@@ -285,8 +292,43 @@ import { findSimilarUiAsync } from './find-similar-ui'
         case 'showAnnotations':
           log.info('show annotations handler', value)
           legend.style.display = 'none'
+          annotationList.style.display = 'none'
+          annotationListInner.innerHTML = ''
           if (value) {
             legend.style.display = 'initial'
+            annotationList.style.display = 'initial'
+            populateAnnotationList({
+              container: annotationListInner,
+              handler: (annotation: Annotation, action: 'select' | 'remove') => {
+                const element = document.getElementById('annotation_' + annotation.id)
+                if (!element) {
+                  log.warn('could not find element from annotation list', annotation)
+                  return
+                }
+                switch(action) {
+                  case 'select':
+                    // very janky shit but I don't want to add more state
+                    // find the dom element if any passed on the id formulat below
+                    // change the border color for a few moments then revert
+
+                    element.style.border = `2px solid limegreen`
+                    // in three seconds abruptly change back
+                    window.setTimeout(() => {
+                      element.style.border = `2px solid` + annotationLabels[annotation.label]
+                    }, 3000)
+                    break
+                  case 'remove':
+                    // remove from state
+                    globals.annotations = globals.annotations.filter(
+                      (a) => a !== annotation,
+                    )
+                    // remove the ui representation as well
+                    element.remove()
+                    break
+                }
+              },
+              annotations: globals.annotations
+            })
             console.log('globals.annotations??', globals.annotations)
             globals.annotations.forEach((anno) => {
               const { id, ref, label, useTextNode } = anno

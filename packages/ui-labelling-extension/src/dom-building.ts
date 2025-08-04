@@ -1,5 +1,10 @@
 import { annotationLabels } from 'ui-labelling-shared'
-import { SALIENT_VISUAL_PROPS, ProjectionType, GlobalState } from './types'
+import {
+  SALIENT_VISUAL_PROPS,
+  ProjectionType,
+  GlobalState,
+  Annotation,
+} from './types'
 import { splitArray } from './util'
 
 const trashCanUrl = chrome.runtime.getURL('/assets/trash-can.svg')
@@ -91,10 +96,12 @@ export function buildAnnotationForm({
   const annotationSelect = buildLabelSelect()
   container.appendChild(annotationSelect)
 
-  container.appendChild(buildCheckboxInput({
-    name: 'usetextnode_cb',
-    label: 'Shrink box to Text Node?'
-  }))
+  container.appendChild(
+    buildCheckboxInput({
+      name: 'usetextnode_cb',
+      label: 'Shrink box to Text Node?',
+    }),
+  )
 
   const buttonContainer = document.createElement('div')
   buttonContainer.style.display = 'flex'
@@ -212,10 +219,11 @@ export function buildProjectionForm({
   const toggleTextNode = buildCheckboxInput({
     name: 'usetextnodeprojection_cb',
     label: 'Toggle Text',
-    checked: false
+    checked: false,
   })
-  toggleTextNode.addEventListener('change',
-    (e) => handleToggleProjectText(((e.target as HTMLInputElement)?.checked)))
+  toggleTextNode.addEventListener('change', (e) =>
+    handleToggleProjectText((e.target as HTMLInputElement)?.checked),
+  )
   misc.appendChild(toggleTextNode)
   container.append(misc)
 
@@ -394,7 +402,7 @@ export function buildColorLegend(
   // Card container
   const card = document.createElement('div')
 
-  Object.entries((containerStyles ?? [])).forEach(([k, v]) => {
+  Object.entries(containerStyles ?? []).forEach(([k, v]) => {
     card.style[k as any] = v
   })
 
@@ -441,11 +449,9 @@ export function buildColorLegend(
   return card
 }
 
-export function createAnnotationCard(
-  annotations: Annotation[],
-  handler: (annotation: Annotation, action: 'select' | 'remove') => void
-): HTMLDivElement {
-  const card = document.createElement('div');
+export function buildAnnotationList(id?: string): [HTMLDivElement, HTMLDivElement] {
+  const card = document.createElement('div')
+  card.setAttribute('id', id ?? 'annotation_list')
   Object.assign(card.style, {
     maxHeight: '200px',
     overflowY: 'auto',
@@ -454,47 +460,60 @@ export function createAnnotationCard(
     borderRadius: '4px',
     fontFamily: 'sans-serif',
     fontSize: '12px',
-  } as Partial<CSSStyleDeclaration>);
+  } as Partial<CSSStyleDeclaration>)
+  const listContainer = document.createElement('div')
+
+  card.appendChild(listContainer)
+  return [card, listContainer]
+}
+
+export function populateAnnotationList({
+  handler,
+  annotations,
+  container,
+}: {
+  handler: (ann: Annotation, action: 'select' | 'remove') => void
+  annotations: Annotation[]
+  container: HTMLElement
+}) {
 
   annotations.forEach((ann) => {
-    const item = document.createElement('div');
+    const item = document.createElement('div')
     Object.assign(item.style, {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
       marginBottom: '4px',
-    } as Partial<CSSStyleDeclaration>);
+    } as Partial<CSSStyleDeclaration>)
 
-    const { top, left, width, height } = ann.rect;
-    const info = document.createElement('span');
-    info.textContent = `${ann.label}, ${Math.round(top)}, ${Math.round(left)}, ${Math.round(width)}, ${Math.round(height)}`;
+    const { top, left, width, height } = ann.rect
+    const info = document.createElement('span')
+    info.textContent = `${ann.label}, ${Math.round(top)}, ${Math.round(left)}, ${Math.round(width)}, ${Math.round(height)}`
 
-    const btnGroup = document.createElement('div');
-    btnGroup.style.display = 'flex';
-    btnGroup.style.gap = '4px';
+    const btnGroup = document.createElement('div')
+    btnGroup.style.display = 'flex'
+    btnGroup.style.gap = '4px'
 
     const makeBtn = (text: string, action: 'select' | 'remove') => {
-      const btn = document.createElement('button');
-      btn.textContent = text;
+      const btn = document.createElement('button')
+      btn.textContent = text
       Object.assign(btn.style, {
         padding: '2px 4px',
         fontSize: '11px',
         cursor: 'pointer',
-      } as Partial<CSSStyleDeclaration>);
+      } as Partial<CSSStyleDeclaration>)
       btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        handler(ann, action);
-      });
-      return btn;
-    };
+        e.stopPropagation()
+        handler(ann, action)
+      })
+      return btn
+    }
 
-    btnGroup.appendChild(makeBtn('Select', 'select'));
-    btnGroup.appendChild(makeBtn('Remove', 'remove'));
+    btnGroup.appendChild(makeBtn('Select', 'select'))
+    btnGroup.appendChild(makeBtn('Remove', 'remove'))
 
-    item.appendChild(info);
-    item.appendChild(btnGroup);
-    card.appendChild(item);
-  });
-
-  return card;
+    item.appendChild(info)
+    item.appendChild(btnGroup)
+    container.appendChild(item)
+  })
 }
