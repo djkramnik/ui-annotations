@@ -5,12 +5,23 @@ This repo also includes a web server for storing annotations in local postgres i
 
 #### TODO
   #### Buggos / QOL
-  * when you have overlapping annotations, in the show annotation view you cannot delete annotations that are occluded by other annotations
-    * in show annotation view, have a list of the annotations.. with remove options there.. (holy shit)
   * the styling of the extension popup should be site style agnostic.
+    * try putting everything into a shadow dom
   * reddit countermeasure? (visibility:initial !important?)
   * unable to nav to 'Find A Store' on the starbucks.com page. Maybe this is due to the differently shaped nav criteria
-  * improve the colours on the annotation dictionary
+  * general test run on a list of websites..
+    * youtube
+    * reddit
+    * whats app web
+    * slack / discord web
+    * starbucks.com
+    * amazon.com
+    * walmart.com
+    * homedepot.com
+    * ycombinator.com
+    * chesswithmrs.com
+    * lichess.com
+    * crazygames.com
 
   #### Data The Gathering
 
