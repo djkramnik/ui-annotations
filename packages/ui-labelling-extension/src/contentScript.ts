@@ -300,7 +300,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
             populateAnnotationList({
               container: annotationListInner,
               handler: (annotation: Annotation, action: 'select' | 'remove') => {
-                const element = document.getElementById('annotation_' + annotation.id)
+                const element = document.getElementById('show_annotation_' + annotation.id)
                 if (!element) {
                   log.warn('could not find element from annotation list', annotation)
                   return
@@ -311,7 +311,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
                     // find the dom element if any passed on the id formulat below
                     // change the border color for a few moments then revert
 
-                    element.style.border = `2px solid limegreen`
+                    element.style.border = `2px solid red`
                     // in three seconds abruptly change back
                     window.setTimeout(() => {
                       element.style.border = `2px solid` + annotationLabels[annotation.label]
@@ -358,7 +358,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
               })
             })
           } else {
-            removeRects('[id^="annotation_"]')
+            removeRects('[id^="show_annotation_"]')
           }
           break
         default:

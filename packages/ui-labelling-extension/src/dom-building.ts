@@ -453,13 +453,17 @@ export function buildAnnotationList(id?: string): [HTMLDivElement, HTMLDivElemen
   const card = document.createElement('div')
   card.setAttribute('id', id ?? 'annotation_list')
   Object.assign(card.style, {
-    maxHeight: '200px',
+    maxHeight: '400px',
     overflowY: 'auto',
     padding: '8px',
     border: '1px solid #ccc',
     borderRadius: '4px',
     fontFamily: 'sans-serif',
     fontSize: '12px',
+    width: '600px',
+    position: 'absolute',
+    bottom: '12px',
+    right: '12px'
   } as Partial<CSSStyleDeclaration>)
   const listContainer = document.createElement('div')
 
