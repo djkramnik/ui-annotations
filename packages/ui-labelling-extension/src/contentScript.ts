@@ -344,7 +344,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
                 removeIcon.parentElement?.remove()
               })
               drawRect({
-                id: 'annotation_' + id,
+                id: 'show_annotation_' + id,
                 element: ref,
                 parent: overlay,
                 styles: {
