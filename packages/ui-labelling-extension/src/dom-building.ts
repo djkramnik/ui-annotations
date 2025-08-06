@@ -16,7 +16,6 @@ export function getButton(label: string, primary?: boolean) {
   button.style.minWidth = '140px'
   button.style.fontSize = '16px'
   button.style.padding = '6px'
-  button.style.borderRadius = '8px'
   button.style.cursor = 'pointer'
   button.style.backgroundColor = primary ? 'green' : '#A0C6FC'
   button.style.color = 'white'
@@ -520,4 +519,19 @@ export function populateAnnotationList({
     item.appendChild(btnGroup)
     container.appendChild(item)
   })
+}
+
+export function buildShadowUi(extensionUiRoot: HTMLElement) {
+  const connector = document.createElement('div')
+  const shadowRoot = connector.attachShadow({ mode: 'open' })
+  shadowRoot.append(extensionUiRoot)
+  const sheet = new CSSStyleSheet()
+  sheet.replaceSync(`
+    button {
+      borderRadius: 8px;
+    }
+    `)
+  shadowRoot.adoptedStyleSheets = [sheet]
+
+  return connector
 }

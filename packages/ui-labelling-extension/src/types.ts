@@ -77,17 +77,21 @@ export type GlobalState = {
   projections: null | HTMLElement[]
   projectTextNode: boolean
   overlayId: string
+  shadowId: string
   annotations: Annotation[]
 }
 
 export const logPrefix = '[UI-LABELLER] '
 export const overlayId = 'ui-labelling-overlay'
+export const shadowId = 'ui-annotation-shadow-host'
 
 export const log = {
   warn: (...args: any[]) => console.warn(logPrefix, ...args),
   info: (...args: any[]) => console.log(logPrefix, ...args),
   error: (...args: any[]) => console.error(logPrefix, ...args),
 }
+
+
 
 export function _GlobalState(cb: (key: keyof GlobalState, value: any) => void) {
   let state: ExtensionState = 'dormant'
@@ -106,6 +110,7 @@ export function _GlobalState(cb: (key: keyof GlobalState, value: any) => void) {
     state,
     annotations,
     overlayId,
+    shadowId,
     currEl,
     showAnnotations,
     projections,
@@ -142,6 +147,9 @@ export function _GlobalState(cb: (key: keyof GlobalState, value: any) => void) {
   Object.defineProperty(obj, 'overlayId', {
     get: () => overlayId,
   })
+  Object.defineProperty(obj, 'shadowId', {
+    get: () => shadowId
+  })
   Object.defineProperty(obj, 'currEl', {
     set: (value) => {
       currEl = value
@@ -158,4 +166,8 @@ export function _GlobalState(cb: (key: keyof GlobalState, value: any) => void) {
   })
 
   return obj
+}
+
+export function getOverlay(globals: GlobalState): HTMLElement | null {
+  return document.getElementById(globals.shadowId)?.shadowRoot?.getElementById(globals.overlayId) ?? null
 }

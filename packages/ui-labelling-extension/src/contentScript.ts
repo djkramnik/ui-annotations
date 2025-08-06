@@ -3,10 +3,11 @@ import {
   _GlobalState,
   Annotation,
   ExtensionMessage,
+  getOverlay,
   GlobalState,
   log,
-  overlayId,
   SALIENT_VISUAL_PROPS,
+  shadowId,
   StorageKeys,
 } from './types'
 import {
@@ -15,6 +16,7 @@ import {
   buildColorLegend,
   buildForm,
   buildProjectionForm,
+  buildShadowUi,
   getFormOverlay,
   getRemoveIcon,
   populateAnnotationList,
@@ -27,6 +29,8 @@ import {
   uuidv4,
 } from './util'
 import { findSimilarUiAsync } from './find-similar-ui'
+
+
 
 ;(function () {
   function main() {
@@ -48,7 +52,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
 
     log.info('saved metadata')
 
-    if (document.getElementById(globals.overlayId)) {
+    if (document.getElementById(globals.shadowId)) {
       log.warn(
         'overlay already present during initialization.  Aborting everything!',
       )
@@ -64,7 +68,9 @@ import { findSimilarUiAsync } from './find-similar-ui'
     overlay.style.left = '0'
     overlay.style.zIndex = '999666999' // obscene
 
-    document.body.appendChild(overlay)
+    const shadowMount = buildShadowUi(overlay)
+    document.body.appendChild(shadowMount)
+    shadowMount.id = ''
 
     const formOverlay = getFormOverlay()
 
@@ -109,7 +115,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
           showToast({
             type: 'error',
             message: 'No label selected',
-            overlayId: globals.overlayId,
+            overlay
           })
           return
         }
@@ -457,7 +463,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
             showToast({
               type: 'success',
               message: 'Preview Mode. Press any key to end preview',
-              overlayId: globals.overlayId,
+              overlay
             })
             window.addEventListener('keypress', function endPreview() {
               form.style.display = 'initial'
@@ -835,22 +841,16 @@ import { findSimilarUiAsync } from './find-similar-ui'
   }
 
   function showToast({
-    overlayId,
     type,
     message,
     persist,
+    overlay
   }: {
-    overlayId: string
+    overlay: HTMLElement
     type: 'error' | 'success'
     message: string
     persist?: number
   }): void {
-    const overlay = document.getElementById(overlayId)
-    if (!overlay) {
-      console.warn(`[showToast] Missing overlay #${overlayId}`)
-      return
-    }
-
     // ── Ensure wrapper + inner exist exactly once ────────────────────────────────
     let wrapper = overlay.querySelector<HTMLDivElement>('#ui-annotation-toast')
 
@@ -933,7 +933,6 @@ import { findSimilarUiAsync } from './find-similar-ui'
   let globalsRef: null | GlobalState = null
 
   chrome.runtime.onMessage.addListener((message: { type?: string }) => {
-    document.getElementById(overlayId)?.remove()
     log.info('content script received message', message)
     if (typeof message?.type !== 'string') {
       log.error('Could not parse runtime message', message)
@@ -949,7 +948,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
         showToast({
           type: 'error',
           message: 'EXPORT FAILED',
-          overlayId: globalsRef.overlayId,
+          overlay: getOverlay(globalsRef)!
         })
         break
       case ExtensionMessage.exportSuccess:
@@ -961,7 +960,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
         showToast({
           type: 'success',
           message: 'EXPORTED SUCCEEDED',
-          overlayId: globalsRef.overlayId,
+          overlay: getOverlay(globalsRef)!
         })
         break
       case ExtensionMessage.clean:
@@ -978,8 +977,8 @@ import { findSimilarUiAsync } from './find-similar-ui'
         unlockScroll()
         break
       case ExtensionMessage.startMain:
-        const overlay = document.querySelector('ui-labelling-overlay')
-        if (overlay) {
+        const mount = document.querySelector(shadowId)
+        if (mount) {
           // TODO.  clean up here instead of running away
           log.warn(
             'request to run main but overlay already present on this page.',
