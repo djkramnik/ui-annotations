@@ -528,9 +528,9 @@ export function buildShadowUi(extensionUiRoot: HTMLElement) {
   const sheet = new CSSStyleSheet()
   sheet.replaceSync(`
     button {
-      borderRadius: 8px;
+      border-radius: 8px;
     }
-    `)
+  `)
   shadowRoot.adoptedStyleSheets = [sheet]
 
   return connector
