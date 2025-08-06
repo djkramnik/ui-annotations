@@ -452,7 +452,7 @@ export function buildAnnotationList(id?: string): [HTMLDivElement, HTMLDivElemen
   const card = document.createElement('div')
   card.setAttribute('id', id ?? 'annotation_list')
   Object.assign(card.style, {
-    maxHeight: '400px',
+    maxHeight: '260px',
     overflowY: 'auto',
     padding: '8px',
     border: '1px solid #ccc',
@@ -529,6 +529,10 @@ export function buildShadowUi(extensionUiRoot: HTMLElement) {
   sheet.replaceSync(`
     button {
       border-radius: 8px;
+      outline: none;
+    }
+    table, td {
+      border: 1px solid black;
     }
   `)
   shadowRoot.adoptedStyleSheets = [sheet]

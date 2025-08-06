@@ -5,8 +5,7 @@ This repo also includes a web server for storing annotations in local postgres i
 
 #### TODO
   #### Buggos / QOL
-  * the styling of the extension popup should be site style agnostic.
-    * try putting everything into a shadow dom
+  * define shadow ui stylesa
   * reddit countermeasure? (visibility:initial !important?)
   * unable to nav to 'Find A Store' on the starbucks.com page. Maybe this is due to the differently shaped nav criteria
   * general test run on a list of websites..
