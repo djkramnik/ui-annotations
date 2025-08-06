@@ -70,7 +70,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
 
     const shadowMount = buildShadowUi(overlay)
     document.body.appendChild(shadowMount)
-    shadowMount.id = ''
+    shadowMount.id = globals.shadowId
 
     const formOverlay = getFormOverlay()
 
