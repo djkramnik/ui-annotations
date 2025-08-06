@@ -306,7 +306,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
             populateAnnotationList({
               container: annotationListInner,
               handler: (annotation: Annotation, action: 'select' | 'remove') => {
-                const element = document.getElementById('show_annotation_' + annotation.id)
+                const element = getOverlay(globals)!.querySelector('#show_annotation_' + annotation.id) as HTMLElement
                 if (!element) {
                   log.warn('could not find element from annotation list', annotation)
                   return
@@ -548,7 +548,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
     }
 
     function removeRects(selector: string = '[id*="candidate_annotation_"]') {
-      Array.from(document.querySelectorAll(selector)).forEach((el) =>
+      Array.from(getOverlay(globals)!.querySelectorAll(selector)).forEach((el) =>
         el.remove(),
       )
     }
@@ -972,7 +972,9 @@ import { findSimilarUiAsync } from './find-similar-ui'
         globalsRef.showAnnotations = false
         break
       case ExtensionMessage.turnOffExtension:
-        document.querySelector('ui-labelling-overlay')?.remove()
+        if (globalsRef) {
+          getOverlay(globalsRef)?.remove()
+        }
         globalsRef = null
         unlockScroll()
         break
