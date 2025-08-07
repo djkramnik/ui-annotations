@@ -6,8 +6,6 @@ This repo also includes a web server for storing annotations in local postgres i
 #### TODO
   #### Buggos / QOL
 
-  * cannot click the annotation list without selecting a candidate annotation
-
   * general test run on a list of websites..
     * youtube
     * reddit

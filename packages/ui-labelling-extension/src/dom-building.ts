@@ -509,6 +509,9 @@ export function populateAnnotationList({
       btn.addEventListener('click', (e) => {
         e.stopPropagation()
         handler(ann, action)
+        if (action === 'remove') {
+          item.remove()
+        }
       })
       return btn
     }

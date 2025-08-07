@@ -298,8 +298,10 @@ import { findSimilarUiAsync } from './find-similar-ui'
           annotationListInner.innerHTML = ''
 
           if (value) {
+            console.log('SHOWING ANNOTATIONS.  WHAT IS THE STATE', globals.state)
             // very messy now..
             if (globals.state === 'initial') {
+              console.log('REMOVING CLICK HANDLER WHILE VIEWING ANNOTATIONS')
               overlay.removeEventListener('mousedown', _handleMouseWrap)
             }
 
@@ -368,6 +370,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
           } else {
             removeRects('[id^="show_annotation_"]')
             if (globals.state === 'initial') {
+              console.log('adding back event listener for initial state')
               overlay.addEventListener('mousedown', _handleMouseWrap)
             }
           }
