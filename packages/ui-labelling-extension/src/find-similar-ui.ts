@@ -45,6 +45,7 @@ export async function* findSimilarUiAsync(
       yield { results, done: true }
     }
     const endIndex = Math.min(index + CHUNK_SIZE, nodeList.length)
+
     for(; index < endIndex; index += 1) {
       const el = nodeList[index] as HTMLElement
       const invalid = el === target || !isInViewport({ target: el }) || !(el instanceof HTMLElement)
@@ -60,7 +61,13 @@ export async function* findSimilarUiAsync(
       let slack = Math.abs(tolerance ?? 0)
 
       const candidateStyle = window.getComputedStyle(el)
+      const { width, height } = el.getBoundingClientRect()
+      const heightCheck = width > 5 && height > 5
+      if (!heightCheck) {
+        continue
+      }
       const pass = keys.every(k => {
+        // exclude very small elements.  magic tracking pixels and the like
         // has to see if this causes issues
         const candidateHasText = hasText(el)
         if (candidateHasText !== targetHasText) {
@@ -69,6 +76,7 @@ export async function* findSimilarUiAsync(
         const match = (candidateStyle.getPropertyValue(k) === targetStyle.getPropertyValue(k)) || ((--slack) >= 0)
         return match
       })
+
       if (pass) {
         results.push(el)
       }

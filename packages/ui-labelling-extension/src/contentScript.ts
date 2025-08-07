@@ -30,8 +30,6 @@ import {
 } from './util'
 import { findSimilarUiAsync } from './find-similar-ui'
 
-
-
 ;(function () {
   function main() {
     const globals = _GlobalState(handleGlobalChange)
@@ -106,9 +104,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
           await createProjections(projectionForm, true /**submitting */)
         }
 
-        const annotationSelect = (
-          event.target as HTMLFormElement
-        ).querySelector('select')!
+        const annotationSelect = projectionForm.querySelector('select')!
 
         if (!annotationSelect.value) {
           log.warn('no label selected?')
@@ -161,9 +157,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
       handleSubmit: (event) => {
         event.preventDefault()
         const form = event.target as HTMLFormElement
-        const annotationSelect = (
-          event.target as HTMLFormElement
-        ).querySelector('select')!
+        const annotationSelect = annotationForm.querySelector('select')!
         log.info(annotationSelect.value)
         if (!annotationSelect.value) {
           log.warn('no label selected?')
@@ -297,10 +291,18 @@ import { findSimilarUiAsync } from './find-similar-ui'
           break
         case 'showAnnotations':
           log.info('show annotations handler', value)
+
+          // only show annotationList if state is also initial?
           legend.style.display = 'none'
           annotationList.style.display = 'none'
           annotationListInner.innerHTML = ''
+
           if (value) {
+            // very messy now..
+            if (globals.state === 'initial') {
+              overlay.removeEventListener('mousedown', _handleMouseWrap)
+            }
+
             legend.style.display = 'initial'
             annotationList.style.display = 'initial'
             populateAnnotationList({
@@ -335,7 +337,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
               },
               annotations: globals.annotations
             })
-            console.log('globals.annotations??', globals.annotations)
+
             globals.annotations.forEach((anno) => {
               const { id, ref, label, useTextNode } = anno
               const c = annotationLabels[label]
@@ -365,6 +367,9 @@ import { findSimilarUiAsync } from './find-similar-ui'
             })
           } else {
             removeRects('[id^="show_annotation_"]')
+            if (globals.state === 'initial') {
+              overlay.addEventListener('mousedown', _handleMouseWrap)
+            }
           }
           break
         default:
@@ -453,6 +458,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
       // disable the submit button... finally restore the submit button
       return task(globals.currEl)
         .then((results: HTMLElement[]) => {
+          console.log('projections???', results)
           globals.projections = results
             .filter((el) => isInViewport({ target: el }))
             .slice(0, Number.isNaN(max) ? undefined : max)

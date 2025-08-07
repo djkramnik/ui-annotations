@@ -5,11 +5,9 @@ This repo also includes a web server for storing annotations in local postgres i
 
 #### TODO
   #### Buggos / QOL
-  * define shadow ui styles. look at the apperance against various sites for guidance on this
-    * background colors on all the elements
-    * font family change
-    * try it on reddit
-  * unable to nav to 'Find A Store' on the starbucks.com page. Maybe this is due to the differently shaped nav criteria
+
+  * cannot click the annotation list without selecting a candidate annotation
+
   * general test run on a list of websites..
     * youtube
     * reddit
