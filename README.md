@@ -10,14 +10,13 @@ This repo also includes a web server for storing annotations in local postgres i
     * youtube
     * reddit
     * whats app web
-    * slack / discord web
     * starbucks.com
     * amazon.com
     * walmart.com
     * homedepot.com
     * ycombinator.com
     * chesswithmrs.com
-    * lichess.com
+    * lichess.org
     * crazygames.com
 
   #### Data The Gathering
