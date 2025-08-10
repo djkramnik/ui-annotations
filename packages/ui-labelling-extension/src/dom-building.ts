@@ -69,6 +69,7 @@ export function buildForm({
 }): HTMLFormElement {
   const form = document.createElement('form')
   form.style.backgroundColor = 'rgba(255, 255, 255)'
+  form.style.color = 'black'
   form.style.borderRadius = '8px'
   form.style.padding = '40px'
   form.style.border = '1px solid black'
@@ -453,6 +454,7 @@ export function buildAnnotationList(id?: string): [HTMLDivElement, HTMLDivElemen
   card.setAttribute('id', id ?? 'annotation_list')
   Object.assign(card.style, {
     backgroundColor: 'white',
+    color: 'black',
     maxHeight: '260px',
     overflowY: 'auto',
     padding: '8px',

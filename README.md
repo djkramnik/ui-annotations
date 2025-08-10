@@ -19,6 +19,8 @@ This repo also includes a web server for storing annotations in local postgres i
     * lichess.org
     * crazygames.com
 
+* can we start, stop and resume without refreshing the page?
+
   #### Data The Gathering
 
   * Highly granular label list -- max accuracy
