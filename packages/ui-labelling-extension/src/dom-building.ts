@@ -535,6 +535,10 @@ export function buildShadowUi(extensionUiRoot: HTMLElement) {
   sheet.replaceSync(`
     * {
       font-family: courier;
+      font-size: 14px;
+    }
+    input {
+      background-color: white;
     }
     button {
       border-radius: 8px;
