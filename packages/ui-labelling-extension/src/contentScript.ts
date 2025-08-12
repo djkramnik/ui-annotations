@@ -202,7 +202,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
     globals.state = 'initial'
 
     // state independent keypress events that should always be active
-    window.addEventListener('keypress', handleKeyPress)
+    overlay.addEventListener('keypress', handleKeyPress)
 
     // janky redux style state handling mega function
     function handleGlobalChange(key: keyof GlobalState, value: any) {
@@ -266,7 +266,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
         case 'state':
           formOverlay.style.display = 'none'
           overlay.removeEventListener('mousedown', _handleMouseWrap)
-          window.removeEventListener('keypress', handleNavigationKeyPress)
+          overlay.removeEventListener('keypress', handleNavigationKeyPress)
 
           if (value === 'initial') {
             removeRects()
@@ -282,7 +282,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
           } else if (value === 'projection') {
             showProjectionPopup()
           } else if (value === 'navigation') {
-            window.addEventListener('keypress', handleNavigationKeyPress)
+            overlay.addEventListener('keypress', handleNavigationKeyPress)
           } else if (value === 'confirmation') {
             showConfirmationPopup()
           }
@@ -441,7 +441,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
                 return update.results
               }
               log.info('progress: ', update.percentComplete)
-              percentDisplay.innerText = update.percentComplete + '%'
+              percentDisplay.innerText = update.percentComplete.toFixed(2) + '%'
             }
             return []
           }
@@ -474,9 +474,9 @@ import { findSimilarUiAsync } from './find-similar-ui'
               message: 'Preview Mode. Press any key to end preview',
               overlay
             })
-            window.addEventListener('keypress', function endPreview() {
+            overlay.addEventListener('keypress', function endPreview() {
               form.style.display = 'initial'
-              window.removeEventListener('keypress', endPreview)
+              overlay.removeEventListener('keypress', endPreview)
             })
           }
         })
