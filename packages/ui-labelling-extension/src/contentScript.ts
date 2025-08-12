@@ -742,15 +742,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
           }
           const firstDifferentlyShapedParent = traverseUp(globals.currEl)
 
-          const lastParent = firstDifferentlyShapedParent
-            ? findHighestSharedShape(firstDifferentlyShapedParent)
-            : null
-
-          if (!lastParent) {
-            log.warn('arrowup', 'no differently shaped parent')
-            break
-          }
-          globals.currEl = lastParent
+          globals.currEl = firstDifferentlyShapedParent
           break
         case 'k':
           const currChildren = Array.from(globals.currEl.children)
@@ -792,7 +784,6 @@ import { findSimilarUiAsync } from './find-similar-ui'
 
     function traverseUp(
       el: HTMLElement,
-      tolerance: number = 2,
     ): HTMLElement | null {
       if (el === document.body) {
         return null
@@ -801,51 +792,16 @@ import { findSimilarUiAsync } from './find-similar-ui'
       if (!parent) {
         return null
       }
-      const boxesMatch = boxesTheSame(
-        el.getBoundingClientRect(),
-        parent.getBoundingClientRect(),
-        tolerance,
-      )
-      if (boxesMatch) {
-        return traverseUp(parent, tolerance)
-      }
-
       return parent
-    }
-
-    function findHighestSharedShape(el: HTMLElement) {
-      if (el === document.body) {
-        return el
-      }
-      const parent = el.parentElement
-      if (!parent) {
-        return el
-      }
-      const boxesMatch = boxesTheSame(
-        el.getBoundingClientRect(),
-        parent.getBoundingClientRect(),
-      )
-      if (boxesMatch) {
-        return findHighestSharedShape(parent)
-      }
-      return el // the difference
     }
 
     function traverseDown(
       el: HTMLElement,
-      tolerance: number = 2,
     ): HTMLElement | null {
       if (el.children.length < 1) {
         return null
       }
-      const bbox = el.getBoundingClientRect()
-      const firstDifferentlyShapedChild = Array.from(el.children).find(
-        (c) => !boxesTheSame(bbox, c.getBoundingClientRect(), tolerance),
-      )
-      if (firstDifferentlyShapedChild) {
-        return firstDifferentlyShapedChild as HTMLElement
-      }
-      return traverseDown(el.children[0] as HTMLElement, tolerance)
+      return Array.from(el.children)[0] as HTMLElement
     }
 
     function boxesTheSame(
