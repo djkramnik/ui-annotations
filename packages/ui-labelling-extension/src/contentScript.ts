@@ -34,14 +34,14 @@ import { findSimilarUiAsync } from './find-similar-ui'
 ;(function () {
   const { addKeyDownListener, removeKeyDownListener } = getSelfishKeyDown(
     function omitHandling(e: KeyboardEvent) {
-      const activeEl = document.activeElement as HTMLElement | null;
-      if (!activeEl) {
+      const target = e.target as HTMLElement
+      if (!(target instanceof HTMLElement)) {
         return false
       }
       // we don't want our keydown handlers invoked if the focus is on a form element
-      return activeEl.tagName === 'INPUT' ||
-        activeEl.tagName === 'TEXTAREA' ||
-        (activeEl as HTMLElement).isContentEditable
+      return target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        (target as HTMLElement).isContentEditable
     }
   )
   function main() {

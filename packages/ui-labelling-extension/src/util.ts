@@ -150,8 +150,10 @@ export function getSelfishKeyDown(skip?: (e: KeyboardEvent) => boolean) {
 
   window.addEventListener('keydown', e => {
     if (skip?.(e) === true) {
+      console.log('what da heck', e)
       return
     }
+    console.log('WE GOT KEYDOWN', e.key)
     for(let i = 0; i < listeners.length; i += 1) {
       listeners[i](e)
     }
