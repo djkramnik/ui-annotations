@@ -125,6 +125,18 @@ export function uuidv4() {
   return crypto.randomUUID()
 }
 
+export function getDeepActiveElement(root: Document | ShadowRoot): Element | null {
+  const active = root.activeElement
+  if (!active) {
+    return null
+  }
+  if (active.shadowRoot?.activeElement) {
+    return getDeepActiveElement(active.shadowRoot)
+  }
+
+  return active;
+}
+
 // event block existing window key event listeners
 export function getSelfishKeyDown(skip?: (e: KeyboardEvent) => boolean) {
   const listeners: Array<(event: KeyboardEvent) => void> = []

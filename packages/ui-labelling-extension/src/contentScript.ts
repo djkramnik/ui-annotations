@@ -24,6 +24,7 @@ import {
 import {
   getBoundingBoxOfText,
   getCousins,
+  getDeepActiveElement,
   getSelfishKeyDown,
   getSibs,
   isInViewport,
@@ -34,14 +35,16 @@ import { findSimilarUiAsync } from './find-similar-ui'
 ;(function () {
   const { addKeyDownListener, removeKeyDownListener } = getSelfishKeyDown(
     function omitHandling(e: KeyboardEvent) {
-      const target = e.target as HTMLElement
-      if (!(target instanceof HTMLElement)) {
+      // if the active / focused element is within the shadow dom, document.activeElement will only return the host
+      const activeEl = getDeepActiveElement(document)
+      console.log('keydown exception?', activeEl)
+      if (!activeEl) {
         return false
       }
       // we don't want our keydown handlers invoked if the focus is on a form element
-      return target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        (target as HTMLElement).isContentEditable
+      return activeEl.tagName === 'INPUT' ||
+        activeEl.tagName === 'TEXTAREA' ||
+        (activeEl as HTMLElement).isContentEditable
     }
   )
   function main() {
