@@ -24,6 +24,7 @@ import {
 import {
   getBoundingBoxOfText,
   getCousins,
+  getSelfishKeyDown,
   getSibs,
   isInViewport,
   uuidv4,
@@ -31,6 +32,18 @@ import {
 import { findSimilarUiAsync } from './find-similar-ui'
 
 ;(function () {
+  const { addKeyDownListener, removeKeyDownListener } = getSelfishKeyDown(
+    function omitHandling(e: KeyboardEvent) {
+      const activeEl = document.activeElement as HTMLElement | null;
+      if (!activeEl) {
+        return false
+      }
+      // we don't want our keydown handlers invoked if the focus is on a form element
+      return activeEl.tagName === 'INPUT' ||
+        activeEl.tagName === 'TEXTAREA' ||
+        (activeEl as HTMLElement).isContentEditable
+    }
+  )
   function main() {
     const globals = _GlobalState(handleGlobalChange)
 
@@ -202,7 +215,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
     globals.state = 'initial'
 
     // state independent keypress events that should always be active
-    overlay.addEventListener('keypress', handleKeyPress)
+    addKeyDownListener(handleKeyPress)
 
     // janky redux style state handling mega function
     function handleGlobalChange(key: keyof GlobalState, value: any) {
@@ -266,7 +279,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
         case 'state':
           formOverlay.style.display = 'none'
           overlay.removeEventListener('mousedown', _handleMouseWrap)
-          overlay.removeEventListener('keypress', handleNavigationKeyPress)
+          removeKeyDownListener(handleNavigationKeyPress)
 
           if (value === 'initial') {
             removeRects()
@@ -282,7 +295,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
           } else if (value === 'projection') {
             showProjectionPopup()
           } else if (value === 'navigation') {
-            overlay.addEventListener('keypress', handleNavigationKeyPress)
+            addKeyDownListener(handleNavigationKeyPress)
           } else if (value === 'confirmation') {
             showConfirmationPopup()
           }
@@ -474,9 +487,9 @@ import { findSimilarUiAsync } from './find-similar-ui'
               message: 'Preview Mode. Press any key to end preview',
               overlay
             })
-            overlay.addEventListener('keypress', function endPreview() {
+            addKeyDownListener(function endPreview() {
               form.style.display = 'initial'
-              overlay.removeEventListener('keypress', endPreview)
+              removeKeyDownListener(endPreview)
             })
           }
         })

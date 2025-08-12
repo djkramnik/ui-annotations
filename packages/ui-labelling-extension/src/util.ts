@@ -125,6 +125,43 @@ export function uuidv4() {
   return crypto.randomUUID()
 }
 
+// event block existing window key event listeners
+export function getSelfishKeyDown(skip?: (e: KeyboardEvent) => boolean) {
+  const listeners: Array<(event: KeyboardEvent) => void> = []
+
+  const controller = {
+    addKeyDownListener: (
+      function addKeyDown(listener: (event: KeyboardEvent) => void) {
+        if (listeners.includes(listener)) {
+          console.warn('you tried to double add this key down listener! we dun allow that!', String(listener))
+          return
+        }
+        listeners.push(listener)
+      }
+    ),
+    removeKeyDownListener: function removeKeyDown(listener: (event: KeyboardEvent) => void) {
+      const idx = listeners.findIndex(l => l === listener)
+      if (idx === -1) {
+        return
+      }
+      listeners.splice(idx, 1)
+    }
+  }
+
+  window.addEventListener('keydown', e => {
+    if (skip?.(e) === true) {
+      return
+    }
+    for(let i = 0; i < listeners.length; i += 1) {
+      listeners[i](e)
+    }
+    e.stopImmediatePropagation()
+    e.preventDefault()
+  }, true)
+
+  return controller
+}
+
 function getLegitimizedChildren(parent: HTMLElement): HTMLElement[] {
   return Array.from(parent.children).filter(el => el instanceof HTMLElement)
 }
