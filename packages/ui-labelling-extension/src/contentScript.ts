@@ -28,6 +28,7 @@ import {
   getSelfishKeyDown,
   getSibs,
   isInViewport,
+  minimallyBig,
   uuidv4,
 } from './util'
 import { findSimilarUiAsync } from './find-similar-ui'
@@ -645,15 +646,6 @@ import { findSimilarUiAsync } from './find-similar-ui'
       // get siblings.. drawRect on them
       const siblings = getSibs(element)
 
-      // traverse down the dom, skipping containers that have the same bounding box as this
-      // (i.e. layers of div wrappers that do nothing to layout)
-      // const differentlyShapedPredecessor = traverseDown(element)
-
-      // // get all the elements at that level
-      // const differentlyShapedKids = differentlyShapedPredecessor
-      //   ? getSibs(differentlyShapedPredecessor).concat(differentlyShapedPredecessor)
-      //   : []
-
       siblings.forEach((sib, index) => {
         drawRect({
           id: `candidate_annotation_sib_${index}`,
@@ -665,18 +657,6 @@ import { findSimilarUiAsync } from './find-similar-ui'
           },
         })
       })
-
-      // differentlyShapedKids.forEach((child, index) => {
-      //   drawRect({
-      //     id: `candidate_annotation_child_${index}`,
-      //     element: child,
-      //     parent,
-      //     styles: {
-      //       border: `2px solid aliceblue`,
-      //       boxShadow: `inset 0 4px 8px rgba(0, 0, 0, 0.3)`
-      //     }
-      //   })
-      // })
     }
 
     // this is active only when the global state is "navigation"
@@ -687,10 +667,10 @@ import { findSimilarUiAsync } from './find-similar-ui'
       }
       const parent: HTMLElement | null = globals.currEl.parentElement
       const siblings: HTMLElement[] = parent
-        ? (Array.from(parent.children) as HTMLElement[])
+        ? (Array.from(parent.children) as HTMLElement[]).filter(minimallyBig)
         : []
       const currIndex: number | null = parent
-        ? Array.from(parent.children).indexOf(globals.currEl)
+        ? siblings.filter(minimallyBig).indexOf(globals.currEl)
         : -1
 
       let newIndex

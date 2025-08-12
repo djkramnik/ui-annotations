@@ -44,7 +44,7 @@ export function getSibs(target: HTMLElement): HTMLElement[] {
     return []
   }
   return getLegitimizedChildren(target.parentElement)
-    .filter(el => el !== target)
+    .filter(el => el !== target && minimallyBig(el))
 }
 
 // excludes target from return array
@@ -225,4 +225,10 @@ function traverseDown({
     return null
   }
   return traverseDown({ origin: next, indexes: indexes.slice(1) })
+}
+
+export function minimallyBig(el: HTMLElement, min?: number) {
+  const { width, height } = el.getBoundingClientRect()
+  const minimum = min ?? 10
+  return [width, height].some(d => d > minimum)
 }
