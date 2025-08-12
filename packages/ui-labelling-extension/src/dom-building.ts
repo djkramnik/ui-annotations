@@ -533,11 +533,16 @@ export function buildShadowUi(extensionUiRoot: HTMLElement) {
   shadowRoot.append(extensionUiRoot)
   const sheet = new CSSStyleSheet()
   sheet.replaceSync(`
+    :host, :host * {
+      color-scheme: light;
+      color: black;
+    }
     * {
       font-family: courier;
       font-size: 14px;
     }
-    input {
+    input,select,option {
+      color: black;
       background-color: white;
     }
     button {
