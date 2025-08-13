@@ -33,7 +33,7 @@ import {
 } from './util'
 import { findSimilarUiAsync } from './find-similar-ui'
 
-;import { getChildrenWithShadow, getParentWithShadow, getSiblingsWithShadow } from './navigation';
+;import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSiblingsWithShadow, normalizeForNav } from './navigation';
 (function () {
   const { addKeyDownListener, removeKeyDownListener } = getSelfishKeyDown(
     function omitHandling(e: KeyboardEvent) {
@@ -543,7 +543,8 @@ import { findSimilarUiAsync } from './find-similar-ui'
 
       const mx = event.clientX
       const my = event.clientY
-      const realTarget = document.elementFromPoint(mx, my) as HTMLElement
+      const hit = deepElementFromPoint(mx, my) as HTMLElement
+      const realTarget = hit ? normalizeForNav(hit) : null
       overlay.style.pointerEvents = 'initial'
 
       log.info('real target?', realTarget)
@@ -646,6 +647,8 @@ import { findSimilarUiAsync } from './find-similar-ui'
       })
       // get siblings.. drawRect on them
       const siblings = getSiblingsWithShadow(element)
+      console.log('ITS A ME', element)
+      console.log('ME SIBLINGS', siblings)
 
       siblings.forEach((sib, index) => {
         drawRect({
@@ -671,9 +674,12 @@ import { findSimilarUiAsync } from './find-similar-ui'
       const thisGeneration: HTMLElement[] = parent
         ? getChildrenWithShadow(parent)
         : []
+      console.log('THIS GENERATION', thisGeneration)
+      console.log('ME PARENT', parent)
       const currIndex: number | null = parent
         ? thisGeneration.indexOf(curr)
         : -1
+      console.log('ME INDEX', currIndex)
 
       let newIndex
       log.info('keypressed', event.key)
