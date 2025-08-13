@@ -33,7 +33,7 @@ import {
 } from './util'
 import { findSimilarUiAsync } from './find-similar-ui'
 
-;import { getChildrenWithShadow, getParentWithShadow } from './navigation';
+;import { getChildrenWithShadow, getParentWithShadow, getSiblingsWithShadow } from './navigation';
 (function () {
   const { addKeyDownListener, removeKeyDownListener } = getSelfishKeyDown(
     function omitHandling(e: KeyboardEvent) {
@@ -645,7 +645,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
         parent,
       })
       // get siblings.. drawRect on them
-      const siblings = getSibs(element)
+      const siblings = getSiblingsWithShadow(element).filter(minimallyBig)
 
       siblings.forEach((sib, index) => {
         drawRect({
