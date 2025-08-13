@@ -4,24 +4,20 @@ Primarily a chrome browser extension to help me quickly annotate UI elements on 
 This repo also includes a web server for storing annotations in local postgres instance, and a small frontend for viewing them.
 
 #### TODO
-  #### Buggos / QOL
 
-* can we start, stop and resume without refreshing the page?
+#### Data The Gathering
 
+* Highly granular label list -- max accuracy
+* Broader yet still granular label list
+* consider an algorithm for grouping close elements
+* Collect data
 
-#### Nice to haves
+#### Nice to haves (Future)
 * can we fix shadow dom navigation
 * can we account for shadow dom when projecting to other elements
 * can we have a way of testing the visual similarity of two elements? (compare mode)
 * can we have a way of testing for the separation between two dom nodes (cousins)
-
-  #### Data The Gathering
-
-  * Highly granular label list -- max accuracy
-  * Broader yet still granular label list
-  * A separate detector for organizational elements.. not too specific... plus an algorithm for grouping close elements
-  * Collect data
-
+* can we have clean code
 
 ### UI Labelling Extension
 

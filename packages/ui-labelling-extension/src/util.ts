@@ -138,8 +138,9 @@ export function getDeepActiveElement(root: Document | ShadowRoot): Element | nul
 }
 
 // event block existing window key event listeners
+let listeners: Array<(event: KeyboardEvent) => void> = []
+let listenersInitialized = false
 export function getSelfishKeyDown(skip?: (e: KeyboardEvent) => boolean) {
-  const listeners: Array<(event: KeyboardEvent) => void> = []
 
   const controller = {
     addKeyDownListener: (
@@ -157,21 +158,25 @@ export function getSelfishKeyDown(skip?: (e: KeyboardEvent) => boolean) {
         return
       }
       listeners.splice(idx, 1)
+    },
+    removeAllListeners: () => {
+      listeners = []
     }
   }
 
-  window.addEventListener('keydown', e => {
-    if (skip?.(e) === true) {
-      console.log('what da heck', e)
-      return
-    }
-    console.log('WE GOT KEYDOWN', e.key)
-    for(let i = 0; i < listeners.length; i += 1) {
-      listeners[i](e)
-    }
-    e.stopImmediatePropagation()
-    e.preventDefault()
-  }, true)
+  if (!listenersInitialized) {
+    window.addEventListener('keydown', e => {
+      if (skip?.(e) === true) {
+        return
+      }
+      for(let i = 0; i < listeners.length; i += 1) {
+        listeners[i](e)
+      }
+      e.stopImmediatePropagation()
+      e.preventDefault()
+    }, true)
+    listenersInitialized = true
+  }
 
   return controller
 }

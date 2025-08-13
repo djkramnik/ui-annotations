@@ -914,9 +914,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
         globalsRef.showAnnotations = false
         break
       case ExtensionMessage.turnOffExtension:
-        if (globalsRef) {
-          getOverlay(globalsRef)?.remove()
-        }
+        document.getElementById(shadowId)?.remove()
         globalsRef = null
         unlockScroll()
         break
@@ -944,6 +942,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
               (activeEl as HTMLElement).isContentEditable
           }
         )
+        controller.removeAllListeners()
         addKeyDownListener = controller.addKeyDownListener
         removeKeyDownListener = controller.removeKeyDownListener
         const mount = document.querySelector(shadowId)
