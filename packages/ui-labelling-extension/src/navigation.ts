@@ -132,3 +132,40 @@ export function coerceToDirectChildOfParent(node: HTMLElement, parent: HTMLEleme
   // If we landed on a valid child, use it; otherwise fall back to `parent` itself.
   return (n && kids.includes(n)) ? n : parent;
 }
+
+export function isInShadowRoot(node: Node, root: ShadowRoot): boolean {
+  // Fast path: direct tree membership
+  if (node.getRootNode({ composed: false }) === root) return true;
+
+  let n: Node | null = node;
+
+  while (n) {
+    // If the node is slotted into some shadow tree, jump to the slot element.
+    const assignedSlot = (n as any).assignedSlot as HTMLSlotElement | undefined;
+    if (assignedSlot) {
+      if (assignedSlot.getRootNode({ composed: false }) === root) return true;
+      // Continue climbing from the slot (useful for nested shadow roots).
+      n = assignedSlot;
+      continue;
+    }
+
+    // Walk regular DOM parents.
+    if (n.parentNode) {
+      if (n.parentNode === root) return true;
+      n = n.parentNode;
+      continue;
+    }
+
+    // Cross a shadow boundary: from a ShadowRoot up to its host.
+    const ownRoot = n.getRootNode({ composed: false });
+    if (ownRoot instanceof ShadowRoot) {
+      if (ownRoot === root) return true;
+      n = ownRoot.host;
+    } else {
+      // Reached the document root; not inside `root`.
+      break;
+    }
+  }
+
+  return false;
+}

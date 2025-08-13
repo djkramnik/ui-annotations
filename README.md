@@ -7,8 +7,6 @@ This repo also includes a web server for storing annotations in local postgres i
   #### Buggos / QOL
 
   * general test run on a list of websites..
-    * youtube
-    * reddit
     * whats app web
     * starbucks.com
     * amazon.com

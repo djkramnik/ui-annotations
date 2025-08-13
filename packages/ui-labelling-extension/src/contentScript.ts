@@ -31,7 +31,7 @@ import {
   uuidv4,
 } from './util'
 import { findSimilarUiAsync } from './find-similar-ui'
-import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSiblingsWithShadow, normalizeForNav } from './navigation';
+import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSiblingsWithShadow, isInShadowRoot, normalizeForNav } from './navigation';
 
 (function () {
   let addKeyDownListener: (listener: (event: KeyboardEvent) => void) => void
@@ -919,14 +919,6 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
         unlockScroll()
         break
       case ExtensionMessage.startMain:
-        const mount = document.querySelector(shadowId)
-        if (mount) {
-          // TODO.  clean up here instead of running away
-          log.warn(
-            'request to run main but overlay already present on this page.',
-          )
-          return
-        }
         const controller = getSelfishKeyDown(
           function omitHandling(e: KeyboardEvent) {
             // if the active / focused element is within the shadow dom, document.activeElement will only return the host
@@ -935,6 +927,15 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
             if (!activeEl) {
               return false
             }
+            const shadowMount = document.getElementById(shadowId)
+            if (!(shadowMount?.shadowRoot)) {
+              console.error('could not get a reference to our own shadow root smh')
+              return false
+            }
+            if (!isInShadowRoot(activeEl, shadowMount.shadowRoot)) {
+              return false
+            }
+            console.log('so this element is guaranteed to be in our shadow root huh', activeEl)
             // we don't want our keydown handlers invoked if the focus is on a form element
             return activeEl.tagName === 'INPUT' ||
               activeEl.tagName === 'TEXTAREA' ||
@@ -943,7 +944,16 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
         )
         addKeyDownListener = controller.addKeyDownListener
         removeKeyDownListener = controller.removeKeyDownListener
+        const mount = document.querySelector(shadowId)
+        if (mount) {
+          // TODO.  clean up here instead of running away
+          log.warn(
+            'request to run main but overlay already present on this page.',
+          )
+          return
+        }
         globalsRef = main()
+
         lockScroll()
         break
     }
