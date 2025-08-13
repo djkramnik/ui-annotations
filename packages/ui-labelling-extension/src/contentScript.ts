@@ -28,27 +28,15 @@ import {
   getSelfishKeyDown,
   getSibs,
   isInViewport,
-  minimallyBig,
   uuidv4,
 } from './util'
 import { findSimilarUiAsync } from './find-similar-ui'
+import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSiblingsWithShadow, normalizeForNav } from './navigation';
 
-;import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSiblingsWithShadow, normalizeForNav } from './navigation';
 (function () {
-  const { addKeyDownListener, removeKeyDownListener } = getSelfishKeyDown(
-    function omitHandling(e: KeyboardEvent) {
-      // if the active / focused element is within the shadow dom, document.activeElement will only return the host
-      const activeEl = getDeepActiveElement(document)
+  let addKeyDownListener: (listener: (event: KeyboardEvent) => void) => void
+  let removeKeyDownListener: (listener: (event: KeyboardEvent) => void) => void
 
-      if (!activeEl) {
-        return false
-      }
-      // we don't want our keydown handlers invoked if the focus is on a form element
-      return activeEl.tagName === 'INPUT' ||
-        activeEl.tagName === 'TEXTAREA' ||
-        (activeEl as HTMLElement).isContentEditable
-    }
-  )
   function main() {
     const globals = _GlobalState(handleGlobalChange)
 
@@ -788,19 +776,6 @@ import { findSimilarUiAsync } from './find-similar-ui'
       return Array.from(el.children)[0] as HTMLElement
     }
 
-    function boxesTheSame(
-      bb1: DOMRect,
-      bb2: DOMRect,
-      tolerance: number = 2,
-    ): boolean {
-      return (
-        Math.abs(bb1.top - bb2.top) < tolerance &&
-        Math.abs(bb1.left - bb2.left) < tolerance &&
-        Math.abs(bb1.right - bb2.right) < tolerance &&
-        Math.abs(bb1.bottom - bb2.bottom) < tolerance
-      )
-    }
-
     // END OF SO CALLED UTILS
     return globals
   }
@@ -952,6 +927,22 @@ import { findSimilarUiAsync } from './find-similar-ui'
           )
           return
         }
+        const controller = getSelfishKeyDown(
+          function omitHandling(e: KeyboardEvent) {
+            // if the active / focused element is within the shadow dom, document.activeElement will only return the host
+            const activeEl = getDeepActiveElement(document)
+
+            if (!activeEl) {
+              return false
+            }
+            // we don't want our keydown handlers invoked if the focus is on a form element
+            return activeEl.tagName === 'INPUT' ||
+              activeEl.tagName === 'TEXTAREA' ||
+              (activeEl as HTMLElement).isContentEditable
+          }
+        )
+        addKeyDownListener = controller.addKeyDownListener
+        removeKeyDownListener = controller.removeKeyDownListener
         globalsRef = main()
         lockScroll()
         break
