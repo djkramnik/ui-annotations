@@ -51,31 +51,3 @@ export function getSiblingsWithShadow(el: HTMLElement): HTMLElement[] {
   return getChildrenWithShadow(parent)
     .filter(child => child !== el)
 }
-
-export function prevSiblingWithShadow(el: HTMLElement): HTMLElement | null {
-  const parent = getParentWithShadow(el)
-  if (!parent) {
-    return null
-  }
-  const children = getChildrenWithShadow(parent);
-  const i = children.indexOf(el);
-  if (i === -1) {
-    throw Error('prevSibling: could not find element among parents children')
-  }
-  return i > 0 ? (children[i - 1] as HTMLElement) : null
-}
-
-export function nextSiblingWithShadow(el: HTMLElement): HTMLElement | null {
-  const parent = getParentWithShadow(el)
-  if (!parent) {
-    return null
-  }
-  const children = getChildrenWithShadow(parent);
-  const i = children.indexOf(el);
-  if (i === -1) {
-    throw Error('nextSibling: could not find element among parents children')
-  }
-  return (i < children.length - 1)
-    ? (children[i + 1] as HTMLElement)
-    : null
-}

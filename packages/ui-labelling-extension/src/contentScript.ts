@@ -645,7 +645,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
         parent,
       })
       // get siblings.. drawRect on them
-      const siblings = getSiblingsWithShadow(element).filter(minimallyBig)
+      const siblings = getSiblingsWithShadow(element)
 
       siblings.forEach((sib, index) => {
         drawRect({
@@ -669,7 +669,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
       const curr = globals.currEl as HTMLElement
       const parent: HTMLElement | null = getParentWithShadow(curr)
       const thisGeneration: HTMLElement[] = parent
-        ? getChildrenWithShadow(parent).filter(minimallyBig)
+        ? getChildrenWithShadow(parent)
         : []
       const currIndex: number | null = parent
         ? thisGeneration.indexOf(curr)
@@ -686,7 +686,9 @@ import { findSimilarUiAsync } from './find-similar-ui'
         // arrow left
         case 'j':
           if (!parent || currIndex === -1) {
-            log.warn('arrowleft', 'cannot find parent node')
+            log.warn('arrowleft', parent
+              ? 'could not find current node among children'
+              : 'cannot find parent node')
             break
           }
           if (thisGeneration.length < 2) {
@@ -702,7 +704,9 @@ import { findSimilarUiAsync } from './find-similar-ui'
         // arrow right
         case 'l':
           if (!parent || currIndex === -1) {
-            log.warn('arrowright', 'cannot find parent node')
+            log.warn('arrowright', parent
+              ? 'could not find curr node among children'
+              : 'cannot find parent node')
             break
           }
           if (thisGeneration.length < 2) {
@@ -730,7 +734,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
           break
         // arrow down
         case 'k':
-          const currChildren = getChildrenWithShadow(curr).filter(minimallyBig)
+          const currChildren = getChildrenWithShadow(curr)
           if (!currChildren.length) {
             log.warn('arrowdown', 'no children', curr)
             break
