@@ -39,7 +39,7 @@ import { findSimilarUiAsync } from './find-similar-ui'
     function omitHandling(e: KeyboardEvent) {
       // if the active / focused element is within the shadow dom, document.activeElement will only return the host
       const activeEl = getDeepActiveElement(document)
-      console.log('keydown exception?', activeEl)
+
       if (!activeEl) {
         return false
       }
@@ -316,10 +316,8 @@ import { findSimilarUiAsync } from './find-similar-ui'
           annotationListInner.innerHTML = ''
 
           if (value) {
-            console.log('SHOWING ANNOTATIONS.  WHAT IS THE STATE', globals.state)
             // very messy now..
             if (globals.state === 'initial') {
-              console.log('REMOVING CLICK HANDLER WHILE VIEWING ANNOTATIONS')
               overlay.removeEventListener('mousedown', _handleMouseWrap)
             }
 
@@ -647,8 +645,6 @@ import { findSimilarUiAsync } from './find-similar-ui'
       })
       // get siblings.. drawRect on them
       const siblings = getSiblingsWithShadow(element)
-      console.log('ITS A ME', element)
-      console.log('ME SIBLINGS', siblings)
 
       siblings.forEach((sib, index) => {
         drawRect({
@@ -674,12 +670,10 @@ import { findSimilarUiAsync } from './find-similar-ui'
       const thisGeneration: HTMLElement[] = parent
         ? getChildrenWithShadow(parent)
         : []
-      console.log('THIS GENERATION', thisGeneration)
-      console.log('ME PARENT', parent)
+
       const currIndex: number | null = parent
         ? thisGeneration.indexOf(curr)
         : -1
-      console.log('ME INDEX', currIndex)
 
       let newIndex
       log.info('keypressed', event.key)

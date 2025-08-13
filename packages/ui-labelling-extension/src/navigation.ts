@@ -28,7 +28,6 @@ export function getChildrenWithShadow(el: HTMLElement): HTMLElement[] {
 export function getParentWithShadow(el: HTMLElement): HTMLElement | null {
   const slot = (el as HTMLElement).assignedSlot
   if (slot) {
-    console.log('WE ARE A SLOT IN SEARCH OF A PARENT')
     const slotRoot = slot.getRootNode();
     return slotRoot instanceof ShadowRoot ? (slotRoot.host as HTMLElement) : null;
   }
@@ -58,6 +57,7 @@ export function normalizeForNav(el: HTMLElement): HTMLElement {
   if (!(el instanceof HTMLSlotElement)) {
     return el
   }
+
   const assigned = el.assignedElements({ flatten: true })
     .find((n): n is HTMLElement => n instanceof HTMLElement);
   if (assigned) {
@@ -113,4 +113,22 @@ export function deepElementFromPoint(x: number, y: number): Element | null {
   }
 
   return el;
+}
+
+// more gpt churn
+export function coerceToDirectChildOfParent(node: HTMLElement, parent: HTMLElement): HTMLElement {
+  const kids = getChildrenWithShadow(parent);
+
+  // If it already matches, done.
+  if (kids.includes(node)) return node;
+
+  // Walk up the *composed* ancestry until we hit a direct child of `parent`.
+  // Use your getParentWithShadow (host-level parent: slot -> host, shadow top -> host, else .parentElement).
+  let n: HTMLElement | null = node;
+  while (n && n !== parent && !kids.includes(n)) {
+    n = getParentWithShadow(n);
+  }
+
+  // If we landed on a valid child, use it; otherwise fall back to `parent` itself.
+  return (n && kids.includes(n)) ? n : parent;
 }
