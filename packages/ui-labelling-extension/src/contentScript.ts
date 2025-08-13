@@ -33,7 +33,8 @@ import {
 } from './util'
 import { findSimilarUiAsync } from './find-similar-ui'
 
-;(function () {
+;import { getChildrenWithShadow, getParentWithShadow } from './navigation';
+(function () {
   const { addKeyDownListener, removeKeyDownListener } = getSelfishKeyDown(
     function omitHandling(e: KeyboardEvent) {
       // if the active / focused element is within the shadow dom, document.activeElement will only return the host
@@ -665,12 +666,13 @@ import { findSimilarUiAsync } from './find-similar-ui'
         log.error('no current element to navigate from')
         return
       }
-      const parent: HTMLElement | null = globals.currEl.parentElement
-      const siblings: HTMLElement[] = parent
-        ? (Array.from(parent.children) as HTMLElement[]).filter(minimallyBig)
+      const curr = globals.currEl as HTMLElement
+      const parent: HTMLElement | null = getParentWithShadow(curr)
+      const thisGeneration: HTMLElement[] = parent
+        ? getChildrenWithShadow(parent).filter(minimallyBig)
         : []
       const currIndex: number | null = parent
-        ? siblings.filter(minimallyBig).indexOf(globals.currEl)
+        ? thisGeneration.indexOf(curr)
         : -1
 
       let newIndex
@@ -681,61 +683,59 @@ import { findSimilarUiAsync } from './find-similar-ui'
         case 'q':
           globals.state = 'initial'
           break
-        // ijlk navigating the DOM
+        // arrow left
         case 'j':
           if (!parent || currIndex === -1) {
             log.warn('arrowleft', 'cannot find parent node')
             break
           }
-          if (siblings.length < 2) {
+          if (thisGeneration.length < 2) {
             log.warn('arrowleft', 'no siblings')
             break
           }
           newIndex = currIndex - 1
           if (newIndex < 0) {
-            newIndex = siblings.length - 1
+            newIndex = thisGeneration.length - 1
           }
-          globals.currEl = siblings[newIndex] as HTMLElement
+          globals.currEl = thisGeneration[newIndex]
           break
+        // arrow right
         case 'l':
           if (!parent || currIndex === -1) {
             log.warn('arrowright', 'cannot find parent node')
             break
           }
-          if (siblings.length < 2) {
+          if (thisGeneration.length < 2) {
             log.warn('arrowright', 'no siblings')
             break
           }
           newIndex = currIndex + 1
-          if (newIndex > siblings.length - 1) {
+          if (newIndex > thisGeneration.length - 1) {
             newIndex = 0
           }
-          globals.currEl = siblings[newIndex] as HTMLElement
+          globals.currEl = thisGeneration[newIndex] as HTMLElement
           break
+        // arrow up
         case 'i':
           if (
-            !globals.currEl.parentElement ||
-            globals.currEl.parentElement === document.body
+            !parent || parent === document.body
           ) {
-            log.warn('arrowup', 'no parent node')
+            log.warn('arrowup', parent
+                ? 'parent is document body'
+                : 'no parent node')
             break
           }
-          const firstDifferentlyShapedParent = traverseUp(globals.currEl)
 
-          globals.currEl = firstDifferentlyShapedParent
+          globals.currEl = parent
           break
+        // arrow down
         case 'k':
-          const currChildren = Array.from(globals.currEl.children)
+          const currChildren = getChildrenWithShadow(curr).filter(minimallyBig)
           if (!currChildren.length) {
-            log.warn('arrowdown', 'no children', globals.currEl)
+            log.warn('arrowdown', 'no children', curr)
             break
           }
-          const firstDifferentlyShapedChild = traverseDown(globals.currEl)
-          if (!firstDifferentlyShapedChild) {
-            log.warn('arrowdown', 'no differently shaped children')
-            break
-          }
-          globals.currEl = firstDifferentlyShapedChild
+          globals.currEl = currChildren[0]
           break
         // after settling on what to label, hit enter to bring up label dropdown
         case 'Enter':
