@@ -38,24 +38,40 @@ export function getFormOverlay() {
   return formOverlay
 }
 
-// this assumes that the parent must be relatively positioned!!
-export function getRemoveIcon(
-  handler?: (event: MouseEvent) => void,
-): HTMLImageElement {
-  const removeIcon = document.createElement('img')
-  removeIcon.setAttribute('src', trashCanUrl)
-  removeIcon.style.position = 'absolute'
-  removeIcon.style.right = '0'
-  removeIcon.style.height = '100%'
-  removeIcon.style.maxHeight = '30px'
-  removeIcon.style.minHeight = '15px'
-  removeIcon.style.cursor = 'pointer'
-  removeIcon.style.zIndex = '2'
+export async function getRemoveIconInline(
+  handler?: (event: MouseEvent) => void
+): Promise<HTMLElement> {
+  // Fetch the SVG file as text
+  const res = await fetch(trashCanUrl);
+  const svgText = await res.text();
+
+  // Parse the SVG into a DOM element
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = svgText.trim();
+  const removeIcon = wrapper.firstElementChild as SVGElement;
+
+  // Apply styles
+  Object.assign(wrapper.style, {
+    position: 'absolute',
+    right: '0',
+    height: '100%',
+    maxHeight: '30px',
+    minHeight: '15px',
+    cursor: 'pointer',
+    zIndex: '2',
+  });
+
+  Object.assign(removeIcon.style, {
+    height: '100%',
+    width: '100%'
+  })
+
+  // Attach handler if provided
   if (typeof handler === 'function') {
-    removeIcon.addEventListener('mousedown', handler)
+    removeIcon.addEventListener('mousedown', handler);
   }
 
-  return removeIcon
+  return wrapper;
 }
 
 export function buildForm({

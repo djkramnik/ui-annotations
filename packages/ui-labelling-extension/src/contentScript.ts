@@ -18,7 +18,7 @@ import {
   buildProjectionForm,
   buildShadowUi,
   getFormOverlay,
-  getRemoveIcon,
+  getRemoveIconInline,
   populateAnnotationList,
 } from './dom-building'
 import {
@@ -347,28 +347,30 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
             globals.annotations.forEach((anno) => {
               const { id, ref, label, useTextNode } = anno
               const c = annotationLabels[label]
-
-              const removeIcon = getRemoveIcon((event) => {
+              let removeIcon: HTMLElement | undefined = undefined
+              getRemoveIconInline((event) => {
                 event.stopPropagation()
                 // filter annotation out of the global state var
                 globals.annotations = globals.annotations.filter(
                   (a) => a !== anno,
                 )
                 // fragile
-                removeIcon.parentElement?.remove()
-              })
-              drawRect({
-                id: 'show_annotation_' + id,
-                element: ref,
-                parent: overlay,
-                styles: {
-                  border: '2px solid ' + c,
-                  backgroundColor: c,
-                  opacity: '0.9',
-                  zIndex: '2',
-                },
-                child: removeIcon,
-                useTextNode,
+                removeIcon?.parentElement?.remove()
+              }).then(svg => {
+                removeIcon = svg
+                drawRect({
+                  id: 'show_annotation_' + id,
+                  element: ref,
+                  parent: overlay,
+                  styles: {
+                    border: '2px solid ' + c,
+                    backgroundColor: c,
+                    opacity: '0.9',
+                    zIndex: '2',
+                  },
+                  child: removeIcon,
+                  useTextNode,
+                })
               })
             })
           } else {
@@ -579,7 +581,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
       parent: HTMLElement
       styles?: Partial<Record<keyof CSSStyleDeclaration, string>>
       id?: string
-      child?: HTMLElement
+      child?: Element
       useTextNode?: boolean
     }) {
       const annotation = document.createElement('div')

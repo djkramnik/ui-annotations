@@ -6,18 +6,14 @@ This repo also includes a web server for storing annotations in local postgres i
 #### TODO
   #### Buggos / QOL
 
-  * general test run on a list of websites..
-    * whats app web
-    * starbucks.com
-    * amazon.com
-    * walmart.com
-    * homedepot.com
-    * ycombinator.com
-    * chesswithmrs.com
-    * lichess.org
-    * crazygames.com
-
 * can we start, stop and resume without refreshing the page?
+
+
+#### Nice to haves
+* can we fix shadow dom navigation
+* can we account for shadow dom when projecting to other elements
+* can we have a way of testing the visual similarity of two elements? (compare mode)
+* can we have a way of testing for the separation between two dom nodes (cousins)
 
   #### Data The Gathering
 
