@@ -64,7 +64,7 @@ export default function ScreenshotAnnotator({
         const fill   = annotationLabels[label] ?? 'rgba(255,66,64,0.35)'
         // make an opaque border if the fill is rgba with alpha
         const border = fill.startsWith('rgba')
-          ? fill.replace(/[\d.]+\)$/, '1)')
+          ? fill.replace(/[\d.]+\)$/, '0.5)')
           : fill
 
         return (

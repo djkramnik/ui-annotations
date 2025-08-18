@@ -273,7 +273,7 @@ export default function AnnotationPage() {
       }
     })
     setAdjustReset(reset => !reset)
-  }, [pageState, setAnnotations, adjustment, setAdjustReset])
+  }, [pageState, setAnnotations, adjustment, setAdjustReset, annotations])
 
   const handleRemoveAnnotation = useCallback((index: number) => {
     const proceed = window.confirm('you sure?  you sure you want to delete this wonderful annotation?')
@@ -291,9 +291,14 @@ export default function AnnotationPage() {
         }
       }
     })
+    setPageState(value => ({
+      ...value,
+      currToggleIndex: null,
+      mode: 'initial'
+    }))
     // react hack.  we only do this to force an effect to run within useAdjustRect
     setAdjustReset(reset => !reset)
-  }, [setAnnotations, setAdjustReset])
+  }, [setAnnotations, setAdjustReset, annotations, pageState, setPageState])
 
   useEffect(() => {
     if (!isReady) return
@@ -332,7 +337,7 @@ export default function AnnotationPage() {
   if (!annotations) {
     return <p>Loading…</p>
   }
-
+  console.log('CURRENT ANNOTATIONS', annotations.payload)
   const {
     url,
     date,
@@ -392,14 +397,18 @@ export default function AnnotationPage() {
           >
             <ScreenshotAnnotator
               screenshot={screenshotDataUrl}
-              labelOverride={
-                pageState.mode !== 'toggle'
-                  ? undefined
-                  : {
-                    backgroundColor: 'transparent',
-                    border: `1px solid #16F529`
-                  }
-              }
+              labelOverride={{
+                ...(
+                  pageState.mode !== 'toggle'
+                    ? undefined
+                    : {
+                      backgroundColor: 'transparent',
+                      border: `1px solid #16F529`
+                    }
+                ),
+                opacity: '0.9'
+              }}
+
               annotations={
                 pageState.mode !== 'toggle'
                   ? payload.annotations
