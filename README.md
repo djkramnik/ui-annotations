@@ -10,6 +10,7 @@ This repo also includes a web server for storing annotations in local postgres i
 * on the frontend viewer, have a tally of the counts of the following
   * num screenshots
   * num of each label
+  * num of unique urls
 * reset the toggle text / shrink to text node checkboxes to false after each submit
 * export should call end at the same time.  buttons like start / end / export should be disabled if appropriate
 * for visual projection, check everything by default and restore to this default state after each submit
@@ -20,6 +21,7 @@ This repo also includes a web server for storing annotations in local postgres i
 #### Data The Gathering
 
 * Highly granular label list -- max accuracy
+* first training run - try for min 500 per label
 * Broader yet still granular label list
 * consider an algorithm for grouping close elements
 * Collect data

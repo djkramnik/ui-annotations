@@ -184,3 +184,47 @@ annotationRouter.get('/:id', async (req: Request, res: Response) => {
     res.status(500).send({ message: 'Unexpected error ' + err })
   }
 })
+
+annotationRouter.get('/analytics', async (_req: Request, res: Response) => {
+  try {
+    const labelCountsQ = prisma.$queryRaw<
+      { label: string; count: bigint }[]
+    >`
+      SELECT
+        ann->>'label' AS label,
+        COUNT(*)::bigint AS count
+      FROM annotations,
+           jsonb_array_elements(payload->'annotations') ann
+      GROUP BY ann->>'label'
+      ORDER BY count DESC
+    `;
+
+    const urlCountQ = prisma.$queryRaw<
+      { url_count: bigint }[]
+    >`
+      SELECT COUNT(DISTINCT url)::bigint AS url_count
+      FROM annotations
+    `;
+
+    const [labelRows, urlRows] = await Promise.all([labelCountsQ, urlCountQ]);
+
+    const out: Record<string, number> = {
+      ...(labelRows.reduce((acc, r) => {
+        if (typeof r.label !== 'string') {
+          return acc
+        }
+        return {
+          ...acc,
+          [r.label]: Number(r.count)
+        }
+      }, {} as Record<string, number>)),
+      url: Number(urlRows[0].url_count)
+    }
+
+    res.status(200).json(out);
+
+  } catch(err) {
+    console.error(err)
+    res.status(500).send({ message: 'Unexpected error ' + err })
+  }
+})
