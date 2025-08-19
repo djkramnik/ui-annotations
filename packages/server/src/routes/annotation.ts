@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express'
 import { prisma } from '../db'
+import { AnnotationLabel } from 'ui-labelling-shared'
 
 export const annotationRouter = Router()
 
@@ -187,44 +188,61 @@ annotationRouter.get('/:id', async (req: Request, res: Response) => {
 
 annotationRouter.get('/analytics', async (_req: Request, res: Response) => {
   try {
+    // --- constants for guaranteed keys ---
+    const LABELS = ['button', 'copy', 'heading', 'input'] as const;
+    type Label = (typeof LABELS)[number];
+    type Bucket = Record<AnnotationLabel | 'url', number>;
+    const zeroBucket = (): Bucket => ({ button: 0, copy: 0, heading: 0, input: 0, url: 0 });
+    const labelSet = new Set<string>(LABELS as readonly string[]);
+
+    // --- queries ---
     const labelCountsQ = prisma.$queryRaw<
-      { label: string; count: bigint }[]
+      { is_published: boolean; label: string | null; count: bigint }[]
     >`
       SELECT
-        ann->>'label' AS label,
-        COUNT(*)::bigint AS count
-      FROM annotations,
-           jsonb_array_elements(payload->'annotations') ann
-      GROUP BY ann->>'label'
-      ORDER BY count DESC
+        (COALESCE(a.published, 0) <> 0)        AS is_published,
+        ann->>'label'                          AS label,
+        COUNT(*)::bigint                       AS count
+      FROM annotations a,
+           jsonb_array_elements(COALESCE(a.payload->'annotations', '[]'::jsonb)) ann
+      GROUP BY is_published, ann->>'label'
+      ORDER BY is_published DESC, count DESC
     `;
 
     const urlCountQ = prisma.$queryRaw<
-      { url_count: bigint }[]
+      { is_published: boolean; url_count: bigint }[]
     >`
-      SELECT COUNT(DISTINCT url)::bigint AS url_count
+      SELECT
+        (COALESCE(published, 0) <> 0)          AS is_published,
+        COUNT(DISTINCT url)::bigint            AS url_count
       FROM annotations
+      GROUP BY is_published
     `;
 
     const [labelRows, urlRows] = await Promise.all([labelCountsQ, urlCountQ]);
 
-    const out: Record<string, number> = {
-      ...(labelRows.reduce((acc, r) => {
-        if (typeof r.label !== 'string') {
-          return acc
-        }
-        return {
-          ...acc,
-          [r.label]: Number(r.count)
-        }
-      }, {} as Record<string, number>)),
-      url: Number(urlRows[0].url_count)
+    // --- guaranteed shape with zeros ---
+    const out: Record<'published' | 'draft', Bucket> = {
+      published: zeroBucket(),
+      draft: zeroBucket(),
+    };
+
+    // fill label counts
+    for (const r of labelRows) {
+      if (!r.label || !labelSet.has(r.label)) continue; // ignore unknown labels
+      const bucket = r.is_published ? 'published' : 'draft';
+      out[bucket][r.label as Label] = Number(r.count);
+    }
+
+    // fill url counts (zeros already present if missing)
+    for (const r of urlRows) {
+      const bucket = r.is_published ? 'published' : 'draft';
+      out[bucket].url = Number(r.url_count);
     }
 
     res.status(200).json(out);
-
-  } catch(err) {
-    console.error(err)
-    res.status(500).send({ message: 'Unexpected error ' + err })
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: 'Unexpected error ' + err });
   }
-})
+});

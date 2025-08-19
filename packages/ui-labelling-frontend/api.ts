@@ -1,3 +1,4 @@
+import { AnnotationLabel, annotationLabels } from "ui-labelling-shared"
 import { AnnotationPayload } from "./utils/type"
 
 
@@ -6,6 +7,20 @@ const throwIfErrorStatus = (r: Response) => {
     return r.json()
   }
   return Promise.reject(r)
+}
+
+type CountBreakdown = Record<AnnotationLabel | 'url', number>
+
+type Analytics = {
+  'published': CountBreakdown
+  'draft': CountBreakdown
+}
+
+export const getAnalytics = (): Promise<Analytics> => {
+  return (
+    fetch('/api/analytics')
+      .then(throwIfErrorStatus)
+  )
 }
 
 export const getAnnotations = () => {
