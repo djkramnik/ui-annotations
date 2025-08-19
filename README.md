@@ -5,19 +5,47 @@ This repo also includes a web server for storing annotations in local postgres i
 
 #### TODO
 
+#### QOL / BUGS
+
+* on the frontend viewer, have a tally of the counts of the following
+  * num screenshots
+  * num of each label
+* reset the toggle text / shrink to text node checkboxes to false after each submit
+* export should call end at the same time.  buttons like start / end / export should be disabled if appropriate
+* for visual projection, check everything by default and restore to this default state after each submit
+* projection can result in invisible elements getting added.  confirm this on the test-site.  confirm a fix likewise
+* before navigating away can we notify if no export was performed
+
+
 #### Data The Gathering
 
 * Highly granular label list -- max accuracy
 * Broader yet still granular label list
 * consider an algorithm for grouping close elements
 * Collect data
+a
+#### First label definitions
+* button
+  * visual button with some kind of outline.  Can contain text or text with icon but pure icon is another category
+  * If it's got too much crap inside it's not a button.  That is anything more than a textwrap for layout
+* heading
+  * Should look like it is serving as a large contextual text that frames a section of the ui
+  * a large piece of text meant to draw immediate attention of the viewer before other elements
+* copy
+  * Meant to be a primary source of info on the page or the section. Should be composed of sentence(s).
+  * body-text / descriptive text that’s meant to be read, not interacted with
+  * Text whose main purpose is to deliver the core content of the page/section, usually longer than a phrase, and meant to be consumed as information.
+* input
+  * editable text form field
+  * just the part that you type into.  A text input with a search icon on the right or left does not comprise the two together
+  * does not include textareas (multiline)
 
 #### Nice to haves (Future)
 * can we fix shadow dom navigation
 * can we account for shadow dom when projecting to other elements
 * can we have a way of testing the visual similarity of two elements? (compare mode)
 * can we have a way of testing for the separation between two dom nodes (cousins)
-* can we have clean code
+* can we have clean code (no)
 
 ### UI Labelling Extension
 
