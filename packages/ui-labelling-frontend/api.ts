@@ -9,16 +9,16 @@ const throwIfErrorStatus = (r: Response) => {
   return Promise.reject(r)
 }
 
-type CountBreakdown = Record<AnnotationLabel | 'url', number>
+export type CountBreakdown = Record<AnnotationLabel | 'url', number>
 
-type Analytics = {
+export type Analytics = {
   'published': CountBreakdown
   'draft': CountBreakdown
 }
 
-export const getAnalytics = (): Promise<Analytics> => {
+export const getAnalytics = (): Promise<{ data: Analytics}> => {
   return (
-    fetch('/api/analytics')
+    fetch('/api/annotation/analytics')
       .then(throwIfErrorStatus)
   )
 }

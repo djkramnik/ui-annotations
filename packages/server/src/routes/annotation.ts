@@ -77,6 +77,67 @@ annotationRouter.put('/unpublish/:id', async (req: Request, res: Response) => {
   }
 })
 
+annotationRouter.get('/analytics', async (_req: Request, res: Response) => {
+  try {
+    // --- constants for guaranteed keys ---
+    const LABELS = Object.values(AnnotationLabel)
+    type Label = (typeof LABELS)[number];
+    type Bucket = Record<AnnotationLabel | 'url', number>;
+    const zeroBucket = (): Bucket => ({ button: 0, copy: 0, heading: 0, input: 0, url: 0 });
+    const labelSet = new Set<string>(LABELS as readonly string[]);
+
+    // --- queries ---
+    const labelCountsQ = prisma.$queryRaw<
+      { is_published: boolean; label: string | null; count: bigint }[]
+    >`
+      SELECT
+        (COALESCE(a.published, 0) <> 0)        AS is_published,
+        ann->>'label'                          AS label,
+        COUNT(*)::bigint                       AS count
+      FROM annotations a,
+           jsonb_array_elements(COALESCE(a.payload->'annotations', '[]'::jsonb)) ann
+      GROUP BY is_published, ann->>'label'
+      ORDER BY is_published DESC, count DESC
+    `;
+
+    const urlCountQ = prisma.$queryRaw<
+      { is_published: boolean; url_count: bigint }[]
+    >`
+      SELECT
+        (COALESCE(published, 0) <> 0)          AS is_published,
+        COUNT(DISTINCT url)::bigint            AS url_count
+      FROM annotations
+      GROUP BY is_published
+    `;
+
+    const [labelRows, urlRows] = await Promise.all([labelCountsQ, urlCountQ]);
+
+    // --- guaranteed shape with zeros ---
+    const out: Record<'published' | 'draft', Bucket> = {
+      published: zeroBucket(),
+      draft: zeroBucket(),
+    };
+
+    // fill label counts
+    for (const r of labelRows) {
+      if (!r.label || !labelSet.has(r.label)) continue; // ignore unknown labels
+      const bucket = r.is_published ? 'published' : 'draft';
+      out[bucket][r.label as Label] = Number(r.count);
+    }
+
+    // fill url counts (zeros already present if missing)
+    for (const r of urlRows) {
+      const bucket = r.is_published ? 'published' : 'draft';
+      out[bucket].url = Number(r.url_count);
+    }
+
+    res.status(200).json({ data: out});
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: 'Unexpected error ' + err });
+  }
+});
+
 annotationRouter.post('/', async (req: Request, res: Response) => {
   try {
     const {
@@ -186,63 +247,4 @@ annotationRouter.get('/:id', async (req: Request, res: Response) => {
   }
 })
 
-annotationRouter.get('/analytics', async (_req: Request, res: Response) => {
-  try {
-    // --- constants for guaranteed keys ---
-    const LABELS = ['button', 'copy', 'heading', 'input'] as const;
-    type Label = (typeof LABELS)[number];
-    type Bucket = Record<AnnotationLabel | 'url', number>;
-    const zeroBucket = (): Bucket => ({ button: 0, copy: 0, heading: 0, input: 0, url: 0 });
-    const labelSet = new Set<string>(LABELS as readonly string[]);
 
-    // --- queries ---
-    const labelCountsQ = prisma.$queryRaw<
-      { is_published: boolean; label: string | null; count: bigint }[]
-    >`
-      SELECT
-        (COALESCE(a.published, 0) <> 0)        AS is_published,
-        ann->>'label'                          AS label,
-        COUNT(*)::bigint                       AS count
-      FROM annotations a,
-           jsonb_array_elements(COALESCE(a.payload->'annotations', '[]'::jsonb)) ann
-      GROUP BY is_published, ann->>'label'
-      ORDER BY is_published DESC, count DESC
-    `;
-
-    const urlCountQ = prisma.$queryRaw<
-      { is_published: boolean; url_count: bigint }[]
-    >`
-      SELECT
-        (COALESCE(published, 0) <> 0)          AS is_published,
-        COUNT(DISTINCT url)::bigint            AS url_count
-      FROM annotations
-      GROUP BY is_published
-    `;
-
-    const [labelRows, urlRows] = await Promise.all([labelCountsQ, urlCountQ]);
-
-    // --- guaranteed shape with zeros ---
-    const out: Record<'published' | 'draft', Bucket> = {
-      published: zeroBucket(),
-      draft: zeroBucket(),
-    };
-
-    // fill label counts
-    for (const r of labelRows) {
-      if (!r.label || !labelSet.has(r.label)) continue; // ignore unknown labels
-      const bucket = r.is_published ? 'published' : 'draft';
-      out[bucket][r.label as Label] = Number(r.count);
-    }
-
-    // fill url counts (zeros already present if missing)
-    for (const r of urlRows) {
-      const bucket = r.is_published ? 'published' : 'draft';
-      out[bucket].url = Number(r.url_count);
-    }
-
-    res.status(200).json(out);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send({ message: 'Unexpected error ' + err });
-  }
-});
