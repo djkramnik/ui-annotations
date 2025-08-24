@@ -7,10 +7,6 @@ This repo also includes a web server for storing annotations in local postgres i
 
 #### QOL / BUGS
 
-* on the frontend viewer, have a tally of the counts of the following
-  * num screenshots
-  * num of each label
-  * num of unique urls
 * reset the toggle text / shrink to text node checkboxes to false after each submit
 * export should call end at the same time.  buttons like start / end / export should be disabled if appropriate
 * for visual projection, check everything by default and restore to this default state after each submit
@@ -27,19 +23,34 @@ This repo also includes a web server for storing annotations in local postgres i
 * Collect data
 a
 #### First label definitions
-* button
+* Button:
   * visual button with some kind of outline.  Can contain text or text with icon but pure icon is another category
   * If it's got too much crap inside it's not a button.  That is anything more than a textwrap for layout
-* heading
-  * Should look like it is serving as a large contextual text that frames a section of the ui
-  * a large piece of text meant to draw immediate attention of the viewer before other elements
-* copy
-  * Meant to be a primary source of info on the page or the section. Should be composed of sentence(s).
-  * body-text / descriptive text that’s meant to be read, not interacted with
-  * Text whose main purpose is to deliver the core content of the page/section, usually longer than a phrase, and meant to be consumed as information.
-* input
+
+* Heading:
+Prominent text whose primary function is to name or contextualize a page or section, typically visually distinguished by size, weight, or placement relative to surrounding text.
+
+Include (yes):
+
+Page titles, section titles, card titles, widget headers.
+
+Bold/large text that acts as an entry point into content below it.
+
+Text at the top of a logical content group (e.g., “Specifications,” “Customer Reviews”).
+
+Exclude (no):
+
+Button text (belongs to button).
+
+Labels for controls (e.g., “Email” above an input).
+
+Standalone emphasized words inside copy (e.g., bold inline words).
+
+Decorative big text that doesn’t title anything (e.g., a hero banner with random marketing words, unless it really is the page’s title).
+
+* Input:
   * editable text form field
-  * just the part that you type into.  A text input with a search icon on the right or left does not comprise the two together
+  * if coupled with other elements (a search button) I am including the whole thing
   * does not include textareas (multiline)
 
 #### Nice to haves (Future)
