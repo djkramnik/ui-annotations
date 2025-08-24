@@ -366,7 +366,7 @@ export default function AnnotationPage() {
         </button>
         <Flex aic jcsb>
           <Flex aic gap="12px">
-            <strong>{url}</strong>
+            <strong>{url.slice(0, 50)}</strong>
             <p><strong>Date:</strong> <SimpleDate date={date} /></p>
             <p>Scroll: {scrollY}</p>
           </Flex>
