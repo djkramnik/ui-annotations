@@ -348,9 +348,25 @@ export default function AnnotationPage() {
   }, [setChanged, annotations])
 
   if (!annotations) {
-    return <p>Loading…</p>
+    return (
+      <main id="annotation-view">
+      <Container>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center'}}>
+          <button id="back-btn" onClick={() => push('/')}>
+            Back
+          </button>
+          <button id="prev-btn" onClick={() => push('/view/' + (Number(String(query.id)) - 1))}>
+            Prev
+          </button>
+          <button id="next-btn" onClick={() => push('/view/' + (Number(query.id) + 1))}>
+            Next
+          </button>
+        </div>
+        </Container>
+      </main>
+    )
   }
-  console.log('CURRENT ANNOTATIONS', annotations.payload)
+
   const {
     url,
     date,
@@ -374,9 +390,17 @@ export default function AnnotationPage() {
           : null
       }
       <Container>
-        <button id="back-btn" onClick={() => push('/')}>
-          Back
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center'}}>
+          <button id="back-btn" onClick={() => push('/')}>
+            Back
+          </button>
+          <button id="prev-btn" onClick={() => push('/view/' + (Number(String(query.id)) - 1))}>
+            Prev
+          </button>
+          <button id="next-btn" onClick={() => push('/view/' + (Number(query.id) + 1))}>
+            Next
+          </button>
+        </div>
         <Flex aic jcsb>
           <Flex aic gap="12px">
             <strong>{url.slice(0, 50)}</strong>
