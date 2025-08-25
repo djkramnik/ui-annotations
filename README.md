@@ -7,7 +7,11 @@ This repo also includes a web server for storing annotations in local postgres i
 
 #### QOL / BUGS
 
-* need a faster way to delete annotations on the frontend viewer
+* in the extension there should be a mode to vary the styles on the page and take multiple
+screenshots
+* frontend viewer after you update do not go back to index please
+* need a faster way to delete annotations on the frontend viewer (give us the icon)
+* need a faster way to draw annotate.  I should be able to draw multiple boxes and then label them in one shot?
 * reset the toggle text / shrink to text node checkboxes to false after each submit
 * export should call end at the same time.  buttons like start / end / export should be disabled if appropriate
 * for visual projection, check everything by default and restore to this default state after each submit

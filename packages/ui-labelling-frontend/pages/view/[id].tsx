@@ -47,14 +47,24 @@ export default function AnnotationPage() {
   )
 
 
-  const resetPageState = useCallback(() => {
+  const resetPageState = useCallback((options?: Partial<{
+    restoreNoChange: boolean
+    updateOriginalAnnotations: boolean
+  }>) => {
+    const { restoreNoChange, updateOriginalAnnotations} = options ?? {}
     setPageState({
       mode: 'initial',
       toggleState: null,
       dangerState: null,
       currToggleIndex: null
     })
-  }, [setPageState])
+    if (restoreNoChange) {
+      setChanged(false)
+    }
+    if (updateOriginalAnnotations) {
+      originalAnnotations.current = annotations.payload.annotations
+    }
+  }, [setPageState, setChanged, annotations])
 
   const NewAnnotationForm = useMemo(() => {
     return () => !pageState.drawCandidate ? null : (
@@ -94,7 +104,7 @@ export default function AnnotationPage() {
               <button type="submit">
                 submit
               </button>
-              <button type="button" onClick={resetPageState}>
+              <button type="button" onClick={() => resetPageState()}>
                 cancel
               </button>
             </Flex>
@@ -176,13 +186,16 @@ export default function AnnotationPage() {
       updateAnnotation(
         Number(String(query.id)),
         { annotations: annotations.payload.annotations },
-      ).then(() => push('/'))
+      ).then(() => resetPageState({
+        restoreNoChange: true,
+        updateOriginalAnnotations: true
+      }))
     } catch(e) {
       // show toast
     } finally {
       setDisabled(false)
     }
-  }, [setDisabled, disabled, changed, annotations, push])
+  }, [setDisabled, disabled, changed, annotations, resetPageState])
 
   const handlePublishClick = useCallback(() => {
     if (disabled || !annotations) {
