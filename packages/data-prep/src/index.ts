@@ -1,6 +1,7 @@
 /* src/index.ts */
 /* eslint-disable no-console */
 import { PrismaClient } from '@prisma/client';
+import { getRasterSize } from './utils/raster';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
@@ -180,11 +181,29 @@ async function main() {
     const absImgPath = path.join(IMG_DIR, split, fileBase);
     await fs.writeFile(absImgPath, buf);
 
+    // SCALING CRAP
+    const size = getRasterSize(buf);
+    if (!size) {
+      console.warn(`Skipping id=${it.id}: could not read raster size`);
+      continue;
+    }
+    const W_img = size.width;
+    const H_img = size.height;
+
+    // Your previous meta dims (likely CSS px you saved as viewWidth/viewHeight)
+    const W_meta = it.width;
+    const H_meta = it.height;
+
+    // Scale factors from meta coords → raster coords
+    const sx = W_meta ? (W_img / W_meta) : 1.0;
+    const sy = H_meta ? (H_img / H_meta) : 1.0;
+    // END SCALING CRAP
+
     const image: CocoImage = {
       id: it.id,
       file_name: path.posix.join('images', split, fileBase), // relative to dist/coco
-      width: it.width,
-      height: it.height
+      width: W_img,
+      height: H_img
     };
 
     // Build annotations
@@ -200,15 +219,23 @@ async function main() {
         typeof height !== 'number' ||
         width <= 0 ||
         height <= 0
-      ) continue;
+      ) {
+        console.error('WACK ANNOTATION DETECTED', JSON.stringify(a))
+        continue
+      }
+
+      const bx = x * sx;
+      const by = y * sy;
+      const bw = width * sx;
+      const bh = height * sy;
 
       anns.push({
         id: annId++,
         image_id: image.id,
         category_id: CAT_ID_BY_NAME.get(a.label)!,
-        bbox: [x, y, width, height],
+        bbox: [bx, by, bw, bh],
         iscrowd: 0,
-        area: width * height
+        area: bw * bh
       });
     }
 
