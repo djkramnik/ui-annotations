@@ -3,3 +3,5 @@ node_modules
 !.env.sample
 dist
 .next
+/**/*/model_final.pth
+env
