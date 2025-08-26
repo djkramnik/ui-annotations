@@ -106,6 +106,8 @@ type CocoDoc = {
   images: CocoImage[];
   annotations: CocoAnnotation[];
   categories: CocoCategory[];
+  licenses: string[]
+  info: { description: string, version: string }
 };
 
 async function ensureDirs() {
@@ -124,6 +126,19 @@ async function readRows() {
       payload: true
     }
   });
+}
+
+function getCocoTemplate(categories: CocoCategory[]) {
+  return {
+    images: [],
+    annotations: [],
+    categories,
+    licenses: [],
+    info: {
+      description: 'UI dataset',
+      version: '1.0'
+    }
+  }
 }
 
 async function main() {
@@ -162,8 +177,8 @@ async function main() {
 
   // COCO docs
   const categories: CocoCategory[] = CLASS_NAMES.map((n, i) => ({ id: i + 1, name: n }));
-  const train: CocoDoc = { images: [], annotations: [], categories };
-  const val: CocoDoc = { images: [], annotations: [], categories };
+  const train: CocoDoc = getCocoTemplate(categories)
+  const val: CocoDoc = getCocoTemplate(categories)
 
   let annId = 1;
 

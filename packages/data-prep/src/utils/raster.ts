@@ -1,32 +1,78 @@
-// utils/raster.ts
-export function pngSize(buf: Buffer) {
-  // PNG IHDR at bytes 16..23 (big-endian)
-  if (buf.length >= 24 && buf.slice(0, 8).toString('hex') === '89504e470d0a1a0a') {
-    const w = buf.readUInt32BE(16);
-    const h = buf.readUInt32BE(20);
+type RasterSize = { width: number; height: number } | null;
+
+function readUInt16BE(arr: Uint8Array, offset: number): number {
+  return (arr[offset] << 8) | arr[offset + 1];
+}
+
+function readUInt32BE(arr: Uint8Array, offset: number): number {
+  // DataView handles unaligned reads safely
+  return new DataView(arr.buffer, arr.byteOffset, arr.byteLength).getUint32(offset, false);
+}
+
+export function pngSize(arr: Uint8Array): RasterSize {
+  // PNG signature: 89 50 4E 47 0D 0A 1A 0A
+  if (
+    arr.length >= 24 &&
+    arr[0] === 0x89 && arr[1] === 0x50 && arr[2] === 0x4e && arr[3] === 0x47 &&
+    arr[4] === 0x0d && arr[5] === 0x0a && arr[6] === 0x1a && arr[7] === 0x0a
+  ) {
+    const w = readUInt32BE(arr, 16);
+    const h = readUInt32BE(arr, 20);
     return { width: w, height: h };
   }
   return null;
 }
 
-// Minimal JPEG SOF parser (handles most common SOF0/SOF2)
-export function jpegSize(buf: Buffer) {
-  if (buf.length < 4 || buf[0] !== 0xff || buf[1] !== 0xd8) return null; // not JPEG
-  let i = 2;
-  while (i + 9 < buf.length) {
-    if (buf[i] !== 0xff) { i++; continue; }
-    const marker = buf[i + 1];
-    const len = buf.readUInt16BE(i + 2);
-    if (marker >= 0xc0 && marker <= 0xc3) {
-      const h = buf.readUInt16BE(i + 5);
-      const w = buf.readUInt16BE(i + 7);
-      return { width: w, height: h };
+export function jpegSize(arr: Uint8Array): RasterSize {
+  // Minimal JPEG parser: scan markers until a SOF (start of frame) with size info
+  if (arr.length < 4 || arr[0] !== 0xff || arr[1] !== 0xd8) return null; // not a JPEG
+
+  // SOF markers that carry dimensions (exclude DHT/DQT/APP/etc.)
+  const isSOF = (m: number) =>
+    (m >= 0xc0 && m <= 0xc3) ||
+    (m >= 0xc5 && m <= 0xc7) ||
+    (m >= 0xc9 && m <= 0xcb) ||
+    (m >= 0xcd && m <= 0xcf);
+
+  let i = 2; // start after SOI (FF D8)
+  while (i + 3 < arr.length) {
+    // Seek next marker 0xFF
+    while (i < arr.length && arr[i] !== 0xff) i++;
+    if (i + 3 >= arr.length) break;
+
+    // Skip fill bytes (FF FF ...)
+    while (i < arr.length && arr[i] === 0xff) i++;
+    if (i >= arr.length) break;
+
+    const marker = arr[i];
+    i++;
+
+    // Standalone markers without length (e.g., EOI, RSTn)
+    if (marker === 0xd9 || (marker >= 0xd0 && marker <= 0xd7)) {
+      continue;
     }
-    i += 2 + len;
+
+    if (i + 1 >= arr.length) break;
+    const segLen = readUInt16BE(arr, i); // includes the 2 bytes of segLen itself
+    if (segLen < 2 || i + segLen > arr.length) break;
+
+    if (isSOF(marker)) {
+      // SOF segment layout: [len_hi len_lo] [precision] [height_hi height_lo] [width_hi width_lo] ...
+      if (segLen >= 7) {
+        const precision = arr[i + 2]; // unused, usually 8
+        const h = readUInt16BE(arr, i + 3);
+        const w = readUInt16BE(arr, i + 5);
+        if (w > 0 && h > 0) return { width: w, height: h };
+      }
+      return null; // malformed SOF
+    }
+
+    i += segLen; // jump to next marker
   }
-  return null;
+
+  return null; // no SOF found
 }
 
-export function getRasterSize(buf: Buffer) {
-  return pngSize(buf) ?? jpegSize(buf) ?? null;
+export function getRasterSize(arr: Uint8Array): RasterSize {
+  return pngSize(arr) ?? jpegSize(arr);
 }
