@@ -5,3 +5,4 @@ dist
 .next
 /**/*/model_final.pth
 env
+annotated_sample.png
