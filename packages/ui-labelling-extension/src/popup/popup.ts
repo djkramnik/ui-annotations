@@ -13,11 +13,45 @@ document.addEventListener('DOMContentLoaded', () => {
   const exportBtn = document.getElementById('export-btn')
   const startBtn = document.getElementById('start-btn')
   const endBtn = document.getElementById('end-btn')
+  const predictBtn = document.getElementById('predict-btn')
 
-  if (!exportBtn || !startBtn || !endBtn) {
+  if (!exportBtn || !startBtn || !endBtn || !predictBtn) {
     console.error('cannot get dom objects')
     return
   }
+
+  // default state of buttons
+  function setDefaultButtonState() {
+    exportBtn?.setAttribute('disabled', 'disabled')
+    endBtn?.setAttribute('disabled', 'disabled')
+    predictBtn?.removeAttribute('disabled')
+    startBtn?.removeAttribute('disabled')
+  }
+
+  setDefaultButtonState()
+
+  predictBtn.addEventListener('click', async () => {
+    predictBtn.setAttribute('disabled', 'disabled')
+    startBtn.setAttribute('disabled', 'disabled')
+    endBtn.setAttribute('disabled', 'disabled')
+    exportBtn.setAttribute('disabled', 'disabled')
+
+    try {
+      const screenshotUrl = await chrome.tabs.captureVisibleTab()
+      const b64 = screenshotUrl.split(';base64,')[1]
+      const res = await fetch("http://127.0.0.1:8000/predict_base64", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image_base64: b64 }),
+        });
+      const { boxes, scores, class_names, width: imgW, height: imgH } = await res.json();
+
+    } catch(e) {
+
+    } finally {
+      setDefaultButtonState()
+    }
+  })
 
   exportBtn.addEventListener('click', async () => {
     // clear the overlay, reset global state to initial
@@ -54,15 +88,18 @@ document.addEventListener('DOMContentLoaded', () => {
   })
 
   startBtn.addEventListener('click', async () => {
+    predictBtn.setAttribute('disabled', 'disabled')
     startBtn.setAttribute('disabled', 'disabled')
+    endBtn.removeAttribute('disabled')
+    exportBtn.removeAttribute('disabled')
     sendMessage(ExtensionMessage.startMain, () => {
-      startBtn.removeAttribute('disabled')
       window.close()
     })
   })
 
   endBtn.addEventListener('click', async () => {
     sendMessage(ExtensionMessage.turnOffExtension)
+    setDefaultButtonState()
     window.close()
   })
 })

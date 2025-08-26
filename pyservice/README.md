@@ -18,3 +18,6 @@ The config.yaml must be based on the actual config used during training.  metada
 
 From root of pyservice run:
 `curl -X POST "http://127.0.0.1:8000/predict" -F "file=@./sample.png"`
+
+Or try the visualize endpoint:
+`source run-sample.sh`
