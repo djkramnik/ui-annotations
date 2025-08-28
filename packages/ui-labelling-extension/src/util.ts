@@ -137,14 +137,18 @@ export function getDeepActiveElement(root: Document | ShadowRoot): Element | nul
   return active;
 }
 
-// event block existing window key event listeners
+// event-block page's existing window key event listeners and set up this to listen for our own
 let listeners: Array<(event: KeyboardEvent) => void> = []
-let listenersInitialized = false
+let rootListener: null | ((event: KeyboardEvent) => void) = null
+let listening = false
 export function getSelfishKeyDown(skip?: (e: KeyboardEvent) => boolean) {
-
   const controller = {
     addKeyDownListener: (
       function addKeyDown(listener: (event: KeyboardEvent) => void) {
+        if (!rootListener) {
+          console.warn('cannot add key down when no root listener')
+          return
+        }
         if (listeners.includes(listener)) {
           console.warn('you tried to double add this key down listener! we dun allow that!', String(listener))
           return
@@ -153,6 +157,10 @@ export function getSelfishKeyDown(skip?: (e: KeyboardEvent) => boolean) {
       }
     ),
     removeKeyDownListener: function removeKeyDown(listener: (event: KeyboardEvent) => void) {
+      if (!rootListener) {
+        console.warn('cannot remove key down when no root listener')
+        return
+      }
       const idx = listeners.findIndex(l => l === listener)
       if (idx === -1) {
         return
@@ -161,11 +169,34 @@ export function getSelfishKeyDown(skip?: (e: KeyboardEvent) => boolean) {
     },
     removeAllListeners: () => {
       listeners = []
+    },
+    removeThyself: () => {
+      if (!rootListener) {
+        console.warn('no root listener to remove')
+        return
+      }
+      window.removeEventListener('keydown', rootListener)
+
+      // restore our evil global variables to their initial state
+      listeners = []
+      listening = false
+    },
+    init: () => {
+      if (listening) {
+        console.warn('already listening!')
+        return
+      }
+      if (!rootListener) {
+        console.warn('cannot initialize keydown controller because no rootListener')
+        return
+      }
+      listening = true
+      window.addEventListener('keydown', rootListener, true) // important that this is on capture
     }
   }
 
-  if (!listenersInitialized) {
-    window.addEventListener('keydown', e => {
+  if (!rootListener) {
+    rootListener = e => {
       if (skip?.(e) === true) {
         return
       }
@@ -174,8 +205,11 @@ export function getSelfishKeyDown(skip?: (e: KeyboardEvent) => boolean) {
       }
       e.stopImmediatePropagation()
       e.preventDefault()
-    }, true)
-    listenersInitialized = true
+    }
+  } else {
+    console.warn(`this selfish key down constructor thing was called when
+      it didnt need to be. this is a noop, but something is wack
+      with your code.`)
   }
 
   return controller

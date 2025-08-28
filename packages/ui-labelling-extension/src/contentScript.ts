@@ -944,7 +944,29 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
   }
 
   let globalsRef: null | GlobalState = null
+  const keyDownController = getSelfishKeyDown(
+    function omitHandling(e: KeyboardEvent) {
+      // if the active / focused element is within the shadow dom, document.activeElement will only return the host
+      const activeEl = getDeepActiveElement(document)
 
+      if (!activeEl) {
+        return false
+      }
+      const shadowMount = document.getElementById(shadowId)
+      if (!(shadowMount?.shadowRoot)) {
+        console.error('could not get a reference to our own shadow root smh')
+        return false
+      }
+      if (!isInShadowRoot(activeEl, shadowMount.shadowRoot)) {
+        return false
+      }
+      console.log('so this element is guaranteed to be in our shadow root huh', activeEl)
+      // we don't want our keydown handlers invoked if the focus is on a form element
+      return activeEl.tagName === 'INPUT' ||
+        activeEl.tagName === 'TEXTAREA' ||
+        (activeEl as HTMLElement).isContentEditable
+    }
+  )
   chrome.runtime.onMessage.addListener((message: { type?: string, content: null | Record<string, any> }) => {
     log.info('content script received message', message)
     if (typeof message?.type !== 'string') {
@@ -997,36 +1019,16 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
         document.getElementById(shadowId)?.remove()
         globalsRef = null
         unlockScroll()
+        // stop event-blocking all the page listeners
+        keyDownController.removeThyself()
         break
       case ExtensionMessage.startMain:
         removePredictions()
         window.removeEventListener('keypress', removePredictions)
-        const controller = getSelfishKeyDown(
-          function omitHandling(e: KeyboardEvent) {
-            // if the active / focused element is within the shadow dom, document.activeElement will only return the host
-            const activeEl = getDeepActiveElement(document)
-
-            if (!activeEl) {
-              return false
-            }
-            const shadowMount = document.getElementById(shadowId)
-            if (!(shadowMount?.shadowRoot)) {
-              console.error('could not get a reference to our own shadow root smh')
-              return false
-            }
-            if (!isInShadowRoot(activeEl, shadowMount.shadowRoot)) {
-              return false
-            }
-            console.log('so this element is guaranteed to be in our shadow root huh', activeEl)
-            // we don't want our keydown handlers invoked if the focus is on a form element
-            return activeEl.tagName === 'INPUT' ||
-              activeEl.tagName === 'TEXTAREA' ||
-              (activeEl as HTMLElement).isContentEditable
-          }
-        )
-        controller.removeAllListeners()
-        addKeyDownListener = controller.addKeyDownListener
-        removeKeyDownListener = controller.removeKeyDownListener
+        keyDownController.init()
+        keyDownController.removeAllListeners()
+        addKeyDownListener = keyDownController.addKeyDownListener
+        removeKeyDownListener = keyDownController.removeKeyDownListener
         const mount = document.querySelector(shadowId)
         if (mount) {
           // TODO.  clean up here instead of running away
