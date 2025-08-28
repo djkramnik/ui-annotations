@@ -6,6 +6,7 @@ import {
   getOverlay,
   GlobalState,
   log,
+  PredictResponse,
   SALIENT_VISUAL_PROPS,
   shadowId,
   StorageKeys,
@@ -133,12 +134,12 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
           .concat(
             globals.currEl !== null
               ? {
-                  id: uuidv4(),
-                  ref: globals.currEl,
-                  rect: globals.currEl.getBoundingClientRect(),
-                  label: annotationSelect.value as AnnotationLabel,
-                  useTextNode: globals.projectTextNode,
-                }
+                id: uuidv4(),
+                ref: globals.currEl,
+                rect: globals.currEl.getBoundingClientRect(),
+                label: annotationSelect.value as AnnotationLabel,
+                useTextNode: globals.projectTextNode,
+              }
               : [],
           )
 
@@ -278,11 +279,11 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
             removeRects()
             globals.projections = []
             globals.projectTextNode = false
-            ;(
-              projectionForm.querySelector(
-                '#usetextnodeprojection_cb',
-              ) as HTMLInputElement
-            ).checked = false // beyond good and evil
+              ; (
+                projectionForm.querySelector(
+                  '#usetextnodeprojection_cb',
+                ) as HTMLInputElement
+              ).checked = false // beyond good and evil
             overlay.addEventListener('mousedown', _handleMouseWrap)
             log.info('added mousedown listener')
           } else if (value === 'projection') {
@@ -319,7 +320,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
                   log.warn('could not find element from annotation list', annotation)
                   return
                 }
-                switch(action) {
+                switch (action) {
                   case 'select':
                     // very janky shit but I don't want to add more state
                     // find the dom element if any passed on the id formulat below
@@ -715,8 +716,8 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
             !parent || parent === document.body
           ) {
             log.warn('arrowup', parent
-                ? 'parent is document body'
-                : 'no parent node')
+              ? 'parent is document body'
+              : 'no parent node')
             break
           }
 
@@ -872,6 +873,76 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
   }
   // end scroll locking
 
+  function showPredictions(prediction: Pick<PredictResponse, 'boxes' | 'classes'> & {
+    imgW: number
+    imgH: number
+  }) {
+    const { boxes, classes, imgW, imgH } = prediction
+    const existingOverlay = document.getElementById('prediction-viewer')
+    if (existingOverlay) {
+      existingOverlay.remove()
+    }
+    const overlay = document.createElement('div')
+    overlay.setAttribute('id', 'prediction-viewer')
+
+    overlay.style.position = 'fixed'
+    overlay.style.width = '100vw'
+    overlay.style.height = '100vh'
+    overlay.style.top = '0'
+    overlay.style.left = '0'
+    overlay.style.zIndex = '999666999' // obscene
+
+    const viewportCssW = window.innerWidth;
+    const viewportCssH = window.innerHeight;
+    const scaleX = imgW / viewportCssW;
+    const scaleY = imgH / viewportCssH;
+
+    boxes.forEach((b: number[], i: number) => {
+      const [x1, y1, x2, y2] = b;
+      const left = x1 / scaleX;
+      const top = y1 / scaleY;
+      const width = (x2 - x1) / scaleX;
+      const height = (y2 - y1) / scaleY;
+
+      const el = document.createElement("div");
+      Object.assign(el.style, {
+        position: "absolute",
+        left: `${left}px`,
+        top: `${top}px`,
+        width: `${width}px`,
+        height: `${height}px`,
+        border: "2px solid #00ff00",
+        boxSizing: "border-box",
+        background: "rgba(0,255,0,0.10)",
+        pointerEvents: "none",
+      });
+
+      // label
+      const label = document.createElement("div");
+      label.textContent = `${classes?.[i] ?? ""}`.trim();
+      Object.assign(label.style, {
+        position: "absolute",
+        left: "0",
+        top: "-18px",
+        font: "12px/1.2 system-ui, sans-serif",
+        color: "#fff",
+        background: "rgba(0,0,0,0.7)",
+        padding: "1px 4px",
+        borderRadius: "3px",
+        pointerEvents: "none",
+        whiteSpace: "nowrap",
+      });
+      el.appendChild(label);
+
+      overlay!.appendChild(el);
+    })
+
+    document.body.appendChild(overlay)
+  }
+  function removePredictions() {
+    document.getElementById('prediction-viewer')?.remove()
+  }
+
   let globalsRef: null | GlobalState = null
 
   chrome.runtime.onMessage.addListener((message: { type?: string, content: null | Record<string, any> }) => {
@@ -883,7 +954,13 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
 
     switch (message.type) {
       case ExtensionMessage.predict:
-        log.info(message.content)
+        if (message.content === null) {
+          log.warn('impossible state; predict event with no data')
+          break
+        }
+        log.info('PREDICT JUST ARRIVED:', message.content)
+        showPredictions(message.content as any)
+        window.addEventListener('keypress', removePredictions)
         break
       case ExtensionMessage.exportFailed:
         if (globalsRef === null) {
@@ -922,6 +999,8 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
         unlockScroll()
         break
       case ExtensionMessage.startMain:
+        removePredictions()
+        window.removeEventListener('keypress', removePredictions)
         const controller = getSelfishKeyDown(
           function omitHandling(e: KeyboardEvent) {
             // if the active / focused element is within the shadow dom, document.activeElement will only return the host
