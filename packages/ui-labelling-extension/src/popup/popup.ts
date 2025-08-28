@@ -30,7 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
   predictBtn.addEventListener('click', async () => {
     disableAllButtons()
     try {
-      console.log('ready to roll out?')
       const screenshotUrl = await chrome.tabs.captureVisibleTab()
       const b64 = screenshotUrl.split(';base64,')[1]
       const res = await fetch("http://localhost:8000/predict_base64", {
