@@ -234,15 +234,17 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
             removeRects()
             value.forEach((v, index) => {
               drawRect({
-                useTextNode: globals.projectTextNode,
-                element: v as HTMLElement,
+                bbox: globals.projectTextNode
+                  ? getBoundingBoxOfText(v as HTMLElement)
+                  : (v as HTMLElement).getBoundingClientRect(),
                 parent: overlay,
               })
             })
             if (globals.currEl) {
               drawRect({
-                useTextNode: globals.projectTextNode,
-                element: globals.currEl,
+                bbox: globals.projectTextNode
+                  ? getBoundingBoxOfText(globals.currEl)
+                  : globals.currEl.getBoundingClientRect(),
                 parent: overlay,
                 styles: {
                   border: '2px solid blue',
@@ -360,7 +362,9 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
                 removeIcon = svg
                 drawRect({
                   id: 'show_annotation_' + id,
-                  element: ref,
+                  bbox: useTextNode
+                    ? getBoundingBoxOfText(ref)
+                    : ref.getBoundingClientRect(),
                   parent: overlay,
                   styles: {
                     border: '2px solid ' + c,
@@ -369,7 +373,6 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
                     zIndex: '2',
                   },
                   child: removeIcon,
-                  useTextNode,
                 })
               })
             })
@@ -570,26 +573,20 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
     }
 
     function drawRect({
-      element,
+      bbox,
       parent,
       styles,
       id,
       child,
-      useTextNode,
     }: {
-      element: HTMLElement
+      bbox: DOMRect,
       parent: HTMLElement
       styles?: Partial<Record<keyof CSSStyleDeclaration, string>>
       id?: string
       child?: Element
-      useTextNode?: boolean
     }) {
       const annotation = document.createElement('div')
-      const bbox = useTextNode
-        ? getBoundingBoxOfText(element)
-        : element.getBoundingClientRect()
 
-      element.getBoundingClientRect()
       const { top, left, width, height } = bbox
 
       annotation.setAttribute(
@@ -630,7 +627,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
       parent: HTMLElement
     }) {
       drawRect({
-        element,
+        bbox: element.getBoundingClientRect(),
         parent,
       })
       // get siblings.. drawRect on them
@@ -639,7 +636,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
       siblings.forEach((sib, index) => {
         drawRect({
           id: `candidate_annotation_sib_${index}`,
-          element: sib,
+          bbox: sib.getBoundingClientRect(),
           parent,
           styles: {
             border: `2px solid #D3D3D370`,
