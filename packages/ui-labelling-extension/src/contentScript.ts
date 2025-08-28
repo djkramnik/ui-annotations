@@ -1,4 +1,4 @@
-import { AnnotationLabel, annotationLabels } from 'ui-labelling-shared'
+import { AnnotationLabel, annotationLabels, isInViewport } from 'ui-labelling-shared'
 import {
   _GlobalState,
   Annotation,
@@ -28,7 +28,6 @@ import {
   getDeepActiveElement,
   getSelfishKeyDown,
   getSibs,
-  isInViewport,
   uuidv4,
 } from './util'
 import { findSimilarUiAsync } from './find-similar-ui'

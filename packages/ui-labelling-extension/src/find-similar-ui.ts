@@ -1,5 +1,6 @@
 import { SimilarUiOptions } from "./types";
-import { hasIntersection, hasText, isInViewport, snooze } from './util'
+import { hasIntersection, hasText, snooze } from './util'
+import { isInViewport } from 'ui-labelling-shared'
 
 export type FindSimilarUiResponse = (
   | { percentComplete: number; done: false }

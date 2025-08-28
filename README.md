@@ -6,9 +6,10 @@ This repo also includes a web server for storing annotations in local postgres i
 #### TODO
 
 #### Next step:
-* textregions and interactive only
+* new labels: textregions and interactive only
 * a utility to select all lines of text on a page (textregion)
 * a utility to select all interactive elements on a page (interactive)
+* integrate these utils with the existing annotation tool.. so broad first pass with these utils, then existing can handle clean up
 
 #### QOL / BUGS
 

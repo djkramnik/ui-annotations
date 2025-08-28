@@ -7,37 +7,6 @@ export function hasText(el: HTMLElement) {
   return (el.textContent?.replaceAll(/\s+/g, '') ?? '').length > 0
 }
 
-export function isInViewport({
-  target,
-  partial
-}: {
-  target: Element
-  partial?: boolean
-}) {
-  const {
-    bottom,
-    right,
-    top,
-    left,
-  } = target.getBoundingClientRect();
-
-  if (partial) {
-    return (
-      bottom >= 0 &&
-      right  >= 0 &&
-      top    <= (window.innerHeight || document.documentElement.clientHeight) &&
-      left   <= (window.innerWidth  || document.documentElement.clientWidth)
-    );
-  }
-
-  return (
-    top    >= 0 &&
-    left   >= 0 &&
-    bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-    right  <= (window.innerWidth  || document.documentElement.clientWidth)
-  );
-}
-
 // does not return self
 export function getSibs(target: HTMLElement): HTMLElement[] {
   if (!target.parentElement) {

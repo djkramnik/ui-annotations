@@ -11,7 +11,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "ui-labelling-shared": "file:../shared"
+    "ui-labelling-shared": "^1.1.0"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.309",
