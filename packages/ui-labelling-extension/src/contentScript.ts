@@ -869,11 +869,6 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
   }
   // end scroll locking
 
-  function showTextRegions(regions: DOMRect[]) {
-    console.log('displaying exciting text regions!')
-
-  }
-
   function showPredictions(prediction: Pick<PredictResponse, 'boxes' | 'class_names'> & {
     imgW: number
     imgH: number
@@ -992,6 +987,8 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
               console.warn("Unknown chunk type:", chunk);
             }
           }
+          console.log('fruits of the gathering:', textRegionBoxes.length)
+
           for (const r of textRegionBoxes) {
             const bb = r; // DOMRectReadOnly
             const div = document.createElement("div");
@@ -1008,6 +1005,21 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
             });
             document.documentElement.appendChild(div);
           }
+
+          chrome.storage.local.set({
+            [StorageKeys.meta]: {
+              url: window.location.href,
+              date: new Date().toLocaleString('en-US', {
+                timeZone: 'America/New_York',
+              }),
+              window: {
+                scrollY: window.scrollY,
+                width: window.innerWidth,
+                height: window.innerHeight,
+              },
+            },
+          })
+
           chrome.storage.local.set({
             [StorageKeys.annotations]: JSON.stringify(
               textRegionBoxes.map(r => ({
@@ -1018,6 +1030,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
               }))
             ),
           })
+
         })()
         break
       case ExtensionMessage.predict:

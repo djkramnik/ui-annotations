@@ -1,6 +1,7 @@
 
 import { AnnotationLabel } from "ui-labelling-shared"
 import { ExtensionMessage, PredictResponse } from "../types"
+import { snooze } from "../util"
 
 function getMessagePromise(message: string): Promise<void> {
   return new Promise(resolve => {
@@ -30,7 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   textRegionBtn.addEventListener('click', async () => {
-    sendMessage(ExtensionMessage.gatherTextRegions)
+    sendMessage(ExtensionMessage.gatherTextRegions, {
+      cb: () => window.close()
+    })
   })
 
   predictBtn.addEventListener('click', async () => {
@@ -64,6 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // clear the overlay, reset global state to initial
     await getMessagePromise('clean')
     exportBtn.setAttribute('disabled', 'disabled')
+    console.log('HOLY CRAP MAN')
+    await snooze()
     const payload = await getExportPayload()
 
     console.log('PAYLOAD 2 EXPORT', payload)
@@ -89,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
       sendMessage(ExtensionMessage.exportFailed)
       console.error('could not export', e)
     } finally {
-      window.close()
+
     }
   })
 

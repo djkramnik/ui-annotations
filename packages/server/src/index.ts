@@ -29,7 +29,7 @@ dotenv.config({ path: path.join(__dirname, '.env') })
           .then(() => {
             process.exit(0)
           })
-          .catch((e) => {
+          .catch((e: any) => {
             console.error('could not disconnect prisma', e)
             process.exit(1)
           })

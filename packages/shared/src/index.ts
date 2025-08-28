@@ -108,7 +108,6 @@ export async function* gatherTextRegions(
     })
   }
   const out: DOMRect[] = []
-  let processed = 0
   console.log('begin processing roots!', roots.length)
   for (const root of roots) {
     console.log('begin root processing', root)
@@ -122,7 +121,7 @@ export async function* gatherTextRegions(
     for (let n = walker.nextNode(); n; n = walker.nextNode()) {
       const tn = n as Text
       if (!nodeVisible(tn)) {
-        console.log('node not visible??', tn.textContent)
+        console.log('node not visible??')
         continue
       }
 
