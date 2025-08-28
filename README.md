@@ -5,6 +5,11 @@ This repo also includes a web server for storing annotations in local postgres i
 
 #### TODO
 
+#### Next step:
+* textregions and interactive only
+* a utility to select all lines of text on a page (textregion)
+* a utility to select all interactive elements on a page (interactive)
+
 #### QOL / BUGS
 
 * update automatically if you click next / prev (with the same warning)
@@ -18,46 +23,6 @@ screenshots
 * for visual projection, check everything by default and restore to this default state after each submit
 * projection can result in invisible elements getting added.  confirm this on the test-site.  confirm a fix likewise
 * before navigating away can we notify if no export was performed
-
-
-#### Data The Gathering
-
-* Highly granular label list -- max accuracy
-* first training run - try for min 500 per label
-* Broader yet still granular label list
-* consider an algorithm for grouping close elements
-* Collect data
-a
-#### First label definitions
-* Button:
-  * visual button with some kind of outline.  Can contain text or text with icon but pure icon is another category
-  * If it's got too much crap inside it's not a button.  That is anything more than a textwrap for layout
-
-* Heading:
-Prominent text whose primary function is to name or contextualize a page or section, typically visually distinguished by size, weight, or placement relative to surrounding text.
-
-Include (yes):
-
-Page titles, section titles, card titles, widget headers.
-
-Bold/large text that acts as an entry point into content below it.
-
-Text at the top of a logical content group (e.g., “Specifications,” “Customer Reviews”).
-
-Exclude (no):
-
-Button text (belongs to button).
-
-Labels for controls (e.g., “Email” above an input).
-
-Standalone emphasized words inside copy (e.g., bold inline words).
-
-Decorative big text that doesn’t title anything (e.g., a hero banner with random marketing words, unless it really is the page’s title).
-
-* Input:
-  * editable text form field
-  * if coupled with other elements (a search button) I am including the whole thing
-  * does not include textareas (multiline)
 
 #### Nice to haves (Future)
 * can we fix shadow dom navigation
