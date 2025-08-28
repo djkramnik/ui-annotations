@@ -7,6 +7,7 @@ export enum ExtensionMessage {
   exportSuccess = 'exportSuccess',
   exportFailed = 'exportFailed',
   clearAnnotations = 'clearAnnotations',
+  predict = 'predict_response'
 }
 
 export const SALIENT_VISUAL_PROPS: readonly string[] = [
@@ -79,6 +80,15 @@ export type GlobalState = {
   overlayId: string
   shadowId: string
   annotations: Annotation[]
+}
+
+export type PredictResponse = {
+  boxes: [number, number, number, number][]; // array of [x1, y1, x2, y2]
+  scores: number[];
+  classes: number[];
+  class_names: AnnotationLabel[];
+  width: number;
+  height: number;
 }
 
 export const logPrefix = '[UI-LABELLER] '

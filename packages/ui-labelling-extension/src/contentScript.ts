@@ -874,7 +874,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
 
   let globalsRef: null | GlobalState = null
 
-  chrome.runtime.onMessage.addListener((message: { type?: string }) => {
+  chrome.runtime.onMessage.addListener((message: { type?: string, content: null | Record<string, any> }) => {
     log.info('content script received message', message)
     if (typeof message?.type !== 'string') {
       log.error('Could not parse runtime message', message)
@@ -882,6 +882,9 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
     }
 
     switch (message.type) {
+      case ExtensionMessage.predict:
+        log.info(message.content)
+        break
       case ExtensionMessage.exportFailed:
         if (globalsRef === null) {
           log.warn('how could we have no globals ref after export')

@@ -1,10 +1,10 @@
 
 import { AnnotationLabel } from "ui-labelling-shared"
-import { ExtensionMessage } from "../types"
+import { ExtensionMessage, PredictResponse } from "../types"
 
 function getMessagePromise(message: string): Promise<void> {
   return new Promise(resolve => {
-    sendMessage(message, () => { resolve() })
+    sendMessage(message, { cb: () => { resolve() }})
   })
 }
 
@@ -39,15 +39,23 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const screenshotUrl = await chrome.tabs.captureVisibleTab()
       const b64 = screenshotUrl.split(';base64,')[1]
-      const res = await fetch("http://127.0.0.1:8000/predict_base64", {
+      const res = await fetch("http://localhost:8000/predict_base64", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ image_base64: b64 }),
         });
-      const { boxes, scores, class_names, width: imgW, height: imgH } = await res.json();
-
+      const { boxes, class_names, width: imgW, height: imgH } = await res.json() as PredictResponse;
+      sendMessage(ExtensionMessage.predict, {
+        content: {
+          boxes,
+          class_names,
+          imgW,
+          imgH
+        }
+      })
+      window.close()
     } catch(e) {
-
+      console.error('predict failed wtf', e)
     } finally {
       setDefaultButtonState()
     }
@@ -92,9 +100,9 @@ document.addEventListener('DOMContentLoaded', () => {
     startBtn.setAttribute('disabled', 'disabled')
     endBtn.removeAttribute('disabled')
     exportBtn.removeAttribute('disabled')
-    sendMessage(ExtensionMessage.startMain, () => {
+    sendMessage(ExtensionMessage.startMain, { cb: () => {
       window.close()
-    })
+    }})
   })
 
   endBtn.addEventListener('click', async () => {
@@ -104,13 +112,20 @@ document.addEventListener('DOMContentLoaded', () => {
   })
 })
 
-function sendMessage(type: string, cb?: () => void) {
+function sendMessage(type: string, options?: {
+  cb?: () => void, content?: Record<string, any>
+}) {
   return chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     if (typeof tabs[0]?.id !== 'number') {
       return
     }
-    await chrome.tabs.sendMessage(tabs[0].id, { type })
-    cb?.()
+    await chrome.tabs.sendMessage(
+      tabs[0].id,
+      {
+        type,
+        content: options?.content ?? null
+      })
+    options?.cb?.()
   })
 }
 
