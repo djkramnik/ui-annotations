@@ -2,12 +2,14 @@ export enum AnnotationLabel {
   button = 'button',
   heading = 'heading',
   input = 'input',
+  textRegion = 'textRegion'
 }
 
 export const annotationLabels: Record<AnnotationLabel, string> = {
   button: '#a8d1d0',
   heading: '#e3b1e3',
   input: '#e3a1a1',
+  textRegion: 'cornsilk'
 }
 
 /**
@@ -146,14 +148,6 @@ export async function* gatherTextRegions(
         }
       }
       range.detach()
-
-      // cooperative yielding on long pages
-      if (++processed % 2000 === 0) {
-        if (out.length) {
-          yield out.splice(0, out.length)
-        }
-        await new Promise(requestAnimationFrame)
-      }
     }
   }
   yield out

@@ -1,4 +1,4 @@
-import { AnnotationLabel, annotationLabels, isInViewport } from 'ui-labelling-shared'
+import { AnnotationLabel, annotationLabels, gatherTextRegions, isInViewport } from 'ui-labelling-shared'
 import {
   _GlobalState,
   Annotation,
@@ -869,6 +869,11 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
   }
   // end scroll locking
 
+  function showTextRegions(regions: DOMRect[]) {
+    console.log('displaying exciting text regions!')
+
+  }
+
   function showPredictions(prediction: Pick<PredictResponse, 'boxes' | 'class_names'> & {
     imgW: number
     imgH: number
@@ -972,6 +977,49 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
     }
 
     switch (message.type) {
+      // you shouldn't click Gather Text in conjunction with anything else.  the spaghetti is now my master
+      // so basically you navigate to page, click gather text, export, and then end.  trying this
+      // in conjunction with start or vice versa is unpredictable but almost certainly will lead to errors
+      case ExtensionMessage.gatherTextRegions:
+        console.log('GATHERING TEXT')
+        ;(async () => {
+          let textRegionBoxes: DOMRect[] = []
+          for await (const chunk of gatherTextRegions({ batchSize: 50 })) {
+            if (Array.isArray(chunk)) {
+              console.log("Batch size:", chunk.length);
+              textRegionBoxes = textRegionBoxes.concat(chunk)
+            } else {
+              console.warn("Unknown chunk type:", chunk);
+            }
+          }
+          for (const r of textRegionBoxes) {
+            const bb = r; // DOMRectReadOnly
+            const div = document.createElement("div");
+            div.className = "text_region_annotation"
+            Object.assign(div.style, {
+              position: "fixed",
+              left: `${bb.left}px`,
+              top: `${bb.top}px`,
+              width: `${bb.width}px`,
+              height: `${bb.height}px`,
+              outline: "1px solid red",
+              pointerEvents: "none",
+              zIndex: "2147483647",
+            });
+            document.documentElement.appendChild(div);
+          }
+          chrome.storage.local.set({
+            [StorageKeys.annotations]: JSON.stringify(
+              textRegionBoxes.map(r => ({
+                id: uuidv4(),
+                ref: null, // not a proper annotation but we discard this anyway
+                rect: r,
+                label: AnnotationLabel.textRegion
+              }))
+            ),
+          })
+        })()
+        break
       case ExtensionMessage.predict:
         console.log('predict event!')
         if (message.content === null) {
@@ -1006,6 +1054,8 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
         })
         break
       case ExtensionMessage.clean:
+        // clean up after textregion display before exporting
+        document.querySelectorAll('.text_region_annotation').forEach(el => el.remove())
         if (globalsRef === null) {
           log.warn('request for clean up but we have no global state')
           return

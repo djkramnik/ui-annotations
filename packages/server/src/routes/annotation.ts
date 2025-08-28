@@ -83,7 +83,7 @@ annotationRouter.get('/analytics', async (_req: Request, res: Response) => {
     const LABELS = Object.values(AnnotationLabel)
     type Label = (typeof LABELS)[number];
     type Bucket = Record<AnnotationLabel | 'url', number>;
-    const zeroBucket = (): Bucket => ({ button: 0, heading: 0, input: 0, url: 0 });
+    const zeroBucket = (): Bucket => ({ textRegion: 0, button: 0, heading: 0, input: 0, url: 0 });
     const labelSet = new Set<string>(LABELS as readonly string[]);
 
     // --- queries ---

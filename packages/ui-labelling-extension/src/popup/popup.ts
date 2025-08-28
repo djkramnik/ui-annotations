@@ -14,8 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const startBtn = document.getElementById('start-btn')
   const endBtn = document.getElementById('end-btn')
   const predictBtn = document.getElementById('predict-btn')
+  const textRegionBtn = document.getElementById('text-region-btn')
 
-  if (!exportBtn || !startBtn || !endBtn || !predictBtn) {
+  if (!exportBtn || !startBtn || !endBtn || !predictBtn || !textRegionBtn) {
     console.error('cannot get dom objects')
     return
   }
@@ -25,7 +26,12 @@ document.addEventListener('DOMContentLoaded', () => {
     startBtn!.setAttribute('disabled', 'disabled')
     endBtn!.setAttribute('disabled', 'disabled')
     exportBtn!.setAttribute('disabled', 'disabled')
+    textRegionBtn?.setAttribute('disabled', 'disabled')
   }
+
+  textRegionBtn.addEventListener('click', async () => {
+    sendMessage(ExtensionMessage.gatherTextRegions)
+  })
 
   predictBtn.addEventListener('click', async () => {
     disableAllButtons()

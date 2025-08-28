@@ -7,7 +7,8 @@ export enum ExtensionMessage {
   exportSuccess = 'exportSuccess',
   exportFailed = 'exportFailed',
   clearAnnotations = 'clearAnnotations',
-  predict = 'predict_response'
+  predict = 'predict',
+  gatherTextRegions = 'gatherTextRegions'
 }
 
 export const SALIENT_VISUAL_PROPS: readonly string[] = [
