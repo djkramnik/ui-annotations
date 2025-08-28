@@ -170,6 +170,7 @@ class ImagePayload(BaseModel):
 
 @app.post("/predict_base64")
 async def predict_base64(payload: ImagePayload):
+    print("received predict request")
     try:
         # decode base64 to bytes
         img_bytes = base64.b64decode(payload.image_base64)

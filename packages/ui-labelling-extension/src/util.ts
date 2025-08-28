@@ -175,7 +175,7 @@ export function getSelfishKeyDown(skip?: (e: KeyboardEvent) => boolean) {
         console.warn('no root listener to remove')
         return
       }
-      window.removeEventListener('keydown', rootListener)
+      window.removeEventListener('keydown', rootListener, true)
 
       // restore our evil global variables to their initial state
       listeners = []
@@ -197,6 +197,7 @@ export function getSelfishKeyDown(skip?: (e: KeyboardEvent) => boolean) {
 
   if (!rootListener) {
     rootListener = e => {
+      console.log('selfish listener', e.key)
       if (skip?.(e) === true) {
         return
       }

@@ -20,22 +20,15 @@ document.addEventListener('DOMContentLoaded', () => {
     return
   }
 
-  // default state of buttons
-  function setDefaultButtonState() {
-    exportBtn?.setAttribute('disabled', 'disabled')
-    endBtn?.setAttribute('disabled', 'disabled')
-    predictBtn?.removeAttribute('disabled')
-    startBtn?.removeAttribute('disabled')
+  function disableAllButtons() {
+    predictBtn!.setAttribute('disabled', 'disabled')
+    startBtn!.setAttribute('disabled', 'disabled')
+    endBtn!.setAttribute('disabled', 'disabled')
+    exportBtn!.setAttribute('disabled', 'disabled')
   }
 
-  setDefaultButtonState()
-
   predictBtn.addEventListener('click', async () => {
-    predictBtn.setAttribute('disabled', 'disabled')
-    startBtn.setAttribute('disabled', 'disabled')
-    endBtn.setAttribute('disabled', 'disabled')
-    exportBtn.setAttribute('disabled', 'disabled')
-
+    disableAllButtons()
     try {
       console.log('ready to roll out?')
       const screenshotUrl = await chrome.tabs.captureVisibleTab()
@@ -58,11 +51,11 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch(e) {
       console.error('predict failed wtf', e)
     } finally {
-      setDefaultButtonState()
     }
   })
 
   exportBtn.addEventListener('click', async () => {
+    disableAllButtons()
     // clear the overlay, reset global state to initial
     await getMessagePromise('clean')
     exportBtn.setAttribute('disabled', 'disabled')
@@ -83,7 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
           console.log('successful export', response)
           sendMessage(ExtensionMessage.exportSuccess)
           chrome.storage.local.clear()
-          window.close()
           return
         }
         throw `Bad status: ${response.status}`
@@ -92,24 +84,21 @@ document.addEventListener('DOMContentLoaded', () => {
       sendMessage(ExtensionMessage.exportFailed)
       console.error('could not export', e)
     } finally {
-      exportBtn.removeAttribute('disabled')
+      window.close()
     }
   })
 
   startBtn.addEventListener('click', async () => {
-    predictBtn.setAttribute('disabled', 'disabled')
-    startBtn.setAttribute('disabled', 'disabled')
-    endBtn.removeAttribute('disabled')
-    exportBtn.removeAttribute('disabled')
+    disableAllButtons()
     sendMessage(ExtensionMessage.startMain, { cb: () => {
       window.close()
     }})
   })
 
   endBtn.addEventListener('click', async () => {
-    sendMessage(ExtensionMessage.turnOffExtension)
-    setDefaultButtonState()
-    window.close()
+    sendMessage(ExtensionMessage.turnOffExtension, {
+      cb: () => window.close()
+    })
   })
 })
 

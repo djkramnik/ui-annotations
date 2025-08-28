@@ -4,5 +4,6 @@ node_modules
 dist
 .next
 /**/*/model_final.pth
+/**/*/__pycache__
 env
 annotated_sample.png

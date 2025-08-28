@@ -873,11 +873,12 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
   }
   // end scroll locking
 
-  function showPredictions(prediction: Pick<PredictResponse, 'boxes' | 'classes'> & {
+  function showPredictions(prediction: Pick<PredictResponse, 'boxes' | 'class_names'> & {
     imgW: number
     imgH: number
   }) {
-    const { boxes, classes, imgW, imgH } = prediction
+    console.log('very exciting to show this prediction!!!')
+    const { boxes, class_names, imgW, imgH } = prediction
     const existingOverlay = document.getElementById('prediction-viewer')
     if (existingOverlay) {
       existingOverlay.remove()
@@ -919,7 +920,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
 
       // label
       const label = document.createElement("div");
-      label.textContent = `${classes?.[i] ?? ""}`.trim();
+      label.textContent = `${class_names?.[i] ?? ""}`.trim();
       Object.assign(label.style, {
         position: "absolute",
         left: "0",
@@ -976,6 +977,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
 
     switch (message.type) {
       case ExtensionMessage.predict:
+        console.log('predict event!')
         if (message.content === null) {
           log.warn('impossible state; predict event with no data')
           break
