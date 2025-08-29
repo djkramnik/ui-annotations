@@ -159,6 +159,7 @@ export async function* gatherTextRegions(
 }
 
 function isInteractive(el: Element): boolean {
+  console.log('the great interactive filter')
   const actionableRoles = new Set([
     'button',
     'link',
@@ -177,6 +178,7 @@ function isInteractive(el: Element): boolean {
     return false
   }
   const tag = el.tagName.toLowerCase()
+  console.log('interactive tag', tag)
   if (tag === 'button') return true
   if (tag === 'a' && (el as HTMLAnchorElement).href) return true
   if (tag === 'input') {
@@ -224,13 +226,17 @@ export async function* gatherInteractiveRegions(
   }
 
   const out: DOMRect[] = []
+  console.log('processing interactive roots!')
   for (const root of roots) {
     const walker = (root as any).createTreeWalker(
       root,
-      NodeFilter.SHOW_ELEMENT,
+      NodeFilter.SHOW_ALL,
       {
         acceptNode: (node: Node) => {
           const el = node as Element
+          if (el instanceof Element !== true) {
+            return NodeFilter.FILTER_REJECT
+          }
           return filter(el)
             ? NodeFilter.FILTER_ACCEPT
             : NodeFilter.FILTER_REJECT
