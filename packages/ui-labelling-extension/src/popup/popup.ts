@@ -113,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
       sendMessage(ExtensionMessage.exportFailed)
       console.error('could not export', e)
     } finally {
+      window.close()
     }
   })
 

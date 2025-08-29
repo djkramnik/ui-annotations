@@ -116,6 +116,10 @@ export async function* gatherTextRegions(
   const out: DOMRect[] = []
 
   for (const root of roots) {
+    if (typeof (root as any).createTreeWalker !== 'function') {
+      console.log('cannot create tree walker!', root)
+      continue
+    }
     const walker = (root as any).createTreeWalker(root, NodeFilter.SHOW_TEXT, {
       acceptNode: (node: Node) => {
         const t = node.nodeValue ?? ''
@@ -258,6 +262,10 @@ export async function* gatherInteractiveRegions(
   const out: DOMRect[] = []
   console.log('processing interactive roots!')
   for (const root of roots) {
+    if (typeof (root as any).createTreeWalker !== 'function') {
+      console.log('cannot create tree walker!', root)
+      continue
+    }
     const walker = (root as any).createTreeWalker(
       root,
       NodeFilter.SHOW_ELEMENT,
