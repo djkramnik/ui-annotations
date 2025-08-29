@@ -1,4 +1,4 @@
-import { AnnotationLabel, annotationLabels, gatherTextRegions, isInViewport } from 'ui-labelling-shared'
+import { AnnotationLabel, annotationLabels, gatherInteractiveRegions, gatherTextRegions, isInViewport } from 'ui-labelling-shared'
 import {
   _GlobalState,
   Annotation,
@@ -972,7 +972,66 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
     }
 
     switch (message.type) {
-      // you shouldn't click Gather Text in conjunction with anything else.  the spaghetti is now my master
+      // wet code.  this can be dryed out alongside its gather text twin
+      case ExtensionMessage.gatherInteractiveRegions:
+        console.log('GATHER INTERACTIVE REGIONS')
+         ;(async () => {
+          let interactiveBoxes: DOMRect[] = []
+          for await (const chunk of gatherInteractiveRegions({ batchSize: 50 })) {
+            if (Array.isArray(chunk)) {
+              console.log("Batch size:", chunk.length);
+              interactiveBoxes = interactiveBoxes.concat(chunk)
+            } else {
+              console.warn("Unknown chunk type:", chunk);
+            }
+          }
+          console.log('fruits of the gathering:', interactiveBoxes.length)
+
+          for (const r of interactiveBoxes) {
+            const div = document.createElement("div");
+            div.className = "interactive_annotation"
+            Object.assign(div.style, {
+              position: "fixed",
+              left: `${r.left}px`,
+              top: `${r.top}px`,
+              width: `${r.width}px`,
+              height: `${r.height}px`,
+              outline: "1px solid red",
+              pointerEvents: "none",
+              zIndex: "2147483647",
+            });
+            document.documentElement.appendChild(div);
+          }
+
+          chrome.storage.local.set({
+            [StorageKeys.meta]: {
+              url: window.location.href,
+              date: new Date().toLocaleString('en-US', {
+                timeZone: 'America/New_York',
+              }),
+              window: {
+                scrollY: window.scrollY,
+                width: window.innerWidth,
+                height: window.innerHeight,
+              },
+            },
+          })
+
+          chrome.storage.local.set({
+            [StorageKeys.annotations]: JSON.stringify(
+              interactiveBoxes.map(r => ({
+                id: uuidv4(),
+                ref: null, // not a proper annotation but we discard this anyway
+                rect: r,
+                label: AnnotationLabel.interactive
+              }))
+            ),
+          })
+
+        })()
+        break
+      // you shouldn't click Gather Text (or interactive) in conjunction with anything else.
+      // the spaghetti is now my master
       // so basically you navigate to page, click gather text, export, and then end.  trying this
       // in conjunction with start or vice versa is unpredictable but almost certainly will lead to errors
       case ExtensionMessage.gatherTextRegions:
@@ -1067,8 +1126,9 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
         })
         break
       case ExtensionMessage.clean:
-        // clean up after textregion display before exporting
-        document.querySelectorAll('.text_region_annotation').forEach(el => el.remove())
+        // clean up after textregion / interactive display before exporting
+        document.querySelectorAll('.text_region_annotation, .interactive_annotation')
+          .forEach(el => el.remove())
         if (globalsRef === null) {
           log.warn('request for clean up but we have no global state')
           return

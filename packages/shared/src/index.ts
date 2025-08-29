@@ -3,6 +3,7 @@ export enum AnnotationLabel {
   heading = 'heading',
   input = 'input',
   textRegion = 'textRegion',
+  interactive = 'interactive'
 }
 
 export const annotationLabels: Record<AnnotationLabel, string> = {
@@ -10,6 +11,7 @@ export const annotationLabels: Record<AnnotationLabel, string> = {
   heading: '#e3b1e3',
   input: '#e3a1a1',
   textRegion: 'cornsilk',
+  interactive: '#82b2c0'
 }
 
 /**

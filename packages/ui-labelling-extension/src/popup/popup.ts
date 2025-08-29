@@ -1,11 +1,14 @@
-
-import { AnnotationLabel } from "ui-labelling-shared"
-import { ExtensionMessage, PredictResponse } from "../types"
-import { snooze } from "../util"
+import { AnnotationLabel } from 'ui-labelling-shared'
+import { ExtensionMessage, PredictResponse } from '../types'
+import { snooze } from '../util'
 
 function getMessagePromise(message: string): Promise<void> {
-  return new Promise(resolve => {
-    sendMessage(message, { cb: () => { resolve() }})
+  return new Promise((resolve) => {
+    sendMessage(message, {
+      cb: () => {
+        resolve()
+      },
+    })
   })
 }
 
@@ -16,58 +19,75 @@ document.addEventListener('DOMContentLoaded', () => {
   const endBtn = document.getElementById('end-btn')
   const predictBtn = document.getElementById('predict-btn')
   const textRegionBtn = document.getElementById('text-region-btn')
+  const interactiveBtn = document.getElementById('interactive-btn')
 
-  if (!exportBtn || !startBtn || !endBtn || !predictBtn || !textRegionBtn) {
-    console.error('cannot get dom objects')
+  const btns = [
+    exportBtn,
+    startBtn,
+    endBtn,
+    predictBtn,
+    textRegionBtn,
+    interactiveBtn
+  ]
+
+  if (btns.some(b => !b)) {
+    console.error('cannot get reference to popup button(s)!')
     return
   }
 
   function disableAllButtons() {
-    predictBtn!.setAttribute('disabled', 'disabled')
-    startBtn!.setAttribute('disabled', 'disabled')
-    endBtn!.setAttribute('disabled', 'disabled')
-    exportBtn!.setAttribute('disabled', 'disabled')
-    textRegionBtn?.setAttribute('disabled', 'disabled')
+    btns.forEach(b => b?.setAttribute('disabled', 'disabled'))
   }
 
-  textRegionBtn.addEventListener('click', async () => {
-    sendMessage(ExtensionMessage.gatherTextRegions, {
-      cb: () => window.close()
+  interactiveBtn!.addEventListener('click', async () => {
+    sendMessage(ExtensionMessage.gatherInteractiveRegions, {
+      cb: () => window.close(),
     })
   })
 
-  predictBtn.addEventListener('click', async () => {
+  textRegionBtn!.addEventListener('click', async () => {
+    sendMessage(ExtensionMessage.gatherTextRegions, {
+      cb: () => window.close(),
+    })
+  })
+
+  predictBtn!.addEventListener('click', async () => {
     disableAllButtons()
     try {
       const screenshotUrl = await chrome.tabs.captureVisibleTab()
       const b64 = screenshotUrl.split(';base64,')[1]
-      const res = await fetch("http://localhost:8000/predict_base64", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image_base64: b64 }),
-        });
-      const { boxes, class_names, width: imgW, height: imgH } = await res.json() as PredictResponse;
+      const res = await fetch('http://localhost:8000/predict_base64', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_base64: b64 }),
+      })
+      const {
+        boxes,
+        class_names,
+        width: imgW,
+        height: imgH,
+      } = (await res.json()) as PredictResponse
       sendMessage(ExtensionMessage.predict, {
         content: {
           boxes,
           class_names,
           imgW,
-          imgH
-        }
+          imgH,
+        },
       })
       window.close()
-    } catch(e) {
+    } catch (e) {
       console.error('predict failed wtf', e)
     } finally {
     }
   })
 
-  exportBtn.addEventListener('click', async () => {
+  exportBtn!.addEventListener('click', async () => {
     disableAllButtons()
     // clear the overlay, reset global state to initial
     await getMessagePromise('clean')
-    exportBtn.setAttribute('disabled', 'disabled')
-    console.log('HOLY CRAP MAN')
+    // this is seemingly necessary to actually allow the screenshot to go off after the
+    // clean up of decorations
     await snooze()
     const payload = await getExportPayload()
 
@@ -77,11 +97,10 @@ document.addEventListener('DOMContentLoaded', () => {
       fetch('http://localhost:4000/api/annotation', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload)
-      })
-      .then(response => {
+        body: JSON.stringify(payload),
+      }).then((response) => {
         if (response.ok) {
           console.log('successful export', response)
           sendMessage(ExtensionMessage.exportSuccess)
@@ -90,43 +109,50 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         throw `Bad status: ${response.status}`
       })
-    } catch(e) {
+    } catch (e) {
       sendMessage(ExtensionMessage.exportFailed)
       console.error('could not export', e)
     } finally {
-
     }
   })
 
-  startBtn.addEventListener('click', async () => {
+  startBtn!.addEventListener('click', async () => {
     disableAllButtons()
-    sendMessage(ExtensionMessage.startMain, { cb: () => {
-      window.close()
-    }})
+    sendMessage(ExtensionMessage.startMain, {
+      cb: () => {
+        window.close()
+      },
+    })
   })
 
-  endBtn.addEventListener('click', async () => {
+  endBtn!.addEventListener('click', async () => {
+    disableAllButtons()
     sendMessage(ExtensionMessage.turnOffExtension, {
-      cb: () => window.close()
+      cb: () => window.close(),
     })
   })
 })
 
-function sendMessage(type: string, options?: {
-  cb?: () => void, content?: Record<string, any>
-}) {
-  return chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-    if (typeof tabs[0]?.id !== 'number') {
-      return
-    }
-    await chrome.tabs.sendMessage(
-      tabs[0].id,
-      {
+function sendMessage(
+  type: string,
+  options?: {
+    cb?: () => void
+    content?: Record<string, any>
+  },
+) {
+  return chrome.tabs.query(
+    { active: true, currentWindow: true },
+    async (tabs) => {
+      if (typeof tabs[0]?.id !== 'number') {
+        return
+      }
+      await chrome.tabs.sendMessage(tabs[0].id, {
         type,
-        content: options?.content ?? null
+        content: options?.content ?? null,
       })
-    options?.cb?.()
-  })
+      options?.cb?.()
+    },
+  )
 }
 
 async function getExportPayload() {
@@ -152,8 +178,8 @@ async function getExportPayload() {
   const base64Image = screenshotUrl.split(';base64,')[1]
 
   return {
-    annotations: annotations.map(({ref, ...rest}) => ({ ...rest})),
+    annotations: annotations.map(({ ref, ...rest }) => ({ ...rest })),
     screenshot: base64Image,
-    ...meta
+    ...meta,
   }
 }

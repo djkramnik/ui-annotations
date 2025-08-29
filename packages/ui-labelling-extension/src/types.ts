@@ -8,7 +8,8 @@ export enum ExtensionMessage {
   exportFailed = 'exportFailed',
   clearAnnotations = 'clearAnnotations',
   predict = 'predict',
-  gatherTextRegions = 'gatherTextRegions'
+  gatherTextRegions = 'gatherTextRegions',
+  gatherInteractiveRegions = 'gatherInteractiveRegions'
 }
 
 export const SALIENT_VISUAL_PROPS: readonly string[] = [
