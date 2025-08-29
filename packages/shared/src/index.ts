@@ -64,6 +64,21 @@ function nodeVisible(n: Node) {
   return true
 }
 
+export function rectInViewport(r: DOMRect) {
+  const viewport = {
+    left: 0,
+    top: 0,
+    right: window.innerWidth,
+    bottom: window.innerHeight,
+  }
+  return (
+    r.right > viewport.left &&
+    r.left < viewport.right &&
+    r.bottom > viewport.top &&
+    r.top < viewport.bottom
+  )
+}
+
 export async function* gatherTextRegions(
   opts: Partial<{
     batchSize: number
@@ -75,17 +90,6 @@ export async function* gatherTextRegions(
   const minSize = opts.minSize ?? 11
   const includeIFrames = opts.includeIFrames ?? false
   const roots: (Document | ShadowRoot)[] = [document]
-  const viewport = {
-    left: 0,
-    top: 0,
-    right: window.innerWidth,
-    bottom: window.innerHeight,
-  }
-  const rectIntersectsViewport = (r: DOMRectReadOnly): boolean =>
-    r.right > viewport.left &&
-    r.left < viewport.right &&
-    r.bottom > viewport.top &&
-    r.top < viewport.bottom
 
   // gather doc roots
   document.querySelectorAll<HTMLElement>('*').forEach((el) => {
@@ -108,9 +112,8 @@ export async function* gatherTextRegions(
     })
   }
   const out: DOMRect[] = []
-  console.log('begin processing roots!', roots.length)
+
   for (const root of roots) {
-    console.log('begin root processing', root)
     const walker = (root as any).createTreeWalker(root, NodeFilter.SHOW_TEXT, {
       acceptNode: (node: Node) => {
         const t = node.nodeValue ?? ''
@@ -131,7 +134,8 @@ export async function* gatherTextRegions(
       const rects = range.getClientRects()
 
       for (const r of Array.from(rects)) {
-        if (!rectIntersectsViewport(r)) {
+        // need a filter for node candidates and then need a filter for rect
+        if (!rectInViewport(r)) {
           console.log('candidate rejected because not in viewport')
           continue
         }
@@ -152,17 +156,7 @@ export async function* gatherTextRegions(
   yield out
 }
 
-export async function* gatherInteractiveRegions(
-  opts: Partial<{
-    batchSize: number
-    minSize: number
-    includeIFrames: boolean
-  }>,
-): AsyncGenerator<DOMRect[]> {
-  const batchSize = opts.batchSize ?? 200
-  const minSize = opts.minSize ?? 11
-  const includeIFrames = opts.includeIFrames ?? false
-
+function isInteractive(el: Element): boolean {
   const actionableRoles = new Set([
     'button',
     'link',
@@ -175,65 +169,42 @@ export async function* gatherInteractiveRegions(
     'tab',
     'slider',
   ])
-
-  const viewport = {
-    left: 0,
-    top: 0,
-    right: window.innerWidth,
-    bottom: window.innerHeight,
-  }
-  const rectIntersectsViewport = (r: DOMRectReadOnly): boolean =>
-    r.right > viewport.left &&
-    r.left < viewport.right &&
-    r.bottom > viewport.top &&
-    r.top < viewport.bottom
-
-  const isDisabled = (el: Element) =>
+  const isDisabled =
     (el as any).disabled === true || el.getAttribute('aria-disabled') === 'true'
-
-  const elVisible = (el: Element) => {
-    const st = getComputedStyle(el)
-    if (
-      st.display === 'none' ||
-      st.visibility === 'hidden' ||
-      parseFloat(st.opacity) === 0 ||
-      st.pointerEvents === 'none'
-    )
-      return false
-    const r = el.getBoundingClientRect()
-    return r.width > 0 && r.height > 0
-  }
-
-  const nodeVisible = (n: Node) => {
-    let el: Element | null =
-      (n as any).parentElement ?? (n.parentNode as Element | null)
-    while (el) {
-      if (!elVisible(el)) return false
-      el = el.parentElement
-    }
-    return true
-  }
-
-  const isInteractive = (el: Element): boolean => {
-    const tag = el.tagName.toLowerCase()
-    if (isDisabled(el)) return false
-    if (tag === 'button') return true
-    if (tag === 'a' && (el as HTMLAnchorElement).href) return true
-    if (tag === 'input') {
-      const t = (el as HTMLInputElement).type?.toLowerCase()
-      if (t !== 'hidden') return true
-    }
-    if (tag === 'textarea' || tag === 'select' || tag === 'summary') return true
-    if ((el as HTMLElement).isContentEditable) return true
-    const role = (el.getAttribute('role') || '').trim()
-    if (role && actionableRoles.has(role)) return true
-    const ti = (el as HTMLElement).tabIndex
-    if (Number.isInteger(ti) && ti >= 0) return true
-    const st = getComputedStyle(el)
-    if (st.cursor === 'pointer') return true
-    if ((el as any).onclick) return true
+  if (isDisabled) {
     return false
   }
+  const tag = el.tagName.toLowerCase()
+  if (tag === 'button') return true
+  if (tag === 'a' && (el as HTMLAnchorElement).href) return true
+  if (tag === 'input') {
+    const t = (el as HTMLInputElement).type?.toLowerCase()
+    if (t !== 'hidden') return true
+  }
+  if (tag === 'textarea' || tag === 'select' || tag === 'summary') return true
+  if ((el as HTMLElement).isContentEditable) return true
+  const role = (el.getAttribute('role') || '').trim()
+  if (role && actionableRoles.has(role)) return true
+  const ti = (el as HTMLElement).tabIndex
+  if (Number.isInteger(ti) && ti >= 0) return true
+  const st = getComputedStyle(el)
+  if (st.cursor === 'pointer') return true
+  if ((el as any).onclick) return true
+  return false
+}
+
+export async function* gatherInteractiveRegions(
+  opts: Partial<{
+    batchSize: number
+    minSize: number
+    includeIFrames: boolean
+    isInteractive: (el: Element) => boolean
+  }>,
+): AsyncGenerator<DOMRect[]> {
+  const batchSize = opts.batchSize ?? 200
+  const minSize = opts.minSize ?? 11
+  const includeIFrames = opts.includeIFrames ?? false
+  const filter = opts.isInteractive ?? isInteractive
 
   const roots: (Document | ShadowRoot)[] = [document]
   document.querySelectorAll<HTMLElement>('*').forEach((el) => {
@@ -258,19 +229,29 @@ export async function* gatherInteractiveRegions(
       {
         acceptNode: (node: Node) => {
           const el = node as Element
-          if (!isInteractive(el)) return NodeFilter.FILTER_REJECT
-          return NodeFilter.FILTER_ACCEPT
+          return filter(el)
+            ? NodeFilter.FILTER_ACCEPT
+            : NodeFilter.FILTER_REJECT
         },
       } as any,
     )
 
     for (let n = walker.nextNode(); n; n = walker.nextNode()) {
       const el = n as Element
-      if (!nodeVisible(el)) continue
+      if (!nodeVisible(el)) {
+        console.log('interactive candidate not visible')
+        continue
+      }
 
       const r = el.getBoundingClientRect()
-      if (!rectIntersectsViewport(r)) continue
-      if (r.width < minSize || r.height < minSize) continue
+      if (!rectInViewport(r)) {
+        console.log('interactive candidate not in viewport')
+        continue
+      }
+      if (r.width < minSize || r.height < minSize) {
+        console.log('interactive candidate too small')
+        continue
+      }
 
       out.push(r)
       if (out.length >= batchSize) {
