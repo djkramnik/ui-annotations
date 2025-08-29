@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express'
 import { prisma } from '../db'
 import { AnnotationLabel } from 'ui-labelling-shared'
+import { Prisma } from '@prisma/client'
 
 export const annotationRouter = Router()
 
@@ -23,6 +24,7 @@ type AnnotationPayload = {
       label: string
   }[]
   screenshot: string
+  tag?: string
 }
 
 annotationRouter.delete('/:id', async (req: Request, res: Response) => {
@@ -79,6 +81,12 @@ annotationRouter.put('/unpublish/:id', async (req: Request, res: Response) => {
 
 annotationRouter.get('/analytics', async (_req: Request, res: Response) => {
   try {
+    const tag = typeof _req.query.tag === 'string'
+      ? _req.query.tag
+      : null
+    const where = tag
+      ? Prisma.sql`WHERE a.tag = ${tag}`
+      : Prisma.empty
     // --- constants for guaranteed keys ---
     const LABELS = Object.values(AnnotationLabel)
     type Label = (typeof LABELS)[number];
@@ -96,6 +104,7 @@ annotationRouter.get('/analytics', async (_req: Request, res: Response) => {
         COUNT(*)::bigint                       AS count
       FROM annotations a,
            jsonb_array_elements(COALESCE(a.payload->'annotations', '[]'::jsonb)) ann
+      ${where}
       GROUP BY is_published, ann->>'label'
       ORDER BY is_published DESC, count DESC
     `;
@@ -106,7 +115,8 @@ annotationRouter.get('/analytics', async (_req: Request, res: Response) => {
       SELECT
         (COALESCE(published, 0) <> 0)          AS is_published,
         COUNT(DISTINCT url)::bigint            AS url_count
-      FROM annotations
+      FROM annotations a
+      ${where}
       GROUP BY is_published
     `;
 
@@ -144,12 +154,14 @@ annotationRouter.post('/', async (req: Request, res: Response) => {
       url,
       annotations,
       date,
-      screenshot,          // base-64 string or undefined
-      window               // { scrollY, innerWidth, innerHeight, … }
+      screenshot,
+      window,
+      tag
     } = req.body as AnnotationPayload;
 
     const record = await prisma.annotation.create({
       data: {
+        tag: tag ?? null,
         scrollY:   window.scrollY,
         viewWidth: window.width,
         viewHeight: window.height,
@@ -199,7 +211,7 @@ annotationRouter.patch('/:id', async (req: Request, res: Response) => {
 
 annotationRouter.get('/', async (_req: Request, res: Response) => {
   const published = _req.query.published as string
-
+  const tag = (_req.query.tag as string | undefined)
   try {
     const rows = await prisma.annotation.findMany({
       select: { id: true, url: true, scrollY: true, date: true },
@@ -212,7 +224,16 @@ annotationRouter.get('/', async (_req: Request, res: Response) => {
             }
           }
           : {}
-      )
+      ),
+       ...(
+        typeof tag === 'string'
+          ? {
+            where: {
+              tag
+            }
+          }
+          : {}
+      ),
     });
 
     res.status(200).send({ data: rows })
