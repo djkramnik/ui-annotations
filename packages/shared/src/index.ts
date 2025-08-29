@@ -160,7 +160,43 @@ export async function* gatherTextRegions(
 
 function isInteractive(el: Element): boolean {
   console.log('the great interactive filter!')
-  const actionableRoles = new Set([
+
+  const isDisabled =
+    (el as any).disabled === true || el.getAttribute('aria-disabled') === 'true'
+  if (isDisabled) {
+    return false
+  }
+  const tag = el.tagName.toLowerCase()
+
+  // true because button good
+  if (tag === 'button') {
+    return true
+  }
+
+  // true because anchor tag with href
+  if (tag === 'a' && (el as HTMLAnchorElement).href) {
+    return true
+  }
+
+  // true because input and not hidden
+  if (tag === 'input') {
+    const t = (el as HTMLInputElement).type?.toLowerCase()
+    if (t !== 'hidden') return true
+  }
+
+  // true because blue blooded form components
+  if (tag === 'textarea' || tag === 'select' || tag === 'summary') {
+    return true
+  }
+
+  // true because funky contenteditable
+  if ((el as HTMLElement).isContentEditable) {
+    return true
+  }
+
+  // true because screenreader said so
+  const role = (el.getAttribute('role') || '').trim()
+  if ([
     'button',
     'link',
     'checkbox',
@@ -171,29 +207,23 @@ function isInteractive(el: Element): boolean {
     'menuitem',
     'tab',
     'slider',
-  ])
-  const isDisabled =
-    (el as any).disabled === true || el.getAttribute('aria-disabled') === 'true'
-  if (isDisabled) {
-    return false
+  ].includes(role)) {
+    return true
   }
-  const tag = el.tagName.toLowerCase()
-  console.log('interactive tag', tag)
-  if (tag === 'button') return true
-  if (tag === 'a' && (el as HTMLAnchorElement).href) return true
-  if (tag === 'input') {
-    const t = (el as HTMLInputElement).type?.toLowerCase()
-    if (t !== 'hidden') return true
-  }
-  if (tag === 'textarea' || tag === 'select' || tag === 'summary') return true
-  if ((el as HTMLElement).isContentEditable) return true
-  const role = (el.getAttribute('role') || '').trim()
-  if (role && actionableRoles.has(role)) return true
-  const ti = (el as HTMLElement).tabIndex
-  if (Number.isInteger(ti) && ti >= 0) return true
+
+  // true because tab index???
+  // const ti = (el as HTMLElement).tabIndex
+  // if (Number.isInteger(ti) && ti >= 0) return true
+
+  // true because mouse cursor
   const st = getComputedStyle(el)
-  if (st.cursor === 'pointer') return true
-  if ((el as any).onclick) return true
+  if (st.cursor === 'pointer') {
+    return true
+  }
+  // true because javascript
+  if ((el as any).onclick) {
+    return true
+  }
   return false
 }
 
