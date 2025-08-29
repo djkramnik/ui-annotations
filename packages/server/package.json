@@ -6,6 +6,8 @@
     "dev": "nodemon ./src/index.ts",
     "prisma:init": "npx prisma init",
     "prisma:generate": "npx prisma generate",
+    "prisma:migrate:dev": "npx prisma migrate dev --name",
+    "prisma:migrate:deploy": "npx prisma migrate deploy",
     "build": "tsc && cp .env ./dist/.env",
     "watch": "tsc -w"
   },

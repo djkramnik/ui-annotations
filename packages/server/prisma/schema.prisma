@@ -26,6 +26,6 @@ model Annotation {
   payload     Json     @db.JsonB
   screenshot  Bytes?   @db.ByteA            // nullable `bytea`
   published   Int      @default(0)
-
+  tag         String?
   @@map("annotations")                      // points back to the snake-case table
 }
