@@ -4,6 +4,7 @@ import { SimpleDate } from '../components/date'
 import { Analytics, CountBreakdown, getAnalytics, getAnnotations, getPublishedAnnotations } from '../api'
 import { Flex } from '../components/flex'
 import { AnnotationLabel } from 'ui-labelling-shared'
+import { useRouter } from 'next/router'
 
 type Row = {
   id: string
@@ -68,17 +69,22 @@ const Annotation = ({
 }
 
 export default function DirectoryPage() {
+  const router = useRouter()
   const [rows, setRows] = useState<Row[]>([])
   const [pubRows, setPubRows] = useState<Row[]>([])
   const [stats, setStats] = useState<Analytics | null>(null)
 
   useEffect(() => {
     let cancelled = false
+    const tagQuery = router.query.tag
+    const tag = typeof tagQuery === 'string'
+      ? tagQuery
+      : undefined
     async function fetchAll() {
       return Promise.all([
-        getAnnotations(),
-        getPublishedAnnotations(),
-        getAnalytics(),
+        getAnnotations(tag),
+        getPublishedAnnotations(tag),
+        getAnalytics(tag),
       ])
       .then(([drafts, published, stats]) => {
         if (cancelled === true) {
@@ -96,7 +102,7 @@ export default function DirectoryPage() {
       cancelled = true
     }
 
-  }, [])
+  }, [router])
 
   return (
     <main id="directory-view" className="directory">

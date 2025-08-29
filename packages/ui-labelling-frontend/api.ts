@@ -16,23 +16,23 @@ export type Analytics = {
   'draft': CountBreakdown
 }
 
-export const getAnalytics = (): Promise<{ data: Analytics}> => {
+export const getAnalytics = (tag?: string): Promise<{ data: Analytics}> => {
   return (
-    fetch('/api/annotation/analytics')
+    fetch(`/api/annotation/analytics${tag ? `?tag=${tag}` : ''}`)
       .then(throwIfErrorStatus)
   )
 }
 
-export const getAnnotations = () => {
+export const getAnnotations = (tag?: string) => {
   return (
-    fetch('/api/annotation?published=0')
+    fetch(`/api/annotation?published=0${tag ? `&tag=${tag}` : ''}`)
       .then(throwIfErrorStatus)
   )
 }
 
-export const getPublishedAnnotations = () => {
+export const getPublishedAnnotations = (tag?: string) => {
   return (
-    fetch('/api/annotation?published=1')
+    fetch(`/api/annotation?published=1${tag ? `&tag=${tag}` : ''}`)
       .then(throwIfErrorStatus)
   )
 }

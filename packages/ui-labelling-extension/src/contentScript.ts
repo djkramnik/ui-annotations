@@ -985,7 +985,6 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
               console.warn("Unknown chunk type:", chunk);
             }
           }
-          console.log('fruits of the gathering:', interactiveBoxes.length)
 
           for (const r of interactiveBoxes) {
             const div = document.createElement("div");
@@ -1014,6 +1013,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
                 width: window.innerWidth,
                 height: window.innerHeight,
               },
+              tag: 'interactive'
             },
           })
 
@@ -1046,7 +1046,6 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
               console.warn("Unknown chunk type:", chunk);
             }
           }
-          console.log('fruits of the gathering:', textRegionBoxes.length)
 
           for (const r of textRegionBoxes) {
             const bb = r; // DOMRectReadOnly
@@ -1076,6 +1075,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
                 width: window.innerWidth,
                 height: window.innerHeight,
               },
+              tag: 'textregion'
             },
           })
 

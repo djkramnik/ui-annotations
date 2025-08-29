@@ -172,6 +172,7 @@ async function getExportPayload() {
       width: number
       height: number
     }
+    tag?: string
   }
 
   const screenshotUrl = await chrome.tabs.captureVisibleTab()
