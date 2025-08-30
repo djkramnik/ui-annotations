@@ -105,6 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
           console.log('successful export', response)
           sendMessage(ExtensionMessage.exportSuccess)
           chrome.storage.local.clear()
+          window.close()
           return
         }
         throw `Bad status: ${response.status}`
@@ -112,8 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
       sendMessage(ExtensionMessage.exportFailed)
       console.error('could not export', e)
-    } finally {
-      window.close()
     }
   })
 

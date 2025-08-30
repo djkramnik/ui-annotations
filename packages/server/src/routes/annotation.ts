@@ -216,24 +216,22 @@ annotationRouter.get('/', async (_req: Request, res: Response) => {
     const rows = await prisma.annotation.findMany({
       select: { id: true, url: true, scrollY: true, date: true },
       orderBy: { id: 'asc' },
-      ...(
-        typeof published === 'string'
-          ? {
-            where: {
-              published: published === '1' ? 1 : 0,
+      where: {
+        ...(
+          typeof published === 'string'
+            ? {
+                published: published === '1' ? 1 : 0,
             }
-          }
-          : {}
-      ),
-       ...(
-        typeof tag === 'string'
-          ? {
-            where: {
-              tag
+            : {}
+        ),
+        ...(
+          typeof tag === 'string'
+            ? {
+                tag: tag
             }
-          }
-          : {}
-      ),
+            : {}
+        ),
+      }
     });
 
     res.status(200).send({ data: rows })
