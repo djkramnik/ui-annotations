@@ -306,7 +306,6 @@ export async function* gatherInteractiveRegions(
   yield out
 }
 
-
 export interface AnnotationPayload {
   annotations: {
     id: string
@@ -327,11 +326,185 @@ export interface Annotations {
   published: | 0 | 1
 }
 
-export async function postProcessNested(
-  annotations: AnnotationPayload['annotations'],
-  filterBy?: string) {
-
+type Rect = AnnotationPayload['annotations'][0]['rect']
+function contains(outer: Rect, inner: Rect): boolean {
+  return (
+    inner.x >= outer.x &&
+    inner.y >= outer.y &&
+    (inner.x + inner.width)  <= (outer.x + outer.width) &&
+    (inner.y + inner.height) <= (outer.y + outer.height)
+  )
 }
+
+// remove annotations that are contained within bigger annotations
+export async function* postProcessNested(
+  annotations: AnnotationPayload['annotations'],
+  opts?: Partial<{
+    filterBy: string
+    batchSize: number
+  }>): AsyncGenerator<number | AnnotationPayload['annotations']> {
+    const {
+      filterBy,
+      batchSize = 50,
+    } = opts ?? {}
+    const regions = typeof filterBy === 'string'
+      ? annotations.filter(a => a.label === filterBy)
+      : annotations.slice(0)
+    // sort largest to smallest
+    const sortedRegions = regions.sort((a, b) => {
+      return (b.rect.width * b.rect.height) - (a.rect.width * a.rect.height)
+    })
+    const out: AnnotationPayload['annotations'] = []
+    let processed = 0
+
+    for(const r of sortedRegions) {
+      for(const k of out) {
+        if (contains(r.rect, k.rect)) {
+          processed += 1
+          if (processed % batchSize === 0) {
+            yield processed
+          }
+          break
+        }
+      }
+      processed += 1
+      out.push(r)
+      if (processed % batchSize === 0) {
+        yield processed
+      }
+    }
+    yield out
+}
+
+// merge annotations that are horizontally adjacent
+export async function* postProcessAdjacent(
+  annotations: AnnotationPayload['annotations'],
+  opts?: Partial<{
+    filterBy: string
+    batchSize: number
+    tolerance: number
+  }>
+): AsyncGenerator<number | AnnotationPayload['annotations']> {
+  const batchSize = Math.max(1, opts?.batchSize ?? 100)
+  const tolerance = Math.max(0, opts?.tolerance ?? 2)
+  const targetLabel = opts?.filterBy
+
+  // Split: targets to process vs passthrough (unaffected)
+  const targets = targetLabel
+    ? annotations.filter(a => a.label === targetLabel)
+    : annotations.slice(0)
+  const passthrough = targetLabel
+    ? annotations.filter(a => a.label !== targetLabel)
+    : []
+
+  // Nothing to do?
+  if (targets.length <= 1) {
+    yield targets.length
+    yield (passthrough.length ? [...targets, ...passthrough] : targets)
+    return
+  }
+
+  // Helpers
+  type R = typeof targets[number] & {
+    right: number
+    bottom: number
+  }
+  const asRect = (a: typeof targets[number]): R => ({
+    ...a,
+    right: a.rect.x + a.rect.width,
+    bottom: a.rect.y + a.rect.height,
+  })
+
+  const yOverlap = (a: R, b: R) =>
+    Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.rect.y, b.rect.y))
+  const yOverlapRatio = (a: R, b: R) =>
+    yOverlap(a, b) / Math.min(a.rect.height, b.rect.height)
+  const hGap = (a: R, b: R) => b.rect.x - a.right // can be negative (overlap)
+
+  // Build rough "rows" by vertical overlap to avoid cross-line merges
+  const MIN_Y_OVERLAP_RATIO = 0.65
+  const rects = targets
+    .filter(a => a.rect.width > 0 && a.rect.height > 0)
+    .map(asRect)
+    .sort((a, b) => (a.rect.y - b.rect.y) || (a.rect.x - b.rect.x))
+
+  type Row = { boxes: R[]; top: number; bottom: number; height: number }
+  const rows: Row[] = []
+  for (const r of rects) {
+    let placed = false
+    for (const row of rows) {
+      const overlap = Math.max(0, Math.min(row.bottom, r.bottom) - Math.max(row.top, r.rect.y))
+      const ratio = overlap / Math.min(row.height, r.rect.height)
+      if (ratio >= MIN_Y_OVERLAP_RATIO) {
+        row.boxes.push(r)
+        row.top = Math.min(row.top, r.rect.y)
+        row.bottom = Math.max(row.bottom, r.bottom)
+        row.height = row.bottom - row.top
+        placed = true
+        break
+      }
+    }
+    if (!placed) rows.push({ boxes: [r], top: r.rect.y, bottom: r.bottom, height: r.rect.height })
+  }
+
+  // Merge left→right inside each row
+  const merged: AnnotationPayload['annotations'] = []
+  let processed = 0
+
+  for (const row of rows) {
+    row.boxes.sort((a, b) => (a.rect.x - b.rect.x) || (a.rect.y - b.rect.y))
+
+    let current: R | null = null
+    for (const r of row.boxes) {
+      processed++
+      if (processed % batchSize === 0) yield processed
+
+      if (!current) {
+        current = r
+        continue
+      }
+
+      const sameLine = yOverlapRatio(current, r) >= MIN_Y_OVERLAP_RATIO
+      const gap = hGap(current, r)
+
+      if (sameLine && gap <= tolerance) {
+        // Merge r into current (keep leftmost id/label)
+        const left = Math.min(current.rect.x, r.rect.x)
+        const top = Math.min(current.rect.y, r.rect.y)
+        const right = Math.max(current.right, r.right)
+        const bottom = Math.max(current.bottom, r.bottom)
+
+        current = {
+          ...current,
+          // keep current.id and current.label
+          rect: { x: left, y: top, width: right - left, height: bottom - top },
+          right,
+          bottom,
+        }
+      } else {
+        merged.push({
+          id: current.id,
+          label: current.label,
+          rect: { ...current.rect },
+        })
+        current = r
+      }
+    }
+
+    if (current) {
+      merged.push({
+        id: current.id,
+        label: current.label,
+        rect: { ...current.rect },
+      })
+    }
+  }
+
+  // Final result: merged targets + untouched passthrough
+  const result = passthrough.length ? [...merged, ...passthrough] : merged
+  yield result
+}
+
 
 
 
