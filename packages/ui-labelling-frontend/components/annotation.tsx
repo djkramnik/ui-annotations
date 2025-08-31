@@ -4,28 +4,40 @@ import { Flex } from "./flex";
 import { useLabels } from "../hooks/labels";
 
 export const AnnotationToggler = ({
+  currIndex,
   annotations,
-  handleIndexChange,
   handleUpdate,
   handleRemove,
+  handlePrev,
+  handleNext
 }: {
+  currIndex: number
   annotations: AnnotationPayload['annotations']
-  handleIndexChange: (newIndex: number) => void
   handleUpdate: (label: string, index: number) => void
   handleRemove: (index: number) => void
+  handlePrev: () => void
+  handleNext: () => void
 }) => {
-  const [currIndex, setCurrIndex] = useState<number>(0)
-
-  const prev = useCallback(() => {
-    setCurrIndex(index => index === 0 ? annotations.length - 1 : index - 1)
-  }, [setCurrIndex, annotations])
-  const next = useCallback(() => {
-    setCurrIndex(index => (index + 1) % annotations.length)
-  }, [setCurrIndex, annotations])
 
   useEffect(() => {
-    handleIndexChange(currIndex)
-  }, [currIndex])
+    function handleKeydown(event: KeyboardEvent) {
+      switch(event.key) {
+        case 'ArrowRight':
+          handleNext()
+          break
+        case 'ArrowLeft':
+          handlePrev()
+          break
+        case 'x':
+          handleRemove(currIndex)
+          break
+      }
+    }
+    window.addEventListener('keydown', handleKeydown)
+    return () => {
+      window.removeEventListener('keydown', handleKeydown)
+    }
+  }, [handleNext, handlePrev, handleRemove, currIndex])
 
   return (
     <Flex dir="column" gap="8px">
@@ -41,8 +53,8 @@ export const AnnotationToggler = ({
         </p>
       </SelectedAnnotation>
       <Flex gap="8px">
-        <button onClick={prev}>prev</button>
-        <button onClick={next}>next</button>
+        <button onClick={handlePrev}>prev</button>
+        <button onClick={handleNext}>next</button>
       </Flex>
     </Flex>
   )
@@ -64,12 +76,21 @@ export const SelectedAnnotation = (
     handleRemove: (index: number) => void
     children?: React.ReactNode
   }) => {
-    const [currLabel, setCurrLabel] = useState<string>(annotation.label)
+
+    const [currLabel, setCurrLabel] = useState<string>(annotation?.label ?? '')
     const labels = useLabels()
 
     useEffect(() => {
+      if (!annotation) {
+        return
+      }
       setCurrLabel(annotation.label)
     }, [annotation, setCurrLabel])
+
+    // this should never happen but it ain't my current fault (its my past self fault)
+    if (!annotation) {
+      return null
+    }
 
     return (
       <Flex dir="column" gap="8px">

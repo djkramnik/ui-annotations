@@ -36,16 +36,14 @@ export default function AnnotationPage() {
     dangerState: null,
     currToggleIndex: null
   })
-
   const labels = useLabels()
-
+  console.log('mode?', pageState.mode)
   const adjustment = useAdjustRect(typeof pageState.currToggleIndex === 'number'
     ? (annotations?.[pageState.currToggleIndex] ?? null)
     : null,
     pageState.currToggleIndex ?? 0,
     adjustReset
   )
-
 
   const resetPageState = useCallback((options?: Partial<{
     restoreNoChange: boolean
@@ -252,16 +250,34 @@ export default function AnnotationPage() {
     }
   }, [setPageState, setDisabled, disabled, query, push])
 
-  const handleToggleIndexChange = useCallback((newIndex: number) => {
+  const handlePrev = useCallback(() => {
     setPageState(state => {
-      if (state.mode !== 'toggle') {
+      if (state.mode !== 'toggle' || typeof state.currToggleIndex !== 'number') {
         console.error('SOMETHING WENT VERY WRONG.')
         return state
       }
-      state.currToggleIndex = newIndex
+      const proposedPrev = state.currToggleIndex - 1
+
+      state.currToggleIndex = proposedPrev < 0
+        ? annotations.payload.annotations.length - 1
+        : proposedPrev
       return {...state}
     })
-  }, [setPageState])
+  }, [setPageState, annotations])
+
+  const handleNext = useCallback(() => {
+    setPageState(state => {
+      if (state.mode !== 'toggle' || typeof state.currToggleIndex !== 'number') {
+        console.error('SOMETHING WENT VERY WRONG.')
+        return state
+      }
+      const proposedNext = state.currToggleIndex + 1
+      state.currToggleIndex = proposedNext > annotations.payload.annotations.length - 1
+        ? 0
+        : proposedNext
+      return {...state}
+    })
+  }, [setPageState, annotations])
 
   const handleAnnotationUpdate = useCallback((newLabel: string, index: number) => {
     if (pageState.currToggleIndex === null) {
@@ -289,10 +305,12 @@ export default function AnnotationPage() {
   }, [pageState, setAnnotations, adjustment, setAdjustReset, annotations])
 
   const handleRemoveAnnotation = useCallback((index: number) => {
-    const proceed = window.confirm('you sure?  you sure you want to delete this wonderful annotation?')
-    if (!proceed) {
-      return
-    }
+    // const proceed = window.confirm('you sure?  you sure you want to delete this wonderful annotation?')
+    // if (!proceed) {
+    //   return
+    // }
+    const len = annotations.payload.annotations.length
+
     setAnnotations(annotations => {
       const curr = annotations.payload.annotations[index]
       return {
@@ -304,11 +322,22 @@ export default function AnnotationPage() {
         }
       }
     })
-    setPageState(value => ({
-      ...value,
-      currToggleIndex: null,
-      mode: 'initial'
-    }))
+    // this should be fine??
+    console.log('current toggle index', pageState.currToggleIndex)
+    if (len === 1) {
+      setPageState(value => ({
+        ...value,
+        currToggleIndex: null,
+        mode: 'initial'
+      }))
+    } else if (pageState.currToggleIndex + 1 === len) {
+      console.log('we are here!')
+      setPageState(value => ({
+        ...value,
+        currToggleIndex: value.currToggleIndex - 1,
+      }))
+    }
+
     // react hack.  we only do this to force an effect to run within useAdjustRect
     setAdjustReset(reset => !reset)
   }, [setAnnotations, setAdjustReset, annotations, pageState, setPageState])
@@ -502,10 +531,12 @@ export default function AnnotationPage() {
               pageState.mode === 'toggle' && typeof pageState.currToggleIndex === 'number'
                 ? (
                   <AnnotationToggler
+                    currIndex={pageState.currToggleIndex}
                     annotations={payload.annotations}
-                    handleIndexChange={handleToggleIndexChange}
                     handleUpdate={handleAnnotationUpdate}
                     handleRemove={handleRemoveAnnotation}
+                    handlePrev={handlePrev}
+                    handleNext={handleNext}
                   />
                 )
                 : null
