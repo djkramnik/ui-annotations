@@ -305,3 +305,33 @@ export async function* gatherInteractiveRegions(
   }
   yield out
 }
+
+
+export interface AnnotationPayload {
+  annotations: {
+    id: string
+    label: string
+    rect: { x: number; y: number; width: number; height: number }
+  }[]
+}
+
+export interface Annotations {
+  url: string
+  payload: AnnotationPayload
+  screenshot: ArrayBuffer
+  scrollY: number
+  viewHeight: number
+  viewWidth: number
+  date: string
+  id: number
+  published: | 0 | 1
+}
+
+export async function postProcessNested(
+  annotations: AnnotationPayload['annotations'],
+  filterBy?: string) {
+
+}
+
+
+

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { AnnotationPayload } from "../utils/type";
 import { Flex } from "./flex";
 import { useLabels } from "../hooks/labels";
+import { AnnotationPayload } from "ui-labelling-shared";
 
 export const AnnotationToggler = ({
   currIndex,

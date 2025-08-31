@@ -6,7 +6,6 @@ This repo also includes a web server for storing annotations in local postgres i
 #### TODO
 
 #### Next step:
-* update frontend viewer so we can toggle via keypress and delete via keypress, with no prompt warning
 * interactive postprocessing button
 * textregion postprocessing button
 
