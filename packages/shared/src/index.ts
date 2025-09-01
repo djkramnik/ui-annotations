@@ -383,10 +383,12 @@ export async function* postProcessAdjacent(
     filterBy: string
     batchSize: number
     tolerance: number
+    yTolerance: number
   }>
 ): AsyncGenerator<number | AnnotationPayload['annotations']> {
   const batchSize = Math.max(1, opts?.batchSize ?? 100)
   const tolerance = Math.max(0, opts?.tolerance ?? 2)
+  const yTolerance = Math.max(0.5, Math.min(1, opts?.yTolerance ?? 0.95))
   const targetLabel = opts?.filterBy
 
   // Split: targets to process vs passthrough (unaffected)
@@ -417,12 +419,14 @@ export async function* postProcessAdjacent(
 
   const yOverlap = (a: R, b: R) =>
     Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.rect.y, b.rect.y))
+
   const yOverlapRatio = (a: R, b: R) =>
     yOverlap(a, b) / Math.min(a.rect.height, b.rect.height)
+
   const hGap = (a: R, b: R) => b.rect.x - a.right // can be negative (overlap)
 
   // Build rough "rows" by vertical overlap to avoid cross-line merges
-  const MIN_Y_OVERLAP_RATIO = 0.65
+  const MIN_Y_OVERLAP_RATIO = yTolerance
   const rects = targets
     .filter(a => a.rect.width > 0 && a.rect.height > 0)
     .map(asRect)
@@ -437,14 +441,13 @@ export async function* postProcessAdjacent(
       const ratio = overlap / Math.min(row.height, r.rect.height)
       if (ratio >= MIN_Y_OVERLAP_RATIO) {
         row.boxes.push(r)
-        row.top = Math.min(row.top, r.rect.y)
-        row.bottom = Math.max(row.bottom, r.bottom)
-        row.height = row.bottom - row.top
         placed = true
         break
       }
     }
-    if (!placed) rows.push({ boxes: [r], top: r.rect.y, bottom: r.bottom, height: r.rect.height })
+    if (!placed) {
+      rows.push({ boxes: [r], top: r.rect.y, bottom: r.bottom, height: r.rect.height })
+    }
   }
 
   // Merge left→right inside each row
@@ -457,17 +460,17 @@ export async function* postProcessAdjacent(
     let current: R | null = null
     for (const r of row.boxes) {
       processed++
-      if (processed % batchSize === 0) yield processed
+      if (processed % batchSize === 0) {
+        yield processed
+      }
 
       if (!current) {
         current = r
         continue
       }
-
-      const sameLine = yOverlapRatio(current, r) >= MIN_Y_OVERLAP_RATIO
       const gap = hGap(current, r)
 
-      if (sameLine && gap <= tolerance) {
+      if (gap <= tolerance) {
         // Merge r into current (keep leftmost id/label)
         const left = Math.min(current.rect.x, r.rect.x)
         const top = Math.min(current.rect.y, r.rect.y)
@@ -500,9 +503,7 @@ export async function* postProcessAdjacent(
     }
   }
 
-  // Final result: merged targets + untouched passthrough
-  const result = passthrough.length ? [...merged, ...passthrough] : merged
-  yield result
+  yield [...merged, ...passthrough]
 }
 
 
