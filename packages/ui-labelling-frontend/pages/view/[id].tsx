@@ -22,9 +22,12 @@ export default function AnnotationPage() {
   const { query, push, isReady } = useRouter()
 
   const NavButtons = useCallback(() => {
+    const tag = typeof query.tag === 'string'
+      ? query.tag
+      : undefined
     return (
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center'}}>
-        <button id="back-btn" onClick={() => push('/')}>
+        <button id="back-btn" onClick={() => push('/' + tag ? `?tag=${tag}` : '')}>
           Back
         </button>
         <button id="prev-btn" onClick={() => push('/view/' + (Number(String(query.id)) - 1))}>
@@ -35,7 +38,7 @@ export default function AnnotationPage() {
         </button>
       </div>
     )
-  }, [push])
+  }, [push, query])
 
   const [annotations, setAnnotations] = useState<Annotations | null>(null)
   // this is just some hack to force a reset of the adjustment value
@@ -210,13 +213,16 @@ export default function AnnotationPage() {
       : unPublishAnnotation
     try {
       task(Number(String(query.id)))
-        .then(() => push('/'))
+        .then(() => {
+          const tag = query.tag
+          push('/' + (typeof tag === 'string' && !!tag) ? `?tag=${tag}` : '')
+        })
     } catch {
       // show toast
     } finally {
       setDisabled(false)
     }
-  }, [setPageState, setDisabled, disabled, annotations, push])
+  }, [setPageState, setDisabled, disabled, annotations, push, query])
 
   const handleDeleteClick = useCallback(() => {
     if (disabled) {
@@ -236,7 +242,10 @@ export default function AnnotationPage() {
     }
     try {
       deleteAnnotation(Number(String(query.id)))
-        .then(() => push('/'))
+        .then(() => {
+          const tag = query.tag
+          push('/' + (typeof tag === 'string' && !!tag) ? `?tag=${tag}` : '')
+        })
     } catch {
       // show toast
     } finally {

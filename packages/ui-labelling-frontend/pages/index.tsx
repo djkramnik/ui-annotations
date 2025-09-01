@@ -55,12 +55,13 @@ const Annotation = ({
   ...rest
 }: {
   index: number
+  tag?: string
 } & Row) => {
-  const { id, url, date, scrollY } = rest
+  const { id, url, date, scrollY, tag } = rest
   return (
     <li>
       <Flex gap="12px" aic>
-        <Link href={`/view/${id}`}>{url.slice(0, 40)}</Link>
+        <Link href={`/view/${id}` + (tag ? `?tag=${tag}` : '')}>{url.slice(0, 40)}</Link>
         <strong>Date: <SimpleDate date={date} /></strong>
         <p style={{ margin: 0 }}>Scroll: {scrollY}</p>
       </Flex>
@@ -103,7 +104,10 @@ export default function DirectoryPage() {
     }
 
   }, [router])
-
+  const tagQuery = router.query.tag
+  const tag = typeof tagQuery === 'string'
+    ? tagQuery
+    : undefined
   return (
     <main id="directory-view" className="directory">
     <h2>Annotations Directory</h2>
@@ -133,7 +137,7 @@ export default function DirectoryPage() {
             rows
               .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
               .map((row, index) => (
-                <Annotation key={index} index={index} {...row} />
+                <Annotation key={index} index={index} {...row} tag={tag || undefined} />
               ))
           }
         </ol>
@@ -145,7 +149,7 @@ export default function DirectoryPage() {
             pubRows
               .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
               .map((row, index) => (
-                <Annotation key={index} index={index} {...row} />
+                <Annotation key={index} index={index} {...row} tag={tag || undefined} />
               ))
           }
         </ol>

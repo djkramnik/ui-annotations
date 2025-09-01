@@ -358,17 +358,11 @@ export async function* postProcessNested(
     let processed = 0
 
     for(const r of sortedRegions) {
-      for(const k of out) {
-        if (contains(r.rect, k.rect)) {
-          processed += 1
-          if (processed % batchSize === 0) {
-            yield processed
-          }
-          break
-        }
+      const contained = out.some(k => contains(k.rect, r.rect))
+      if (!contained) {
+        out.push(r)
       }
       processed += 1
-      out.push(r)
       if (processed % batchSize === 0) {
         yield processed
       }
