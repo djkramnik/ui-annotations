@@ -80,6 +80,7 @@ export default function AnnotationPage() {
     }
   }, [setPageState, setChanged, annotations])
 
+
   const NewAnnotationForm = useMemo(() => {
     return () => !pageState.drawCandidate ? null : (
       <Popup handleClose={resetPageState}>
@@ -335,7 +336,16 @@ export default function AnnotationPage() {
     setAdjustReset(reset => !reset)
   }, [setAnnotations, setAdjustReset, annotations, pageState, setPageState])
 
+  // LONG RUNNING PROCESSING OPS
   const [processingWork, setProcessingWork] = useState<number | null>(null)
+
+  const ProcessingPopup = useMemo(() => {
+    return () => typeof processingWork === 'number' ? null : (
+      <Popup handleClose={resetPageState}>
+        <h3>Processed: {processingWork}</h3>
+      </Popup>
+    )
+  }, [processingWork])
 
   const handleTextRegionProcessing = useCallback(async () => {
     if (pageState.mode !== 'initial') {
@@ -367,6 +377,7 @@ export default function AnnotationPage() {
       setDisabled(false)
     }
   }, [annotations, pageState, setProcessingWork, setDisabled, setAnnotations])
+  // END LONG RUNNING PROCESSING OPS
 
   // support changing page mode via keypress
   const setModeFromKeypress = useCallback((mode: PageMode) => {
@@ -450,6 +461,11 @@ export default function AnnotationPage() {
 
   return (
     <main id="annotation-view">
+      {
+        pageState.mode === 'initial' && typeof processingWork === 'number'
+          ? <ProcessingPopup />
+          : null
+      }
       {
         pageState.drawCandidate
           ? (
@@ -556,7 +572,7 @@ export default function AnnotationPage() {
                 Toggle
               </button>
               <button onClick={handleTextRegionProcessing} disabled={disabled}>
-                Process Text Regions
+                Process Text
               </button>
             </Flex>
             {
