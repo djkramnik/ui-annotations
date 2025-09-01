@@ -2,7 +2,7 @@ import { useRouter } from 'next/router'
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Container } from '../../components/container'
 import { Flex } from '../../components/flex'
-import { annotationLabels, AnnotationPayload, Annotations, postProcessAdjacent } from 'ui-labelling-shared'
+import { annotationLabels, AnnotationPayload, Annotations, postProcessAdjacent, postProcessNested } from 'ui-labelling-shared'
 import ScreenshotAnnotator from '../../components/screenshot-annotated'   // ← NEW
 import { SimpleDate } from '../../components/date'
 import { deleteAnnotation, publishAnnotation, unPublishAnnotation, updateAnnotation } from '../../api'
@@ -347,17 +347,22 @@ export default function AnnotationPage() {
     )
   }, [processingWork])
 
-  const handleTextRegionProcessing = useCallback(async () => {
+  const processAnnotations = useCallback(async (
+    task: (a: AnnotationPayload['annotations']) => AsyncGenerator<number | AnnotationPayload['annotations']>
+  ) => {
     if (pageState.mode !== 'initial') {
-      console.warn('text region process noop: page mode not in initial state')
+      console.warn('process annotations noop: page mode not in initial state')
       return
     }
     setDisabled(true)
     setProcessingWork(0)
     try {
-      for await (const update of postProcessAdjacent(annotations.payload.annotations)) {
+      for await (const update of task(annotations.payload.annotations)) {
         if (typeof update === 'number') {
           setProcessingWork(update)
+          await (() => {
+            return new Promise(resolve => setTimeout(resolve, 500))
+          })()
         } else {
           setAnnotations(annotations => {
             return {
@@ -377,6 +382,15 @@ export default function AnnotationPage() {
       setDisabled(false)
     }
   }, [annotations, pageState, setProcessingWork, setDisabled, setAnnotations])
+
+  const processText = useCallback(() => {
+    return processAnnotations(postProcessAdjacent)
+  }, [processAnnotations])
+
+  const processNested = useCallback(() => {
+    return processAnnotations(postProcessNested)
+  }, [processAnnotations])
+
   // END LONG RUNNING PROCESSING OPS
 
   // support changing page mode via keypress
@@ -571,8 +585,11 @@ export default function AnnotationPage() {
               <button onClick={handleToggleClick} disabled={disabled}>
                 Toggle
               </button>
-              <button onClick={handleTextRegionProcessing} disabled={disabled}>
+              <button onClick={processText} disabled={disabled}>
                 Process Text
+              </button>
+              <button onClick={processNested}>
+                Process Nested
               </button>
             </Flex>
             {
