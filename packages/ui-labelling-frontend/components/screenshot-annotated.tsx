@@ -11,12 +11,14 @@ export default function ScreenshotAnnotator({
   labelOverride,
   children,
   onScaleMeasured,
+  handleClick,
 }: {
   screenshot: string
   annotations: Annotation[]
   frame: { width: number; height: number }
   labelOverride?: CSSProperties
   children?: React.ReactNode
+  handleClick?: (id: string) => void
   onScaleMeasured?: (scale: { x: number, y: number }) => void
 }) {
   const ref = useRef<HTMLDivElement | null>(null)
@@ -69,6 +71,7 @@ export default function ScreenshotAnnotator({
 
         return (
           <div
+            onClick={typeof handleClick === 'function' ? () => handleClick(id) : undefined}
             key={id}
             style={{
               position: 'absolute',

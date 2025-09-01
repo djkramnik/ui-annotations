@@ -402,6 +402,21 @@ export default function AnnotationPage() {
 
   // END LONG RUNNING PROCESSING OPS
 
+  // when you click on a specific annotation, go immediately into the toggle mode at the correct index for that annotation
+  const handleAnnotationClick = useCallback((id: string) => {
+    const index = annotations.payload.annotations.findIndex(a => a.id === id)
+    if (index === -1) {
+      console.warn('handleAnnotationClick: inexplicably we cannot acquire the index of the annotation we clicked on')
+      return
+    }
+    setPageState({
+      mode: 'toggle',
+      toggleState: null,
+      dangerState: null,
+      currToggleIndex: index,
+    })
+  }, [setPageState, annotations])
+
   // support changing page mode via keypress
   const setModeFromKeypress = useCallback((mode: PageMode) => {
     switch(mode) {
@@ -532,6 +547,7 @@ export default function AnnotationPage() {
             }}
           >
             <ScreenshotAnnotator
+              handleClick={handleAnnotationClick}
               screenshot={screenshotDataUrl}
               labelOverride={{
                 ...(
