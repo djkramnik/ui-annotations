@@ -27,7 +27,7 @@ export default function AnnotationPage() {
       : undefined
     return (
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center'}}>
-        <button id="back-btn" onClick={() => push('/' + tag ? `?tag=${tag}` : '')}>
+        <button id="back-btn" onClick={() => push('/' + (tag ? `?tag=${tag}` : ''))}>
           Back
         </button>
         <button id="prev-btn" onClick={() => push('/view/' + (Number(String(query.id)) - 1))}>
@@ -215,7 +215,8 @@ export default function AnnotationPage() {
       task(Number(String(query.id)))
         .then(() => {
           const tag = query.tag
-          push('/' + (typeof tag === 'string' && !!tag) ? `?tag=${tag}` : '')
+          const homeUrl = ('/' + ((typeof tag === 'string' && !!tag) ? `?tag=${tag}` : ''))
+          push(homeUrl)
         })
     } catch {
       // show toast
@@ -244,7 +245,8 @@ export default function AnnotationPage() {
       deleteAnnotation(Number(String(query.id)))
         .then(() => {
           const tag = query.tag
-          push('/' + (typeof tag === 'string' && !!tag) ? `?tag=${tag}` : '')
+          const homeUrl = ('/' + ((typeof tag === 'string' && !!tag) ? `?tag=${tag}` : ''))
+          push(homeUrl)
         })
     } catch {
       // show toast
@@ -253,13 +255,12 @@ export default function AnnotationPage() {
     }
   }, [setPageState, setDisabled, disabled, query, push])
 
-  const handlePrev = useCallback(() => {
+  const handlePrev = useCallback((proposedPrev: number) => {
     setPageState(state => {
       if (state.mode !== 'toggle' || typeof state.currToggleIndex !== 'number') {
         console.error('SOMETHING WENT VERY WRONG.')
         return state
       }
-      const proposedPrev = state.currToggleIndex - 1
 
       state.currToggleIndex = proposedPrev < 0
         ? annotations.payload.annotations.length - 1
@@ -268,13 +269,12 @@ export default function AnnotationPage() {
     })
   }, [setPageState, annotations])
 
-  const handleNext = useCallback(() => {
+  const handleNext = useCallback((proposedNext: number) => {
     setPageState(state => {
       if (state.mode !== 'toggle' || typeof state.currToggleIndex !== 'number') {
         console.error('SOMETHING WENT VERY WRONG.')
         return state
       }
-      const proposedNext = state.currToggleIndex + 1
       state.currToggleIndex = proposedNext > annotations.payload.annotations.length - 1
         ? 0
         : proposedNext
@@ -517,7 +517,9 @@ export default function AnnotationPage() {
         </Flex>
         <Flex gap="12px" aic>
           <h3>Mode: {pageState.mode}</h3>
-          <strong>{changed ? `THERE BE UNSAVED CHANGES og:${originalAnnotations.current.length} vs. new:${annotations.payload.annotations.length}` : 'NO CHANGES!'}</strong>
+          <strong>{changed
+            ? `THERE BE UNSAVED CHANGES og:${originalAnnotations.current.length} vs. new:${annotations.payload.annotations.length}`
+            : `NO CHANGES! og:${originalAnnotations.current.length}`}</strong>
         </Flex>
         <Flex>
           {/* ───────── screenshot with live-scaled rectangles ───────── */}
@@ -609,8 +611,8 @@ export default function AnnotationPage() {
                     annotations={payload.annotations}
                     handleUpdate={handleAnnotationUpdate}
                     handleRemove={handleRemoveAnnotation}
-                    handlePrev={handlePrev}
-                    handleNext={handleNext}
+                    handlePrev={() => handlePrev(pageState.currToggleIndex - 1)}
+                    handleNext={() => handleNext(pageState.currToggleIndex + 1)}
                   />
                 )
                 : null
