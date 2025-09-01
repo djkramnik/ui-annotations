@@ -5,6 +5,9 @@ export const useMode = (curr: PageMode, setMode: (mode: PageMode) => void) => {
 
   const handleKeyPress = useCallback((e: KeyboardEvent) => {
     switch(e.key) {
+      case 'i':
+        setMode('initial')
+        break
       case 'd':
         setMode('draw')
         break
