@@ -2,7 +2,7 @@ import { useRouter } from 'next/router'
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Container } from '../../components/container'
 import { Flex } from '../../components/flex'
-import { annotationLabels, AnnotationPayload, Annotations } from 'ui-labelling-shared'
+import { annotationLabels, AnnotationPayload, Annotations, postProcessAdjacent } from 'ui-labelling-shared'
 import ScreenshotAnnotator from '../../components/screenshot-annotated'   // ← NEW
 import { SimpleDate } from '../../components/date'
 import { deleteAnnotation, publishAnnotation, unPublishAnnotation, updateAnnotation } from '../../api'
@@ -20,6 +20,23 @@ export default function AnnotationPage() {
   const [changed, setChanged] = useState<boolean>(false)
   const [disabled, setDisabled] = useState<boolean>(false)
   const { query, push, isReady } = useRouter()
+
+  const NavButtons = useCallback(() => {
+    return (
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center'}}>
+        <button id="back-btn" onClick={() => push('/')}>
+          Back
+        </button>
+        <button id="prev-btn" onClick={() => push('/view/' + (Number(String(query.id)) - 1))}>
+          Prev
+        </button>
+        <button id="next-btn" onClick={() => push('/view/' + (Number(query.id) + 1))}>
+          Next
+        </button>
+      </div>
+    )
+  }, [push])
+
   const [annotations, setAnnotations] = useState<Annotations | null>(null)
   // this is just some hack to force a reset of the adjustment value
   const [adjustReset, setAdjustReset] = useState<boolean>(false)
@@ -37,7 +54,6 @@ export default function AnnotationPage() {
     currToggleIndex: null
   })
   const labels = useLabels()
-  console.log('mode?', pageState.mode)
   const adjustment = useAdjustRect(typeof pageState.currToggleIndex === 'number'
     ? (annotations?.[pageState.currToggleIndex] ?? null)
     : null,
@@ -139,29 +155,6 @@ export default function AnnotationPage() {
       currToggleIndex: 0,
     })
   }, [setPageState, pageState])
-
-  // support changing page mode via keypress
-  const setModeFromKeypress = useCallback((mode: PageMode) => {
-    switch(mode) {
-      case 'draw':
-        handleDrawClick()
-        break
-      case 'toggle':
-        handleToggleClick()
-        break
-      case 'initial':
-        setPageState({
-          mode: 'initial',
-          toggleState: null,
-          dangerState: null,
-          currToggleIndex: null
-        })
-        break
-    }
-  }, [handleDrawClick, handleToggleClick, setPageState])
-
-  useMode(pageState.mode, setModeFromKeypress)
-  // end keypress page mode support
 
   const updateDb = useCallback(() => {
     if (!changed) {
@@ -342,6 +335,62 @@ export default function AnnotationPage() {
     setAdjustReset(reset => !reset)
   }, [setAnnotations, setAdjustReset, annotations, pageState, setPageState])
 
+  const [processingWork, setProcessingWork] = useState<number | null>(null)
+
+  const handleTextRegionProcessing = useCallback(async () => {
+    if (pageState.mode !== 'initial') {
+      console.warn('text region process noop: page mode not in initial state')
+      return
+    }
+    setDisabled(true)
+    setProcessingWork(0)
+    try {
+      for await (const update of postProcessAdjacent(annotations.payload.annotations)) {
+        if (typeof update === 'number') {
+          setProcessingWork(update)
+        } else {
+          setAnnotations(annotations => {
+            return {
+              ...annotations,
+              payload: {
+                ...annotations.payload,
+                annotations: update
+              }
+            }
+          })
+        }
+      }
+    } catch(e) {
+      console.error('text region processing failed!', e)
+    } finally {
+      setProcessingWork(null)
+      setDisabled(false)
+    }
+  }, [annotations, pageState, setProcessingWork, setDisabled, setAnnotations])
+
+  // support changing page mode via keypress
+  const setModeFromKeypress = useCallback((mode: PageMode) => {
+    switch(mode) {
+      case 'draw':
+        handleDrawClick()
+        break
+      case 'toggle':
+        handleToggleClick()
+        break
+      case 'initial':
+        setPageState({
+          mode: 'initial',
+          toggleState: null,
+          dangerState: null,
+          currToggleIndex: null
+        })
+        break
+    }
+  }, [handleDrawClick, handleToggleClick, setPageState])
+
+  useMode(pageState.mode, setModeFromKeypress)
+  // end keypress page mode support
+
   useEffect(() => {
     if (!isReady) return
     fetch(`/api/annotation/${query.id}`)
@@ -379,18 +428,8 @@ export default function AnnotationPage() {
   if (!annotations) {
     return (
       <main id="annotation-view">
-      <Container>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center'}}>
-          <button id="back-btn" onClick={() => push('/')}>
-            Back
-          </button>
-          <button id="prev-btn" onClick={() => push('/view/' + (Number(String(query.id)) - 1))}>
-            Prev
-          </button>
-          <button id="next-btn" onClick={() => push('/view/' + (Number(query.id) + 1))}>
-            Next
-          </button>
-        </div>
+        <Container>
+          <NavButtons />
         </Container>
       </main>
     )
@@ -419,17 +458,7 @@ export default function AnnotationPage() {
           : null
       }
       <Container>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center'}}>
-          <button id="back-btn" onClick={() => push('/')}>
-            Back
-          </button>
-          <button id="prev-btn" onClick={() => push('/view/' + (Number(String(query.id)) - 1))}>
-            Prev
-          </button>
-          <button id="next-btn" onClick={() => push('/view/' + (Number(query.id) + 1))}>
-            Next
-          </button>
-        </div>
+        <NavButtons />
         <Flex aic jcsb>
           <Flex aic gap="12px">
             <strong>{url.slice(0, 50)}</strong>
@@ -449,7 +478,7 @@ export default function AnnotationPage() {
         </Flex>
         <Flex gap="12px" aic>
           <h3>Mode: {pageState.mode}</h3>
-          <strong>{changed ? 'THERE BE UNSAVED CHANGES' : 'NO CHANGES!'}</strong>
+          <strong>{changed ? `THERE BE UNSAVED CHANGES og:${originalAnnotations.current.length} vs. new:${annotations.payload.annotations.length}` : 'NO CHANGES!'}</strong>
         </Flex>
         <Flex>
           {/* ───────── screenshot with live-scaled rectangles ───────── */}
@@ -525,6 +554,9 @@ export default function AnnotationPage() {
               </button>
               <button onClick={handleToggleClick} disabled={disabled}>
                 Toggle
+              </button>
+              <button onClick={handleTextRegionProcessing} disabled={disabled}>
+                Process Text Regions
               </button>
             </Flex>
             {

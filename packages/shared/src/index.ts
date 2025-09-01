@@ -505,7 +505,3 @@ export async function* postProcessAdjacent(
 
   yield [...merged, ...passthrough]
 }
-
-
-
-
