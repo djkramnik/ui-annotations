@@ -6,10 +6,14 @@ This repo also includes a web server for storing annotations in local postgres i
 #### TODO
 
 #### Next step:
-* interactive postprocessing button
-* textregion postprocessing button
+* wider hgap in process text
+* need a new universal postprocessing step -- trim annotation to viewport..
+   can do this during the initial export and also post db storage
+* sort annotations in the frontend viewer from top down left right
 
 
+* need something like a select mode in the frontend viewer.  if only to select and delete.
+* a way to draw multiple for a label, and delete multiple by clicking.   I need some refactoring, however mild, to manage keypress listener collisions
 
 #### QOL / BUGS
 

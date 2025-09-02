@@ -68,10 +68,10 @@ export default function ScreenshotAnnotator({
         const border = fill.startsWith('rgba')
           ? fill.replace(/[\d.]+\)$/, '0.5)')
           : fill
-
+        const handlerExists = typeof handleClick === 'function'
         return (
           <div
-            onClick={typeof handleClick === 'function' ? () => handleClick(id) : undefined}
+            onClick={handlerExists ? () => handleClick(id) : undefined}
             key={id}
             style={{
               position: 'absolute',
@@ -82,7 +82,8 @@ export default function ScreenshotAnnotator({
               backgroundColor: fill,
               border: `2px solid ${border}`,
               boxSizing: 'border-box',
-              pointerEvents: 'none',
+              pointerEvents: handlerExists ? 'initial' : 'none',
+              cursor: handlerExists ? 'pointer' : 'initial',
               display: 'flex',
               alignItems: 'flex-start',
               padding: '2px 4px',
