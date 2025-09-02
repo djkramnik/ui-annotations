@@ -5,6 +5,7 @@
   "scripts": {
     "build": "tsc",
     "start": "npm run build && node dist/index.js",
+    "start:textregion": "npm run build && CLASS_NAMES=textRegion OUTPUT_ROOT=coco_textregion TAG=textregion node dist/index.js",
     "prisma:db:pull": "npx prisma db pull"
   },
   "keywords": [],

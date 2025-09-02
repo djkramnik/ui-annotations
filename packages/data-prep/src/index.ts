@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 /* =========================
    Config
    ========================= */
-const OUTPUT_ROOT = path.resolve('dist', 'coco');           // dist/coco
+const OUTPUT_ROOT = path.resolve('dist', process.env.OUTPUT_ROOT ?? 'coco');           // dist/coco
 const IMG_DIR = path.join(OUTPUT_ROOT, 'images');           // dist/coco/images
 const TRAIN_JSON = path.join(OUTPUT_ROOT, 'train.json');
 const VAL_JSON = path.join(OUTPUT_ROOT, 'val.json');
@@ -19,7 +19,9 @@ const TRAIN_FRACTION = 0.85;  // 85/15 split
 const RNG_SEED = 42;          // deterministic split
 
 // Your class set (contiguous 1..N in COCO)
-const CLASS_NAMES = ['button', 'heading', 'input'] as const;
+const CLASS_NAMES = typeof process.env.CLASS_NAMES === 'string'
+  ? (process.env.CLASS_NAMES as string).split(',')
+  : ['button', 'heading', 'input'] as const;
 type UiLabel = (typeof CLASS_NAMES)[number];
 const CAT_ID_BY_NAME = new Map<UiLabel, number>(
   CLASS_NAMES.map((n, i) => [n, i + 1])
@@ -115,7 +117,7 @@ async function ensureDirs() {
   await fs.mkdir(path.join(IMG_DIR, 'val'), { recursive: true });
 }
 
-async function readRows() {
+async function readRows(tag?: string) {
   return prisma.annotation.findMany({
     orderBy: { id: 'asc' },
     select: {
@@ -124,7 +126,15 @@ async function readRows() {
       viewHeight: true,
       screenshot: true,
       payload: true
-    }
+    },
+    where: {
+      published: 1,
+      ...(
+        tag
+          ? { tag }
+          : {}
+      )
+    },
   });
 }
 
@@ -144,8 +154,14 @@ function getCocoTemplate(categories: CocoCategory[]) {
 async function main() {
   await ensureDirs();
 
-  const rows = await readRows();
+  console.log('Customization env variables:')
+  console.log('OUTPUT_ROOT:', process.env.OUTPUT_ROOT, OUTPUT_ROOT)
+  console.log('TAG:', process.env.TAG)
+  console.log('CLASS_NAMES:', process.env.CLASS_NAMES, CLASS_NAMES)
 
+  const rows = await readRows(process.env.TAG);
+
+  console.log(`Received ${rows.length} rows`)
   // Normalize to internal structure
   const items = rows.map(r => ({
     id: r.id,
@@ -161,6 +177,7 @@ async function main() {
     const hasArray = Array.isArray(anns);
     return hasArray && !!it.screenshot && it.width > 0 && it.height > 0;
   });
+  console.log(`Counted ${usable.length} usable rows`)
 
   if (usable.length === 0) {
     console.warn('No usable rows with screenshots and known labels. Nothing to export.');
