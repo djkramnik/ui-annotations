@@ -556,12 +556,14 @@ export async function* postProcessAdjacent(
           rect: { x: left, y: top, width: right - left, height: bottom - top },
           right,
           bottom,
+          textContent: current.textContent + (r.textContent ?? '')
         }
       } else {
         merged.push({
           id: current.id,
           label: current.label,
           rect: { ...current.rect },
+          textContent: current.textContent
         })
         current = r
       }
@@ -572,6 +574,7 @@ export async function* postProcessAdjacent(
         id: current.id,
         label: current.label,
         rect: { ...current.rect },
+        textContent: current.textContent
       })
     }
   }
