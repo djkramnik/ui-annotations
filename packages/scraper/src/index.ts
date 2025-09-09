@@ -50,6 +50,12 @@ async function main() {
           await page.goto(link, { waitUntil: "networkidle2" })
           const proposals = await getFirstTextProposal()
           console.log('PROPOSALS', proposals)
+          // map to AnnotationPayload['annotations']
+          // postprocess proposals... has to include merger of textContents..
+          // yolo prediction... need to run pyservice I'm afraid
+          // filter each proposal 2 way with ai predictions
+          // prepare metadata... prepare request... make request
+
 
           break
 
