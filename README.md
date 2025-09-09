@@ -6,6 +6,8 @@ This repo also includes a web server for storing annotations in local postgres i
 #### TODO
 
 #### Next step (this month):
+* adblock for headless chrome?
+
 * automatic collection script for OCR - textregions + related text.
   * auto textregion proposal via dom with associated text
   * text processing step (merge regions)
