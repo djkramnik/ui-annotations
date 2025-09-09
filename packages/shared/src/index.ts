@@ -81,13 +81,82 @@ export function rectInViewport(r: DOMRect) {
   )
 }
 
+export type TextProposal = {
+  rect: DOMRect
+  textContent: string
+}
+
+/// <reference lib="dom" />
+
+/**
+ * Splits a Text node into visual line fragments and returns
+ * [{ text, rect }] for each fragment across the full node.
+ */
+export function getTextNodeLineFragments(
+  textNode: Text
+): TextProposal[] {
+  const parent = textNode.parentElement;
+  if (!parent) return [];
+
+  const data = textNode.data;
+  const len = data.length;
+  if (len === 0) return [];
+
+  const range = document.createRange();
+  const out: TextProposal[] = [];
+
+  let start = 0;
+
+  while (start < len) {
+    let lastEnd = -1;
+    let lastRect: DOMRect | null = null;
+
+    // Grow the end offset until the selection would span more than one rect (wrap)
+    for (let end = start + 1; end <= len; end++) {
+      range.setStart(textNode, start);
+      range.setEnd(textNode, end);
+
+      const rects = range.getClientRects();
+
+      if (rects.length === 0) {
+        // (collapsed whitespace etc.) keep going; we don't record yet
+        continue;
+      }
+
+      if (rects.length > 1) {
+        // We've just wrapped; stop growing. Use the last single-line slice.
+        break;
+      }
+
+      // Still a single line; remember this as the best slice so far
+      lastEnd = end;
+      const r = rects[0];
+      lastRect = new DOMRect(r.left, r.top, r.width, r.height);
+    }
+
+    if (lastEnd === -1 || !lastRect) {
+      // Nothing drawable from here; bail to avoid infinite loop
+      break;
+    }
+
+    out.push({
+      textContent: data.slice(start, lastEnd),
+      rect: lastRect,
+    });
+
+    start = lastEnd; // continue with the remainder of the node
+  }
+  return out;
+}
+
+
 export async function* gatherTextRegions(
   opts: Partial<{
     batchSize: number
     minSize: number
     includeIFrames: boolean
   }>,
-): AsyncGenerator<DOMRect[]> {
+): AsyncGenerator<TextProposal[]> {
   const batchSize = opts.batchSize ?? 200
   const minSize = opts.minSize ?? 11
   const includeIFrames = opts.includeIFrames ?? false
@@ -113,7 +182,7 @@ export async function* gatherTextRegions(
       }
     })
   }
-  const out: DOMRect[] = []
+  const out: TextProposal[] = []
 
   for (const root of roots) {
     if (typeof (root as any).createTreeWalker !== 'function') {
@@ -134,29 +203,25 @@ export async function* gatherTextRegions(
         continue
       }
 
-      const range = (root.ownerDocument ?? document).createRange()
-      range.selectNodeContents(tn)
+      const textProposals = getTextNodeLineFragments(tn)
 
-      const rects = range.getClientRects()
-
-      for (const r of Array.from(rects)) {
+      for (const p of textProposals) {
         // need a filter for node candidates and then need a filter for rect
-        if (!rectInViewport(r)) {
+        if (!rectInViewport(p.rect)) {
           console.log('candidate rejected because not in viewport')
           continue
         }
-        if (r.width < minSize || r.height < minSize) {
+        if (p.rect.width < minSize || p.rect.height < minSize) {
           console.log('candidate rejected because too small')
           continue
         }
 
-        out.push(r)
+        out.push(p)
         if (out.length >= batchSize) {
           yield out.splice(0, out.length)
           await new Promise(requestAnimationFrame)
         }
       }
-      range.detach()
     }
   }
   yield out
@@ -304,6 +369,19 @@ export async function* gatherInteractiveRegions(
     }
   }
   yield out
+}
+
+export interface AnnotationRequest {
+  annotations: AnnotationPayload['annotations']
+  screenshot: string
+  url: string
+  date: string
+  window: {
+    scrollY: number
+    width: number
+    height: number
+  }
+  tag?: string
 }
 
 export interface AnnotationPayload {

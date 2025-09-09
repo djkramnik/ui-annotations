@@ -1,4 +1,5 @@
 import * as readline from 'readline'
+import { AnnotationRequest } from 'ui-labelling-shared'
 
 export interface CliOptions {
   handleInput: (s: string) => any
@@ -48,5 +49,15 @@ export const waitForEnter = (): Promise<void> => {
     process.stdin.once('data', function () {
       resolve()
     })
+  })
+}
+
+export const postAnnotations = (payload: AnnotationRequest) => {
+  return fetch('http://localhost:4000/api/annotation', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
   })
 }

@@ -1038,12 +1038,12 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
         console.log('GATHERING TEXT')
         ;(async () => {
           let textRegionBoxes: DOMRect[] = []
-          for await (const chunk of gatherTextRegions({ batchSize: 50 })) {
-            if (Array.isArray(chunk)) {
-              console.log("Batch size:", chunk.length);
-              textRegionBoxes = textRegionBoxes.concat(chunk)
+          for await (const proposals of gatherTextRegions({ batchSize: 50 })) {
+            if (Array.isArray(proposals)) {
+              console.log("Batch size:", proposals.length);
+              textRegionBoxes = textRegionBoxes.concat(proposals.map(p => p.rect))
             } else {
-              console.warn("Unknown chunk type:", chunk);
+              console.warn("Unknown chunk type:", proposals);
             }
           }
 

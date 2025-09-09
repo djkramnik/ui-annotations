@@ -1,7 +1,7 @@
 import puppeteer, { Browser } from "puppeteer-core";
 import { waitForEnter } from "./util";
 import { PrismaClient } from "@prisma/client";
-import { getHnHrefs } from "./dom";
+import { getFirstTextProposal, getHnHrefs } from "./dom";
 
 
 const prisma = new PrismaClient();
@@ -45,13 +45,19 @@ async function main() {
         await page.goto(`https://news.ycombinator.com/${tabName}?p=${index + 1}`)
         // get all the links of the right sort
         const links = await page.evaluate(getHnHrefs)
-        console.log('links bro', links)
+        for(const link of links) {
+          console.log('navigating to new link', link)
+          await page.goto(link, { waitUntil: "networkidle2" })
+          const proposals = await getFirstTextProposal()
+          console.log('PROPOSALS', proposals)
+
+          break
+
+        }
       } catch(e) {
         console.error('wtf', e)
       }
     }
-
-
 
 
     console.log('press enter to quit')
