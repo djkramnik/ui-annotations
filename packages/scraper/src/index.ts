@@ -1,5 +1,21 @@
 import puppeteer, { Browser } from "puppeteer-core";
 import { waitForEnter } from "./util";
+import { PrismaClient } from "@prisma/client";
+import { getHnHrefs } from "./dom";
+
+
+const prisma = new PrismaClient();
+
+async function fetchUrls(): Promise<string[]> {
+  const urls = await prisma.annotation.findMany({
+    where: {
+      tag: 'ocr'
+    }
+  }).then(annotation => {
+    return annotation.map(a => a.url)
+  })
+  return Array.from(new Set(urls))
+}
 
 async function main() {
   // On macOS, Chrome is typically installed at this path
@@ -7,7 +23,7 @@ async function main() {
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
   let browser: Browser | null = null;
-
+  const urls = await fetchUrls()
   try {
     browser = await puppeteer.launch({
       headless: false, // run with a visible browser window
@@ -19,8 +35,24 @@ async function main() {
       ],
     });
 
+
+    const MAX_PAGES = 1
+    const tabName = 'news'
+    let index = 0
     const page = await browser.newPage();
-    await page.goto("https://news.ycombinator.com");
+    for(index = 0; index < MAX_PAGES; index += 1) {
+      try {
+        await page.goto(`https://news.ycombinator.com/${tabName}?p=${index + 1}`)
+        // get all the links of the right sort
+        const links = await page.evaluate(getHnHrefs)
+        console.log('links bro', links)
+      } catch(e) {
+        console.error('wtf', e)
+      }
+    }
+
+
+
 
     console.log('press enter to quit')
     await waitForEnter()
