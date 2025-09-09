@@ -311,6 +311,7 @@ export interface AnnotationPayload {
     id: string
     label: string
     rect: { x: number; y: number; width: number; height: number }
+    textContent?: string
   }[]
 }
 

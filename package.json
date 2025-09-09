@@ -12,6 +12,7 @@
     "watch:server": "npm run -w ui-labelling-server watch",
     "start:server": "nodemon packages/server/dist/index.js",
     "start:test-site": "http-server test-site",
+    "scrape": "npm run -w scraper start",
     "format": "prettier --write"
   },
   "keywords": [],
