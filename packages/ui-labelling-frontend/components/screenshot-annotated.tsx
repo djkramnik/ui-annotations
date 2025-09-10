@@ -1,8 +1,9 @@
 import React, { useRef, useState, useLayoutEffect, CSSProperties, useEffect } from 'react'
-import { annotationLabels } from 'ui-labelling-shared'        // ← NEW
+import { annotationLabels, AnnotationPayload } from 'ui-labelling-shared'        // ← NEW
 import { Rect } from '../utils/type';
+import { useRouter } from 'next/router';
 
-type Annotation  = { id: string; label: string; rect: Rect }
+type Annotation  = AnnotationPayload['annotations'][0]
 
 export default function ScreenshotAnnotator({
   screenshot,
@@ -21,6 +22,10 @@ export default function ScreenshotAnnotator({
   handleClick?: (id: string) => void
   onScaleMeasured?: (scale: { x: number, y: number }) => void
 }) {
+  // tribe of one person knowledge
+  const router = useRouter()
+  const isOcr = router.query.tag === 'ocr'
+
   const ref = useRef<HTMLDivElement | null>(null)
   const [scale, setScale] = useState({ x: 1, y: 1 })
 
@@ -62,7 +67,7 @@ export default function ScreenshotAnnotator({
   /* ─── render ─── */
   return (
     <div ref={ref} style={containerStyle}>
-      {annotations.map(({ id, label, rect }) => {
+      {annotations.map(({ id, label, rect, textContent }) => {
         const fill   = annotationLabels[label] ?? 'rgba(255,66,64,0.35)'
         // make an opaque border if the fill is rgba with alpha
         const border = fill.startsWith('rgba')
@@ -94,7 +99,8 @@ export default function ScreenshotAnnotator({
               ...labelOverride
             }}
           >
-            {label}
+            {/** I promise I will always remember ye */}
+            {isOcr ? textContent : label}
           </div>
         )
       })}
