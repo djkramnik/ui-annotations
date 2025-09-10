@@ -15,6 +15,7 @@ from detectron2.data import MetadataCatalog
 import base64
 from pydantic import BaseModel
 from fastapi.responses import StreamingResponse
+from ultralytics import YOLO
 from typing import Tuple
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -25,6 +26,26 @@ CFG_PATH      = os.environ.get("CFG_PATH", os.path.join(SCRIPT_DIR, "config.yaml
 META_PATH     = os.environ.get("META_PATH", os.path.join(SCRIPT_DIR,"metadata.json"))
 DEVICE        = os.environ.get("DEVICE")  # "cpu" | "mps" | "cuda" (if present)
 SCORE_THRESH  = float(os.environ.get("SCORE_THRESH", "0.5"))
+
+#--------- yolo setup -------------
+
+YOLO_MODEL_PATH = os.path.join(SCRIPT_DIR, "textregion.pt")
+YOLO_CONF = 0.25
+YOLO_IOU = 0.45
+YOLO_IMGSZ = 640
+yolo_model = None
+names = []
+
+def _device():
+  return "mps" if torch.backends.mps.is_available() else "cpu"
+
+def setup_yolo():
+    global model, names
+    model = YOLO(YOLO_MODEL_PATH)
+    mn = getattr(model, "names", None)
+    print("model names", mn)
+setup_yolo()
+#--------- end yolo setup -------------
 
 # ---------- load metadata (class names) ----------
 thing_classes: List[str] = []
@@ -63,7 +84,7 @@ if thing_classes:
     except Exception:
         pass
 
-app = FastAPI(title="Detectron2 Inference Server")
+app = FastAPI(title="UI Inference Server")
 
 # CORS (handy if calling from your browser extension)
 # app.add_middleware(
@@ -108,8 +129,6 @@ def _draw_detections(
         draw.text((bx + 3, by + 2), label, fill=(255, 255, 255), font=font)
 
     return img
-
-
 
 @app.get("/health")
 def health():
