@@ -155,7 +155,7 @@ export function filterByOverlap(
   preds: ScaledYoloPred[],
   options: FilterOpts
 ): AnnotationPayload['annotations'] {
-  const { overlapPct, minConf = 0.6, matchLabel } = options;
+  const { overlapPct, minConf = 0, matchLabel } = options;
 
   // 1) pre-filter preds by conf / label if provided
   const filteredPreds = preds.filter(

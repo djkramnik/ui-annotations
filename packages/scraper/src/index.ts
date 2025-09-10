@@ -70,10 +70,6 @@ async function main() {
         const links = await getLinks({ backendUrls:  urls, index, page, type: 'local'})
 
         for(const link of links) {
-          if (urls.includes(link) || link.startsWith('https://news.ycombinator.com')) {
-            console.log('Skipping link', link)
-            continue
-          }
           console.log('navigating to new link', link)
           await page.goto(link, { waitUntil: "networkidle2" })
           const proposals = await getFirstTextProposal(page)
@@ -113,7 +109,7 @@ async function main() {
           const annotationsVerifiedByAi = filterByOverlap(
             processedAnnotations,
             scaledYoloPreds,
-            { overlapPct: 0.8, matchLabel: 'textRegion' }
+            { overlapPct: 0.4, matchLabel: 'textRegion' }
           )
           console.log('verified by ai length', annotationsVerifiedByAi.length)
 
