@@ -1,5 +1,5 @@
 import io, os, json
-from typing import List, Optional
+from typing import List, Optional, Tuple, Dict, Any
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -13,10 +13,9 @@ from detectron2.engine import DefaultPredictor
 from detectron2.data import MetadataCatalog
 
 import base64
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from fastapi.responses import StreamingResponse
 from ultralytics import YOLO
-from typing import Tuple
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -26,26 +25,6 @@ CFG_PATH      = os.environ.get("CFG_PATH", os.path.join(SCRIPT_DIR, "config.yaml
 META_PATH     = os.environ.get("META_PATH", os.path.join(SCRIPT_DIR,"metadata.json"))
 DEVICE        = os.environ.get("DEVICE")  # "cpu" | "mps" | "cuda" (if present)
 SCORE_THRESH  = float(os.environ.get("SCORE_THRESH", "0.5"))
-
-#--------- yolo setup -------------
-
-YOLO_MODEL_PATH = os.path.join(SCRIPT_DIR, "textregion.pt")
-YOLO_CONF = 0.25
-YOLO_IOU = 0.45
-YOLO_IMGSZ = 640
-yolo_model = None
-names = []
-
-def _device():
-  return "mps" if torch.backends.mps.is_available() else "cpu"
-
-def setup_yolo():
-    global model, names
-    model = YOLO(YOLO_MODEL_PATH)
-    mn = getattr(model, "names", None)
-    print("model names", mn)
-setup_yolo()
-#--------- end yolo setup -------------
 
 # ---------- load metadata (class names) ----------
 thing_classes: List[str] = []
@@ -185,7 +164,12 @@ async def predict(file: UploadFile = File(...)):
     )
 
 class ImagePayload(BaseModel):
-    image_base64: str
+  image_base64: str
+
+class YoloPayload(ImagePayload):
+    conf: float = Field(0.25, ge=0.0, le=1.0)
+    iou:  float = Field(0.45, ge=0.0, le=1.0)
+    imgsz: int   = Field(640,  ge=64,  le=4096)
 
 @app.post("/predict_base64")
 async def predict_base64(payload: ImagePayload):
@@ -261,3 +245,76 @@ async def visualize_base64(payload: ImagePayload, min_score: float = SCORE_THRES
     out_img.save(buf, format="PNG")
     buf.seek(0)
     return StreamingResponse(buf, media_type="image/png")
+
+
+
+#--------- yolo setup -------------
+
+YOLO_MODEL_PATH = os.path.join(SCRIPT_DIR, "textregion.pt")
+YOLO_CONF = 0.25
+YOLO_IOU = 0.45
+YOLO_IMGSZ = 640
+yolo_model = None
+names = {}
+
+def _device():
+  return "mps" if torch.backends.mps.is_available() else "cpu"
+
+def setup_yolo():
+    global model, names
+    model = YOLO(YOLO_MODEL_PATH)
+    mn = getattr(model, "names", None)
+    names = mn
+    print("yolo model names", mn)
+    dummy = np.zeros((640, 640, 3), dtype=np.uint8)
+    model.predict(source=dummy, imgsz=640, conf=0.25, iou=0.45,
+      device=_device(), verbose=False)
+
+setup_yolo()
+#--------- end yolo setup -------------
+
+@app.post('/predict_textregions')
+async def predict_textregions(payload: YoloPayload) -> Dict[str, Any]:
+  global model, names
+  if model is None:
+    setup_yolo()
+
+  conf = float(payload.conf)
+  iou = float(payload.iou)
+  imgsz = int(payload.imgsz)
+
+  if (not 0.0 <= conf <= 1.0 and 0.0 <= iou <= 1.0):
+    raise HTTPException(status_code=400, detail="bad conf or iou (0. - 1.)")
+
+  image_b64 = payload.image_base64
+  img_bytes = base64.b64decode(image_b64, validate=True)
+  img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+
+  width, height = img.size
+
+  results = model.predict(
+    source=img,
+    imgsz=imgsz,
+    conf=conf,
+    iou=iou,
+    device=_device(),
+    verbose=False
+  )
+  r = results[0]
+  detections: List[Dict[str, Any]] = []
+  if getattr(r, "boxes", None) is None:
+    return { "width": width, "height": height, "detections": detections }
+
+  # [[x1,y1,x2,y2]]
+  xyxy = r.boxes.xyxy.cpu().tolist()
+  confs = r.boxes.conf.cpu().tolist()
+  classes = [int(x) for x in r.boxes.cls.cpu().tolist()]
+
+  for (x1,y1,x2,y2), conf, cls in zip(xyxy, confs, classes):
+    label = names[cls]
+    detections.append({
+      "box": [float(x1), float(y1), float(x2), float(y2)],
+      "conf": float(conf),
+      "label": label
+    })
+  return { "width": width, "height": height, "detections": detections }
