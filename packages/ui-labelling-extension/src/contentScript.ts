@@ -10,6 +10,8 @@ import {
   SALIENT_VISUAL_PROPS,
   shadowId,
   StorageKeys,
+  XyXy,
+  YoloPredictResponse,
 } from './types'
 import {
   buildAnnotationForm,
@@ -869,7 +871,90 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
   }
   // end scroll locking
 
-  function showPredictions(prediction: Pick<PredictResponse, 'boxes' | 'class_names'> & {
+  type ScaledYoloPred = {
+    rect: {
+      x: number
+      y: number
+      width: number
+      height: number
+    }
+    conf: number
+    label: string
+  }
+
+  function scaleYoloPreds(data: YoloPredictResponse, vw: number, vh: number): ScaledYoloPred[] {
+    const { width, height, detections } = data
+    const sx = vw / width
+    const sy = vh / height
+
+    const scaledDetections = detections.map(d => ({
+      ...d,
+      box: d.box.map((n, i) => n * (i % 2 ? sy : sx)) as XyXy,
+    }))
+
+    return scaledDetections.map(({ box, conf, label }) => ({
+      rect: {
+        x: box[0],
+        y: box[1],
+        width: box[2] - box[0],
+        height: box[3] - box[1]
+      },
+      conf,
+      label,
+    }))
+  }
+
+  function showYoloPredictions(predictions: YoloPredictResponse) {
+    // scale the yolo detections
+    const scaledPreds = scaleYoloPreds(predictions, window.innerWidth, window.innerHeight)
+    const existingOverlay = document.getElementById('prediction-viewer')
+    if (existingOverlay) {
+      existingOverlay.remove()
+    }
+    const overlay = document.createElement('div')
+    overlay.setAttribute('id', 'prediction-viewer')
+
+    overlay.style.position = 'fixed'
+    overlay.style.width = '100vw'
+    overlay.style.height = '100vh'
+    overlay.style.top = '0'
+    overlay.style.left = '0'
+    overlay.style.zIndex = '999666999' // obscene
+
+    scaledPreds.forEach(({ rect, conf }) => {
+      const el = document.createElement("div");
+      Object.assign(el.style, {
+        position: "absolute",
+        left: `${rect.x}px`,
+        top: `${rect.y}px`,
+        width: `${rect.width}px`,
+        height: `${rect.height}px`,
+        border: "2px solid #00ff00",
+        boxSizing: "border-box",
+        background: "rgba(0,255,0,0.10)",
+        pointerEvents: "none",
+      });
+      const label = document.createElement("div");
+      label.textContent = `${conf}`
+      Object.assign(label.style, {
+        position: "absolute",
+        left: "0",
+        top: "-18px",
+        font: "12px/1.2 system-ui, sans-serif",
+        color: "#fff",
+        background: "rgba(0,0,0,0.7)",
+        padding: "1px 4px",
+        borderRadius: "3px",
+        pointerEvents: "none",
+        whiteSpace: "nowrap",
+      });
+      el.appendChild(label);
+      overlay!.appendChild(el);
+    })
+    document.body.appendChild(overlay)
+  }
+
+  function showPredictionsD2(prediction: Pick<PredictResponse, 'boxes' | 'class_names'> & {
     imgW: number
     imgH: number
   }) {
@@ -1099,7 +1184,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
           break
         }
         log.info('PREDICT JUST ARRIVED:', message.content)
-        showPredictions(message.content as any)
+        showYoloPredictions(message.content as any)
         window.addEventListener('keypress', removePredictions)
         break
       case ExtensionMessage.exportFailed:

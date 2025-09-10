@@ -1,5 +1,5 @@
-import { AnnotationLabel, AnnotationPayload, AnnotationRequest } from 'ui-labelling-shared'
-import { ExtensionMessage, PredictResponse } from '../types'
+import { AnnotationPayload, AnnotationRequest } from 'ui-labelling-shared'
+import { PredictResponse, ExtensionMessage, YoloPredictResponse } from '../types'
 import { snooze } from '../util'
 
 function getMessagePromise(message: string): Promise<void> {
@@ -56,23 +56,21 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const screenshotUrl = await chrome.tabs.captureVisibleTab()
       const b64 = screenshotUrl.split(';base64,')[1]
-      const res = await fetch('http://localhost:8000/predict_base64', {
+      const res = await fetch('http://localhost:8000/predict_textregions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image_base64: b64 }),
+        body: JSON.stringify({ image_base64: b64, conf: 0.1 }),
       })
       const {
-        boxes,
-        class_names,
-        width: imgW,
-        height: imgH,
-      } = (await res.json()) as PredictResponse
+        detections,
+        width,
+        height,
+      } = (await res.json()) as YoloPredictResponse
       sendMessage(ExtensionMessage.predict, {
         content: {
-          boxes,
-          class_names,
-          imgW,
-          imgH,
+          detections,
+          width,
+          height,
         },
       })
       window.close()
@@ -131,6 +129,38 @@ document.addEventListener('DOMContentLoaded', () => {
       cb: () => window.close(),
     })
   })
+
+  // unused right now
+  async function d2PredictHandler() {
+    disableAllButtons()
+    try {
+      const screenshotUrl = await chrome.tabs.captureVisibleTab()
+      const b64 = screenshotUrl.split(';base64,')[1]
+      const res = await fetch('http://localhost:8000/predict_base64', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_base64: b64 }),
+      })
+      const {
+        boxes,
+        class_names,
+        width: imgW,
+        height: imgH,
+      } = (await res.json()) as PredictResponse
+      sendMessage(ExtensionMessage.predict, {
+        content: {
+          boxes,
+          class_names,
+          imgW,
+          imgH,
+        },
+      })
+      window.close()
+    } catch (e) {
+      console.error('predict failed wtf', e)
+    } finally {
+    }
+  }
 })
 
 function sendMessage(

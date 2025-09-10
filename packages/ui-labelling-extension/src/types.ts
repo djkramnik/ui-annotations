@@ -93,6 +93,18 @@ export type PredictResponse = {
   height: number;
 }
 
+export type XyXy = [number, number, number, number]
+export type YoloPredictResponse = {
+  width: number
+  height: number
+  detections: {
+    box: XyXy,
+    conf: number
+    label: string
+  }[]
+}
+
+
 export const logPrefix = '[UI-LABELLER] '
 export const overlayId = 'ui-labelling-overlay'
 export const shadowId = 'ui-annotation-shadow-host'
