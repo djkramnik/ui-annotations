@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch('http://localhost:8000/predict_textregions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image_base64: b64, conf: 0.1 }),
+        body: JSON.stringify({ image_base64: b64, conf: 0.1, imgsz: 1024 }),
       })
       const {
         detections,

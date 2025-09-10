@@ -102,14 +102,16 @@ async function main() {
 
           // yolo prediction
           const yoloResp = await getYoloPredictions({
-            image_base64: screenshot
+            image_base64: screenshot,
+            imgsz: 1024,
+            conf: 0.1
           })
           const yoloRawPreds = await yoloResp.json()
           const scaledYoloPreds = scaleYoloPreds(yoloRawPreds, meta.window.width, meta.window.height)
           const annotationsVerifiedByAi = filterByOverlap(
             processedAnnotations,
             scaledYoloPreds,
-            { overlapPct: 0.4, matchLabel: 'textRegion' }
+            { overlapPct: 0.1, matchLabel: 'textRegion' }
           )
           console.log('verified by ai length', annotationsVerifiedByAi.length)
 
