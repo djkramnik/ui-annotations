@@ -85,11 +85,10 @@ async function main() {
             screenshot: await page.screenshot({ encoding: "base64" }),
             ...meta
           })
-          // postprocess proposals... has to include merger of textContents..
 
           // yolo prediction... need to run pyservice I'm afraid
           // filter each proposal 2 way with ai predictions
-          // prepare metadata... prepare request... make request
+
           // inner loop of scroll?
           // inner loop of page transformations?
 
