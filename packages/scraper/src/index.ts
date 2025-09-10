@@ -1,9 +1,8 @@
-import puppeteer, { Browser } from "puppeteer-core";
-import { postAnnotations, waitForEnter } from "./util";
+import puppeteer, { Browser, Page } from "puppeteer-core";
+import { filterByOverlap, getYoloPredictions, postAnnotations, scaleYoloPreds, waitForEnter } from "./util";
 import { PrismaClient } from "@prisma/client";
 import { getFirstTextProposal, getHnHrefs, getMetadata } from "./dom";
 import { AnnotationLabel, AnnotationPayload, postProcessAdjacent } from "ui-labelling-shared";
-
 
 const prisma = new PrismaClient();
 
@@ -16,6 +15,33 @@ async function fetchUrls(): Promise<string[]> {
     return annotation.map(a => a.url)
   })
   return Array.from(new Set(urls))
+}
+
+async function getLinks({
+  type,
+  backendUrls,
+  index,
+  page,
+}: {
+  type: string
+  backendUrls: string[]
+  index: number
+  page: Page
+}): Promise<string[]> {
+  switch(type) {
+    case 'hn':
+      const tabName = "new"
+      await page.goto(`https://news.ycombinator.com/${tabName}?p=${index + 1}`)
+      const hnLinks = await page.evaluate(getHnHrefs)
+      return hnLinks.filter(link => !backendUrls.includes(link) && !link.startsWith('https://news.ycombinator.com'))
+    case 'local':
+      return [
+        'http://127.0.0.1:8080'
+      ]
+    default:
+      console.warn('invalid link type')
+      return []
+  }
 }
 
 async function main() {
@@ -37,14 +63,11 @@ async function main() {
     });
 
     const MAX_PAGES = 1
-    const tabName = 'news'
     let index = 0
     const page = await browser.newPage();
     for(index = 0; index < MAX_PAGES; index += 1) {
       try {
-        await page.goto(`https://news.ycombinator.com/${tabName}?p=${index + 1}`)
-        // get all the links of the right sort
-        const links = await page.evaluate(getHnHrefs)
+        const links = await getLinks({ backendUrls:  urls, index, page, type: 'local'})
 
         for(const link of links) {
           if (urls.includes(link) || link.startsWith('https://news.ycombinator.com')) {
@@ -79,18 +102,26 @@ async function main() {
           console.log('processed annotations length', processedAnnotations.length)
 
           const meta = await getMetadata(page, link, 'ocr')
+          const screenshot = await page.screenshot({ encoding: "base64" })
+
+          // yolo prediction
+          const yoloResp = await getYoloPredictions({
+            image_base64: screenshot
+          })
+          const yoloRawPreds = await yoloResp.json()
+          const scaledYoloPreds = scaleYoloPreds(yoloRawPreds, meta.window.width, meta.window.height)
+          const annotationsVerifiedByAi = filterByOverlap(
+            processedAnnotations,
+            scaledYoloPreds,
+            { overlapPct: 0.8, matchLabel: 'textRegion' }
+          )
+          console.log('verified by ai length', annotationsVerifiedByAi.length)
 
           await postAnnotations({
-            annotations: processedAnnotations,
-            screenshot: await page.screenshot({ encoding: "base64" }),
+            annotations: annotationsVerifiedByAi,
+            screenshot,
             ...meta
           })
-
-          // yolo prediction... need to run pyservice I'm afraid
-          // filter each proposal 2 way with ai predictions
-
-          // inner loop of scroll?
-          // inner loop of page transformations?
 
           break
         }
@@ -98,7 +129,6 @@ async function main() {
         console.error('wtf', e)
       }
     }
-
 
     console.log('press enter to quit')
     await waitForEnter()
