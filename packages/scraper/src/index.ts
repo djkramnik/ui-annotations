@@ -7,7 +7,7 @@ import {
   waitForEnter,
 } from './util'
 import { PrismaClient } from '@prisma/client'
-import { getFirstTextProposal, getHnHrefs, getMetadata } from './dom'
+import { getFirstTextProposal, getHnHrefs, getMetadata, scrolledToBottom, scrollY } from './dom'
 import {
   AnnotationLabel,
   AnnotationPayload,
@@ -15,6 +15,12 @@ import {
 } from 'ui-labelling-shared'
 
 const prisma = new PrismaClient()
+
+main({
+  linkType: 'hn',
+  maxPages: 1,
+  maxScrollIndex: 2,
+})
 
 async function snooze(ms: number = 2000) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -46,13 +52,15 @@ async function getLinks({
 }): Promise<string[]> {
   switch (type) {
     case 'hn':
-      const tabName = 'new'
+      const tabName = 'news'
       await page.goto(`https://news.ycombinator.com/${tabName}?p=${index + 1}`)
       const hnLinks = await page.evaluate(getHnHrefs)
       return hnLinks.filter(
         (link) =>
           !backendUrls.includes(link) &&
-          !link.startsWith('https://news.ycombinator.com'),
+          !link.startsWith('https://news.ycombinator.com') &&
+          !link.startsWith('https://github.com') &&
+          !link.startsWith('https://arxiv.org')
       )
     case 'local':
       return ['http://127.0.0.1:8080']
@@ -62,7 +70,77 @@ async function getLinks({
   }
 }
 
-async function main() {
+async function processScreen(page: Page, link: string) {
+  const proposals = await getFirstTextProposal(page)
+  // console.log('PROPOSALS', proposals)
+  if (proposals.length < 1) {
+    return
+  }
+
+  const rawAnnotations = proposals.map((p) => {
+    return {
+      rect: p.rect,
+      label: AnnotationLabel.textRegion,
+      id: crypto.randomUUID(),
+      textContent: p.textContent,
+    }
+  })
+  console.log('unprocessed annotation len:', rawAnnotations.length)
+
+  let processedAnnotations: AnnotationPayload['annotations'] = []
+  for await (const update of postProcessAdjacent(rawAnnotations)) {
+    if (Array.isArray(update)) {
+      processedAnnotations = processedAnnotations.concat(update)
+    }
+  }
+
+  console.log(
+    'processed annotations length',
+    processedAnnotations.length,
+  )
+
+  const meta = await getMetadata(page, link, 'ocr')
+  const screenshot = await page.screenshot({ encoding: 'base64' })
+
+  // yolo prediction
+  const yoloResp = await getYoloPredictions({
+    image_base64: screenshot,
+    imgsz: 1024,
+    conf: 0.1,
+  })
+  const yoloRawPreds = await yoloResp.json()
+  const scaledYoloPreds = scaleYoloPreds(
+    yoloRawPreds,
+    meta.window.width,
+    meta.window.height,
+  )
+  const annotationsVerifiedByAi = filterByOverlap(
+    processedAnnotations,
+    scaledYoloPreds,
+    { overlapPct: 0.1, matchLabel: 'textRegion' },
+  )
+  console.log('verified by ai length', annotationsVerifiedByAi.length)
+
+  await postAnnotations({
+    annotations: annotationsVerifiedByAi,
+    screenshot,
+    ...meta,
+  })
+  // superstition
+  await snooze()
+
+  return meta
+}
+
+async function main({
+  linkType,
+  maxPages,
+  maxScrollIndex
+}: {
+  linkType: string
+  maxPages: number
+  maxScrollIndex: number
+}) {
   // On macOS, Chrome is typically installed at this path
   const chromePath =
     '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
@@ -77,78 +155,42 @@ async function main() {
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     })
 
-    const MAX_PAGES = 1
-    let index = 0
+    const MAX_PAGES = maxPages
+    const MAX_SCROLL_INDEX = maxScrollIndex
+
+
+    let pageIndex = 0
     const page = await browser.newPage()
-    for (index = 0; index < MAX_PAGES; index += 1) {
+    for (pageIndex = 0; pageIndex < MAX_PAGES; pageIndex += 1) {
       const links = await getLinks({
         backendUrls: urls,
-        index,
+        index: pageIndex,
         page,
-        type: 'hn',
+        type: linkType,
       })
 
       for (const link of links) {
         try {
           console.log('navigating to new link', link)
           await page.goto(link, { waitUntil: 'networkidle2' })
-          const proposals = await getFirstTextProposal(page)
-          // console.log('PROPOSALS', proposals)
-          if (proposals.length < 1) {
-            continue
-          }
 
-          const rawAnnotations = proposals.map((p) => {
-            return {
-              rect: p.rect,
-              label: AnnotationLabel.textRegion,
-              id: crypto.randomUUID(),
-              textContent: p.textContent,
+          // inner scroll loop.  max 3
+
+          let scrollIndex = 0
+
+          while (scrollIndex <= MAX_SCROLL_INDEX) {
+            scrollIndex += 1
+
+            // make the annotations, post them to backend
+            const meta = await processScreen(page, link)
+
+            // if we failed to get any annotations or if we are scrolled to bottom stop this inner loop
+            if (!meta || await scrolledToBottom(page)) {
+              break
             }
-          })
-          console.log('unprocessed annotation len:', rawAnnotations.length)
 
-          let processedAnnotations: AnnotationPayload['annotations'] = []
-          for await (const update of postProcessAdjacent(rawAnnotations)) {
-            if (Array.isArray(update)) {
-              processedAnnotations = processedAnnotations.concat(update)
-            }
+            await scrollY(page, meta?.window.height / 2)
           }
-
-          console.log(
-            'processed annotations length',
-            processedAnnotations.length,
-          )
-
-          const meta = await getMetadata(page, link, 'ocr')
-          const screenshot = await page.screenshot({ encoding: 'base64' })
-
-          // yolo prediction
-          const yoloResp = await getYoloPredictions({
-            image_base64: screenshot,
-            imgsz: 1024,
-            conf: 0.1,
-          })
-          const yoloRawPreds = await yoloResp.json()
-          const scaledYoloPreds = scaleYoloPreds(
-            yoloRawPreds,
-            meta.window.width,
-            meta.window.height,
-          )
-          const annotationsVerifiedByAi = filterByOverlap(
-            processedAnnotations,
-            scaledYoloPreds,
-            { overlapPct: 0.1, matchLabel: 'textRegion' },
-          )
-          console.log('verified by ai length', annotationsVerifiedByAi.length)
-
-          await postAnnotations({
-            annotations: annotationsVerifiedByAi,
-            screenshot,
-            ...meta,
-          })
-          // superstition
-          await snooze()
         } catch (e) {
           console.error('wtf', e)
         }
@@ -165,5 +207,3 @@ async function main() {
     browser?.close()
   }
 }
-
-main()

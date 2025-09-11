@@ -26,6 +26,19 @@ export function getMetadata(page: Page, link: string, label: string): Promise<Om
   }, link, label)
 }
 
+export function scrollY(page: Page, amount?: number): Promise<void> {
+  return page.evaluate((amount) => {
+    window.scrollBy(0, amount ?? 200)
+  }, amount)
+}
+
+export function scrolledToBottom(page: Page): Promise<boolean> {
+  return page.evaluate(() => {
+      const el = document.scrollingElement || document.documentElement;
+      return Math.ceil(el.scrollTop + el.clientHeight) >= el.scrollHeight - 2; // some superstition
+  })
+}
+
 export async function getFirstTextProposal(page: Page): Promise<TextProposal[]> {
   const out = await page.evaluate(async () => {
     function elVisible(el: Element) {

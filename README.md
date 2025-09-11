@@ -6,13 +6,15 @@ This repo also includes a web server for storing annotations in local postgres i
 #### TODO
 
 #### Next step (this month):
-* adblock for headless chrome?
+* frontend viewer toggle needs to include a textContent field
+* draw popup needs a textContent field
+* frontend viewer occlude feature: modify the screenshot itself by drawing a dark box overtop of a portion of it
 
 * automatic collection script for OCR - textregions + related text.
-  * auto textregion proposal via dom with associated text
-  * text processing step (merge regions)
-  * utilize existing yolo model to remove blatant false positives
   * frontend viewer integration to edit these
+
+* need to create scroll inner loop... and transformations
+
 * automatic collection script for more interactive training data
   * auto interactive proposal
   * sanity check with existing yolo model
