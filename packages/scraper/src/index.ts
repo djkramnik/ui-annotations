@@ -174,8 +174,7 @@ async function main({
           console.log('navigating to new link', link)
           await page.goto(link, { waitUntil: 'networkidle2' })
 
-          // inner scroll loop.  max 3
-
+          // inner scroll loop.
           let scrollIndex = 0
 
           while (scrollIndex <= MAX_SCROLL_INDEX) {
@@ -190,6 +189,9 @@ async function main({
             }
 
             await scrollY(page, meta?.window.height / 2)
+            // perform a page transformation here
+
+
           }
         } catch (e) {
           console.error('wtf', e)

@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 
-import { Page } from "puppeteer-core";
+import { ElementHandle, Page } from "puppeteer-core";
 import { AnnotationRequest, TextProposal } from "ui-labelling-shared";
 
 export function getHnHrefs() {
@@ -37,6 +37,52 @@ export function scrolledToBottom(page: Page): Promise<boolean> {
       const el = document.scrollingElement || document.documentElement;
       return Math.ceil(el.scrollTop + el.clientHeight) >= el.scrollHeight - 2; // some superstition
   })
+}
+
+export async function adjustViewport({
+  page,
+  width,
+  height,
+  dpr = 1,
+}: {
+  page: Page
+  width: number
+  height: number
+  dpr?: number
+}) {
+  const client = await page.createCDPSession()
+  return client.send('Emulation.setDeviceMetricsOverride', {
+    width, height, deviceScaleFactor: dpr, mobile: false,
+  })
+}
+
+export async function adjustZoom({
+  page,
+  scale
+}: {
+  page: Page
+  scale: number
+}) {
+  const client = await page.createCDPSession()
+  return client.send('Emulation.setPageScaleFactor', {
+    pageScaleFactor: scale
+  })
+}
+
+export async function changeFontFamily(
+  page: Page,
+  family = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+): Promise<{ remove: () => Promise<void> }> {
+  const css = `
+    * { font-family: ${family} !important; }
+  `;
+  const style = await page.addStyleTag({ content: css });
+  return {
+    remove: async () => {
+      try { await style.evaluate(el => el.remove()); } catch {}
+      try { await style.dispose(); } catch {}
+    }
+  };
 }
 
 export async function getFirstTextProposal(page: Page): Promise<TextProposal[]> {
