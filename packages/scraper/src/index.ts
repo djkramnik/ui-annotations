@@ -23,6 +23,7 @@ main({
   linkType: 'hn',
   maxPages: 1,
   maxScrollIndex: 2,
+  maxLinks: 3,
 })
 
 async function snooze(ms: number = 2000) {
@@ -188,35 +189,39 @@ async function main({
             scrollIndex += 1
 
             // apply transformations randomly
-            // adjustViewport({
-            //   page,
-            //   width: randInt(800, 1600),
-            //   height: randInt(500, 992),
-            // })
+            adjustViewport({
+              page,
+              width: randInt(800, 1600),
+              height: randInt(500, 992),
+            })
+            await snooze()
 
             let removeFont = null
             // a quarter of the time change the font?
             if (Math.random() >= 0.75) {
               removeFont = await changeFontFamily(page, getRandomLocalFont())
             }
-            // let zoom = 1
-            // if (Math.random() >= 0.75) {
-            //   zoom = getRandomZoom()
-            //   await adjustZoom({ page, scale: zoom })
-            // }
+            let zoom = 1
+            if (Math.random() >= 0.5) {
+              zoom = getRandomZoom()
+              await adjustZoom({ page, scale: zoom })
+              await snooze()
+            }
 
             // collect annotations
             // make the annotations, post them to backend
             const meta = await processScreen(page, link)
-            // if we failed to get any annotations or if we are scrolled to bottom stop this inner loop
+
             linkCount += 1
             if (linkCount >= MAX_LINKS) {
               break
             }
             // remove effects
             removeFont?.remove()
-            // await adjustZoom({ page, scale:1 })
+            await adjustZoom({ page, scale:1 })
+            await snooze()
 
+            // if we failed to get any annotations or if we are scrolled to bottom stop this inner loop
             if (!meta || await scrolledToBottom(page)) {
               break
             }

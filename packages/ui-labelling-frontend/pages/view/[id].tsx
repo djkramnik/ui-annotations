@@ -518,6 +518,7 @@ export default function AnnotationPage() {
             <strong>{url.slice(0, 50)}</strong>
             <p><strong>Date:</strong> <SimpleDate date={date} /></p>
             <p>Scroll: {scrollY}</p>
+            <p>Window: {viewWidth}, {viewHeight}</p>
           </Flex>
           <Flex aic gap="12px">
             <button onClick={updateDb}
