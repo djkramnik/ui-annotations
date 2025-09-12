@@ -3,11 +3,12 @@ import {
   filterByOverlap,
   getYoloPredictions,
   postAnnotations,
+  randInt,
   scaleYoloPreds,
   waitForEnter,
 } from './util'
 import { PrismaClient } from '@prisma/client'
-import { getFirstTextProposal, getHnHrefs, getMetadata, scrolledToBottom, scrollY } from './dom'
+import { adjustViewport, getFirstTextProposal, getHnHrefs, getMetadata, scrolledToBottom, scrollY } from './dom'
 import {
   AnnotationLabel,
   AnnotationPayload,
@@ -190,6 +191,11 @@ async function main({
 
             await scrollY(page, meta?.window.height / 2)
             // perform a page transformation here
+            adjustViewport({
+              page,
+              width: randInt(800, 1600),
+              height: randInt(500, 992),
+            })
 
 
           }
