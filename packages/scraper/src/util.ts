@@ -175,3 +175,48 @@ export function randInt(_min: number, _max: number) {
   if (max < min) [min, max] = [max, min];
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+
+export function getRandomLocalFont() {
+  const localFonts = [
+    `Roboto`,
+    `StoryScript-Regular`,
+    `"Playfair Display", serif`,
+    `"Roboto Mono", monospace`,
+    `"Lobster", sans-serif`,
+    `"Oswald", sans-serif`,
+    `"Merriweather", serif`,
+    `"Noto Sans", sans-serif`,
+    `"Lato", sans-serif`,
+    `"Love Ya Like A Sister", cursive`,
+    `"Lora", serif`,
+    `"Lilita One", sans-serif`,
+    `"Love Light", cursive`,
+    `"Lexend", sans-serif`,
+    `"Luckiest Guy", cursive`,
+    `"Libre Bodoni", serif`,
+    `Verdana`,
+    `Phosphate`,
+    `"Metal Mania", system-ui`,
+    `"Michroma", sans-serif`,
+    `"Macondo", cursive`,
+    `Marcellus", serif`,
+    `"Merienda", cursive`,
+    `"Manufacturing Consent", system-ui`,
+    `"Mr Dafoe", cursive`
+  ]
+  return localFonts[randInt(0, localFonts.length - 1)] as string
+}
+
+export function getRandomZoom() {
+  const zooms = [
+    0.8,
+    0.85,
+    0.9,
+    0.95,
+    1.05,
+    1.1,
+    1.15,
+    1.2
+  ]
+  return zooms[randInt(0, zooms.length)] as number
+}

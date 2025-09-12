@@ -1,6 +1,8 @@
 import puppeteer, { Browser, Page } from 'puppeteer-core'
 import {
   filterByOverlap,
+  getRandomLocalFont,
+  getRandomZoom,
   getYoloPredictions,
   postAnnotations,
   randInt,
@@ -8,7 +10,7 @@ import {
   waitForEnter,
 } from './util'
 import { PrismaClient } from '@prisma/client'
-import { adjustViewport, getFirstTextProposal, getHnHrefs, getMetadata, scrolledToBottom, scrollY } from './dom'
+import { adjustViewport, adjustZoom, changeFontFamily, getFirstTextProposal, getHnHrefs, getMetadata, scrolledToBottom, scrollY } from './dom'
 import {
   AnnotationLabel,
   AnnotationPayload,
@@ -181,24 +183,42 @@ async function main({
           while (scrollIndex <= MAX_SCROLL_INDEX) {
             scrollIndex += 1
 
-            // make the annotations, post them to backend
-            const meta = await processScreen(page, link)
-
-            // if we failed to get any annotations or if we are scrolled to bottom stop this inner loop
-            if (!meta || await scrolledToBottom(page)) {
-              break
-            }
-
-            await scrollY(page, meta?.window.height / 2)
-            // perform a page transformation here
+            // apply transformations randomly
             adjustViewport({
               page,
               width: randInt(800, 1600),
               height: randInt(500, 992),
             })
 
+            let removeFont = null
+            // a quarter of the time change the font?
+            if (Math.random() >= 0.75) {
+              removeFont = await changeFontFamily(page, getRandomLocalFont())
+            }
+            let zoom = 1
+            if (Math.random() >= 0.75) {
+              zoom = getRandomZoom()
+              await adjustZoom({ page, scale: zoom })
+            }
 
+            // collect annotations
+            // make the annotations, post them to backend
+            const meta = await processScreen(page, link)
+            // if we failed to get any annotations or if we are scrolled to bottom stop this inner loop
+
+            // remove effects
+            removeFont?.remove()
+            await adjustZoom({ page, scale:1 })
+
+            if (!meta || await scrolledToBottom(page)) {
+              break
+            }
+
+            await scrollY(page, meta?.window.height / 2)
+            // perform a page transformation here
           }
+
+
         } catch (e) {
           console.error('wtf', e)
         }
