@@ -63,7 +63,8 @@ async function getLinks({
           !backendUrls.includes(link) &&
           !link.startsWith('https://news.ycombinator.com') &&
           !link.startsWith('https://github.com') &&
-          !link.startsWith('https://arxiv.org')
+          !link.startsWith('https://arxiv.org') &&
+          !link.endsWith('.pdf')
       )
     case 'local':
       return ['http://127.0.0.1:8080']
@@ -138,11 +139,13 @@ async function processScreen(page: Page, link: string) {
 async function main({
   linkType,
   maxPages,
-  maxScrollIndex
+  maxScrollIndex,
+  maxLinks = 1000,
 }: {
   linkType: string
   maxPages: number
   maxScrollIndex: number
+  maxLinks?: number
 }) {
   // On macOS, Chrome is typically installed at this path
   const chromePath =
@@ -160,10 +163,12 @@ async function main({
 
     const MAX_PAGES = maxPages
     const MAX_SCROLL_INDEX = maxScrollIndex
-
+    const MAX_LINKS = maxLinks
 
     let pageIndex = 0
     const page = await browser.newPage()
+
+    let linkCount = 0
     for (pageIndex = 0; pageIndex < MAX_PAGES; pageIndex += 1) {
       const links = await getLinks({
         backendUrls: urls,
@@ -179,36 +184,38 @@ async function main({
 
           // inner scroll loop.
           let scrollIndex = 0
-
           while (scrollIndex <= MAX_SCROLL_INDEX) {
             scrollIndex += 1
 
             // apply transformations randomly
-            adjustViewport({
-              page,
-              width: randInt(800, 1600),
-              height: randInt(500, 992),
-            })
+            // adjustViewport({
+            //   page,
+            //   width: randInt(800, 1600),
+            //   height: randInt(500, 992),
+            // })
 
             let removeFont = null
             // a quarter of the time change the font?
             if (Math.random() >= 0.75) {
               removeFont = await changeFontFamily(page, getRandomLocalFont())
             }
-            let zoom = 1
-            if (Math.random() >= 0.75) {
-              zoom = getRandomZoom()
-              await adjustZoom({ page, scale: zoom })
-            }
+            // let zoom = 1
+            // if (Math.random() >= 0.75) {
+            //   zoom = getRandomZoom()
+            //   await adjustZoom({ page, scale: zoom })
+            // }
 
             // collect annotations
             // make the annotations, post them to backend
             const meta = await processScreen(page, link)
             // if we failed to get any annotations or if we are scrolled to bottom stop this inner loop
-
+            linkCount += 1
+            if (linkCount >= MAX_LINKS) {
+              break
+            }
             // remove effects
             removeFont?.remove()
-            await adjustZoom({ page, scale:1 })
+            // await adjustZoom({ page, scale:1 })
 
             if (!meta || await scrolledToBottom(page)) {
               break
@@ -218,10 +225,15 @@ async function main({
             // perform a page transformation here
           }
 
-
         } catch (e) {
           console.error('wtf', e)
         }
+        if (linkCount >= MAX_LINKS) {
+          break
+        }
+      }
+      if (linkCount >= MAX_LINKS) {
+        break
       }
     }
 
