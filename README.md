@@ -6,8 +6,8 @@ This repo also includes a web server for storing annotations in local postgres i
 #### TODO
 
 #### Next step (this month):
-* draw popup needs a textContent field
 * frontend viewer occlude feature: modify the screenshot itself by drawing a dark box overtop of a portion of it
+  * use sharp
 
 * automatic collection script for OCR - textregions + related text.
   * frontend viewer integration to edit these
