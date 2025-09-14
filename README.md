@@ -6,7 +6,6 @@ This repo also includes a web server for storing annotations in local postgres i
 #### TODO
 
 #### Next step (this month):
-* frontend viewer toggle needs to include a textContent field
 * draw popup needs a textContent field
 * frontend viewer occlude feature: modify the screenshot itself by drawing a dark box overtop of a portion of it
 

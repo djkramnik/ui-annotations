@@ -85,6 +85,7 @@ export default function AnnotationPage() {
 
 
   const NewAnnotationForm = useMemo(() => {
+    const [currText, setCurrText] = useState<string>('')
     return () => !pageState.drawCandidate ? null : (
       <Popup handleClose={resetPageState}>
         <form onSubmit={(e: FormEvent<HTMLFormElement>) => {
@@ -96,7 +97,8 @@ export default function AnnotationPage() {
               annotations: annotations.payload.annotations.concat({
                 id: String(new Date().getTime()), // I am baffled why I ever included this
                 label: select.value,
-                rect: pageState.drawCandidate
+                rect: pageState.drawCandidate,
+                ...(currText ? { textContent: currText } : {})
               })
             }
           }))
@@ -116,6 +118,7 @@ export default function AnnotationPage() {
                     })
                   }
                 </select>
+                <textarea name="textarea" value={currText} onChange={e => setCurrText(e.target.value)}></textarea>
               </Flex>
             </Flex>
             <Flex gap="6px">
@@ -282,7 +285,7 @@ export default function AnnotationPage() {
     })
   }, [setPageState, annotations])
 
-  const handleAnnotationUpdate = useCallback((newLabel: string, index: number) => {
+  const handleAnnotationUpdate = useCallback((newLabel: string, newTextContent: string | null, index: number) => {
     if (pageState.currToggleIndex === null) {
       console.error('SOMETHING WENT VERY WRONG IN HANDLE ANNOTATION UPDATE')
       return
@@ -297,6 +300,7 @@ export default function AnnotationPage() {
               return adjustAnnotation({
                 ...a,
                 label: newLabel, // holy shit
+                textContent: newTextContent || undefined,
               }, adjustment)
             }
             return a
@@ -466,6 +470,7 @@ export default function AnnotationPage() {
         const og = originalAnnotations.current[index]
         return item.id !== og.id ||
           item.label !== og.label ||
+          item.textContent !== og.textContent ||
           item.rect.x !== og.rect.x ||
           item.rect.y !== og.rect.y ||
           item.rect.width !== og.rect.width ||

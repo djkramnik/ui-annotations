@@ -13,7 +13,7 @@ export const AnnotationToggler = ({
 }: {
   currIndex: number
   annotations: AnnotationPayload['annotations']
-  handleUpdate: (label: string, index: number) => void
+  handleUpdate: (label: string, textContent: string | null, index: number) => void
   handleRemove: (index: number) => void
   handlePrev: () => void
   handleNext: () => void
@@ -72,11 +72,11 @@ export const SelectedAnnotation = (
   }: {
     index: number
     annotation: AnnotationPayload['annotations'][0]
-    handleUpdate: (label: string, index: number) => void
+    handleUpdate: (label: string, textContent: string | null, index: number) => void
     handleRemove: (index: number) => void
     children?: React.ReactNode
   }) => {
-
+    const [currText, setCurrText] = useState<string | null>(annotation?.textContent ?? null)
     const [currLabel, setCurrLabel] = useState<string>(annotation?.label ?? '')
     const labels = useLabels()
 
@@ -85,7 +85,8 @@ export const SelectedAnnotation = (
         return
       }
       setCurrLabel(annotation.label)
-    }, [annotation, setCurrLabel])
+      setCurrText(annotation.textContent ?? null)
+    }, [annotation, setCurrLabel, setCurrText])
 
     // this should never happen but it ain't my current fault (its my past self fault)
     if (!annotation) {
@@ -103,7 +104,7 @@ export const SelectedAnnotation = (
         <Flex>
           <form onSubmit={e => {
             e.preventDefault()
-            handleUpdate(currLabel, index)
+            handleUpdate(currLabel, currText || null, index)
           }}>
             <Flex dir="column" gap="4px">
               <label htmlFor="label-select" style={{ fontWeight: 'bold' }}>Label:</label>
@@ -118,6 +119,7 @@ export const SelectedAnnotation = (
                   })
                 }
               </select>
+              <textarea rows={5} value={currText ?? ''} onChange={ e => setCurrText(e.target.value) }></textarea>
             </Flex>
             {children}
             <button type="submit" style={{ marginTop: '4px' }}>Update</button>
