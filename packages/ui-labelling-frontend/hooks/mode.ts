@@ -4,6 +4,12 @@ import { PageMode } from "../utils/type";
 export const useMode = (curr: PageMode, setMode: (mode: PageMode) => void) => {
 
   const handleKeyPress = useCallback((e: KeyboardEvent) => {
+    if (e.target instanceof Element) {
+      if (e.target.tagName.toLowerCase() === 'textarea' ||
+        e.target.tagName.toLowerCase() === 'input') {
+        return
+      }
+    }
     switch(e.key) {
       case 'i':
         setMode('initial')
