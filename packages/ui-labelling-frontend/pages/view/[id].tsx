@@ -654,6 +654,7 @@ export default function AnnotationPage() {
         <ProcessingPopup />
       ) : null}
       {pageState.drawCandidate ? <NewAnnotationForm /> : null}
+      {pageState.occludeCandidate ? <OcclusionForm /> : null}
       <Container>
         <NavButtons />
         <Flex aic jcsb>
