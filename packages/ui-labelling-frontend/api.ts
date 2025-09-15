@@ -1,6 +1,8 @@
-import { AnnotationLabel, annotationLabels } from "ui-labelling-shared"
-import { AnnotationPayload } from "./utils/type"
-
+import {
+  AnnotationLabel,
+  AnnotationPayload,
+  annotationLabels
+} from "ui-labelling-shared"
 
 const throwIfErrorStatus = (r: Response) => {
   if (r.ok) {
@@ -15,6 +17,20 @@ export type Analytics = {
   'published': CountBreakdown
   'draft': CountBreakdown
 }
+
+export const occludeScreenshot = (id: number, rect: Pick<DOMRect, 'x' | 'y' | 'width' | 'height'>)
+  : Promise<{ updatedScreen: ArrayBuffer }> => {
+    return (
+      fetch(`/api/screenshot/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ rect })
+      })
+      .then(throwIfErrorStatus)
+    )
+  }
 
 export const getAnalytics = (tag?: string): Promise<{ data: Analytics}> => {
   return (

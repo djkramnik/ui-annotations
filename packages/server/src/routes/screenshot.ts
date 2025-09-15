@@ -1,7 +1,5 @@
 import { Router, Request, Response } from 'express'
 import { prisma } from '../db'
-import { AnnotationLabel } from 'ui-labelling-shared'
-import { Prisma } from '@prisma/client'
 import sharp from 'sharp'
 
 type Rect = {
@@ -52,7 +50,6 @@ screenshotRouter.put('/:id', async (req: Request, res: Response) => {
     iy = Math.max(0, Math.min(iy, imgH - 1));
     iw = Math.max(0, Math.min(iw, imgW - ix));
     ih = Math.max(0, Math.min(ih, imgH - iy));
-
 
     const newImg = await img
       .composite([

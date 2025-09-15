@@ -20,6 +20,7 @@ import ScreenshotAnnotator from '../../components/screenshot-annotated' // ← N
 import { SimpleDate } from '../../components/date'
 import {
   deleteAnnotation,
+  occludeScreenshot,
   publishAnnotation,
   unPublishAnnotation,
   updateAnnotation,
@@ -67,6 +68,7 @@ export default function AnnotationPage() {
     )
   }, [push, query])
 
+  const [updatedScreen, setUpdatedScreen] = useState<string | null>(null)
   const [annotations, setAnnotations] = useState<Annotations | null>(null)
   // this is just some hack to force a reset of the adjustment value
   const [adjustReset, setAdjustReset] = useState<boolean>(false)
@@ -123,9 +125,15 @@ export default function AnnotationPage() {
         ? null
         : (
           <Popup handleClose={resetPageState}>
-            <form onSubmit={e => {
+            <form onSubmit={async (e) => {
               e.preventDefault()
-              // we are going to call the backend, it will save the update to db, and then we will update the frontend with the new base64
+              // we are going to call the backend, it will save the update to db, and then we will update state with a new base64
+              const { updatedScreen } = await occludeScreenshot(
+                Number(String(query.id)),
+                pageState.occludeCandidate,
+              )
+              setUpdatedScreen(`data:image/png;base64,${Buffer.from(updatedScreen).toString('base64')}`)
+              resetPageState()
             }}>
               <h3>You sure you want to occlude these provocative pixels?</h3>
               <Flex gap="6px">
@@ -138,7 +146,7 @@ export default function AnnotationPage() {
           </Popup>
         )
     }
-  }, [pageState, resetPageState])
+  }, [pageState, resetPageState, setUpdatedScreen, query])
 
   const NewAnnotationForm = useMemo(() => {
     return () => {
@@ -284,7 +292,7 @@ export default function AnnotationPage() {
     } finally {
       setDisabled(false)
     }
-  }, [setDisabled, disabled, changed, annotations, resetPageState])
+  }, [setDisabled, disabled, changed, annotations, resetPageState, query])
 
   const handlePublishClick = useCallback(() => {
     if (disabled || !annotations) {
@@ -638,7 +646,7 @@ export default function AnnotationPage() {
     published,
   } = annotations
 
-  const screenshotDataUrl = `data:image/png;base64,${Buffer.from(screenshot).toString('base64')}`
+  const screenshotDataUrl = updatedScreen ?? `data:image/png;base64,${Buffer.from(screenshot).toString('base64')}`
 
   return (
     <main id="annotation-view">
