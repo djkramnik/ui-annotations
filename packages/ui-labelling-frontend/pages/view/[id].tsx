@@ -76,6 +76,7 @@ export default function AnnotationPage() {
     toggleState: ToggleState | null
     dangerState: DangerState | null
     drawCandidate?: Rect
+    occludeCandidate?: Rect
     currToggleIndex: number | null
   }>({
     mode: 'initial',
@@ -115,6 +116,29 @@ export default function AnnotationPage() {
     },
     [setPageState, setChanged, annotations],
   )
+
+  const OcclusionForm = useMemo(() => {
+    return () => {
+      return !pageState.occludeCandidate
+        ? null
+        : (
+          <Popup handleClose={resetPageState}>
+            <form onSubmit={e => {
+              e.preventDefault()
+              // we are going to call the backend, it will save the update to db, and then we will update the frontend with the new base64
+            }}>
+              <h3>You sure you want to occlude these provocative pixels?</h3>
+              <Flex gap="6px">
+                <button type="submit">Yes</button>
+                <button type="button" onClick={() => resetPageState()}>
+                  Actually, NO
+                </button>
+              </Flex>
+            </form>
+          </Popup>
+        )
+    }
+  }, [pageState, resetPageState])
 
   const NewAnnotationForm = useMemo(() => {
     return () => {
@@ -177,12 +201,31 @@ export default function AnnotationPage() {
     }
   }, [pageState, resetPageState, labels, setAnnotations])
 
+  const handleNewOccludeCandidate = useCallback(
+    (rect: Rect) => {
+      setPageState((state) => ({...state, occludeCandidate: rect }))
+    },
+    [setPageState]
+  )
+
   const handleNewDrawCandidate = useCallback(
     (rect: Rect) => {
       setPageState((state) => ({ ...state, drawCandidate: rect }))
     },
     [setPageState],
   )
+
+  const handleOccludeMode = useCallback(() => {
+    if (pageState.mode === 'occlude') {
+      return
+    }
+    setPageState({
+      mode: 'occlude',
+      toggleState: null,
+      dangerState: null,
+      currToggleIndex: null,
+    })
+  }, [setPageState, pageState])
 
   const handleDrawClick = useCallback(() => {
     if (pageState.mode === 'draw') {
@@ -512,6 +555,9 @@ export default function AnnotationPage() {
   const setModeFromKeypress = useCallback(
     (mode: PageMode) => {
       switch (mode) {
+        case 'occlude':
+          handleOccludeMode()
+          break
         case 'draw':
           handleDrawClick()
           break
@@ -670,6 +716,13 @@ export default function AnnotationPage() {
               {pageState.mode === 'draw' ? (
                 <DrawSurface
                   handleCandidate={handleNewDrawCandidate}
+                  ogHeight={viewHeight}
+                  ogWidth={viewWidth}
+                />
+              ) : null}
+              {pageState.mode === 'occlude' ? (
+                <DrawSurface
+                  handleCandidate={handleNewOccludeCandidate}
                   ogHeight={viewHeight}
                   ogWidth={viewWidth}
                 />

@@ -11,6 +11,9 @@ export const useMode = (curr: PageMode, setMode: (mode: PageMode) => void) => {
       }
     }
     switch(e.key) {
+      case 'o':
+        setMode('occlude')
+        break
       case 'i':
         setMode('initial')
         break
