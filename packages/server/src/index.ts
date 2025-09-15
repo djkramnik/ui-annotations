@@ -2,6 +2,7 @@ import dotenv = require('dotenv')
 import path from 'path'
 import express from 'express'
 import { annotationRouter } from './routes/annotation'
+import { screenshotRouter } from './routes/screenshot'
 import { prisma } from './db'
 
 dotenv.config({ path: path.join(__dirname, '.env') })
@@ -15,6 +16,7 @@ dotenv.config({ path: path.join(__dirname, '.env') })
 
     app.use(express.json({ limit: '10mb' }))
     app.use('/api/annotation', annotationRouter)
+    app.use('/api/screenshot', screenshotRouter)
 
     const server = app.listen(port, () => {
       console.log('serving listening on port', port)
