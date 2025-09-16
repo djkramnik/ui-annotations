@@ -6,13 +6,11 @@ This repo also includes a web server for storing annotations in local postgres i
 #### TODO
 
 #### Next step (this month):
-* frontend viewer occlude feature: modify the screenshot itself by drawing a dark box overtop of a portion of it
-  * use sharp
 
-* automatic collection script for OCR - textregions + related text.
-  * frontend viewer integration to edit these
-
-* need to create scroll inner loop... and transformations
+* need a frontend viewer button to turn all annotations on a given page to uppercase
+* need some script targeting the db to start and end trim textContent
+* retrain text model.. using the new data
+* new data prep script for ocr... cut out each bounding box and pair with the label.. upload to google colab
 
 * automatic collection script for more interactive training data
   * auto interactive proposal

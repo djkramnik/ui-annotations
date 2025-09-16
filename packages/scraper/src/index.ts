@@ -21,9 +21,8 @@ const prisma = new PrismaClient()
 
 main({
   linkType: 'hn',
-  maxPages: 1,
+  maxPages: 5,
   maxScrollIndex: 2,
-  maxLinks: 3,
 })
 
 async function snooze(ms: number = 2000) {
@@ -200,6 +199,7 @@ async function main({
             // a quarter of the time change the font?
             if (Math.random() >= 0.75) {
               removeFont = await changeFontFamily(page, getRandomLocalFont())
+              await snooze()
             }
             let zoom = 1
             if (Math.random() >= 0.5) {
@@ -240,6 +240,7 @@ async function main({
       if (linkCount >= MAX_LINKS) {
         break
       }
+
     }
 
     console.log('press enter to quit')
