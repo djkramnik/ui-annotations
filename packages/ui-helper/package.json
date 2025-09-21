@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "screenshot": "npm run build && node dist/screenshot.js"
+    "screenshot": "npm run build && node dist/screenshot.js",
+    "screenshot2": "npm run build && node dist/screenshot2.js"
   },
   "keywords": [],
   "author": "",
@@ -14,6 +15,7 @@
     "@types/node": "^24.5.2"
   },
   "dependencies": {
-    "puppeteer-core": "^24.22.0"
+    "puppeteer-core": "^24.22.0",
+    "puppeteer-full-page-screenshot": "^1.2.5"
   }
 }
