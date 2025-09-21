@@ -19,6 +19,20 @@ model Annotation {
   screenshot Bytes?
   published  Int      @default(0)
   tag        String?
+  ocr        ocr[]
 
   @@map("annotations")
+}
+
+model ocr {
+  id           Int         @id @default(autoincrement())
+  screenshot   Bytes
+  date         DateTime    @db.Timestamptz(6)
+  text         String
+  annotationId Int?
+  x            Float?
+  y            Float?
+  width        Float?
+  height       Float?
+  annotations  Annotation? @relation(fields: [annotationId], references: [id])
 }
