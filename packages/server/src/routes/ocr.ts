@@ -16,7 +16,10 @@ ocrRouter.get('/:id', async (req: Request, res: Response) => {
         id: ocrId
       }
     })
-    res.status(200).send(result)
+    res.status(200).send({
+      screenshot: Array.from(result.screenshot),
+      text: result.text
+    })
   } catch(e) {
     res.status(500).send({
       error: String(e)

@@ -4,7 +4,7 @@ import {
   annotationLabels
 } from "ui-labelling-shared"
 
-const throwIfErrorStatus = (r: Response) => {
+const jsonOrThrow = (r: Response) => {
   if (r.ok) {
     return r.json()
   }
@@ -18,6 +18,13 @@ export type Analytics = {
   'draft': CountBreakdown
 }
 
+export const getOcr = (id: number): Promise<{ screenshot: number[]; text: string }> => {
+  return (
+    fetch(`/api/ocr/${id}`)
+      .then(jsonOrThrow)
+  )
+}
+
 export const occludeScreenshot = (id: number, rect: Pick<DOMRect, 'x' | 'y' | 'width' | 'height'>)
   : Promise<{ updatedScreen: ArrayBuffer }> => {
     return (
@@ -28,42 +35,42 @@ export const occludeScreenshot = (id: number, rect: Pick<DOMRect, 'x' | 'y' | 'w
         },
         body: JSON.stringify({ rect })
       })
-      .then(throwIfErrorStatus)
+      .then(jsonOrThrow)
     )
   }
 
 export const getAnalytics = (tag?: string): Promise<{ data: Analytics}> => {
   return (
     fetch(`/api/annotation/analytics${tag ? `?tag=${tag}` : ''}`)
-      .then(throwIfErrorStatus)
+      .then(jsonOrThrow)
   )
 }
 
 export const getAnnotations = (tag?: string) => {
   return (
     fetch(`/api/annotation?published=0${tag ? `&tag=${tag}` : ''}`)
-      .then(throwIfErrorStatus)
+      .then(jsonOrThrow)
   )
 }
 
 export const getPublishedAnnotations = (tag?: string) => {
   return (
     fetch(`/api/annotation?published=1${tag ? `&tag=${tag}` : ''}`)
-      .then(throwIfErrorStatus)
+      .then(jsonOrThrow)
   )
 }
 
 export const getAnnotation = (id: number) => {
   return (
     fetch(`/api/annotation/${id}`)
-      .then(throwIfErrorStatus)
+      .then(jsonOrThrow)
   )
 }
 
 export const deleteAnnotation = (id: number) => {
   return (
     fetch(`/api/annotation/${id}`, { method: 'DELETE' })
-      .then(throwIfErrorStatus)
+      .then(jsonOrThrow)
   )
 }
 
@@ -79,16 +86,16 @@ export const updateAnnotation = (
       },
       body: JSON.stringify(payload),
     })
-    .then(throwIfErrorStatus)
+    .then(jsonOrThrow)
   )
 }
 
 export const publishAnnotation = (id: number) => {
   return fetch(`/api/annotation/publish/${id}`, { method: 'PUT' })
-    .then(throwIfErrorStatus)
+    .then(jsonOrThrow)
 }
 
 export const unPublishAnnotation = (id: number) => {
   return fetch(`/api/annotation/unpublish/${id}`, { method: 'PUT' })
-    .then(throwIfErrorStatus)
+    .then(jsonOrThrow)
 }
