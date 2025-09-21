@@ -37,7 +37,7 @@ async function main() {
       tag: 'ocr'
     }
   })
-  console.log('unconverted annos length',unconvertedAnnos.length)
+  console.log('unconverted annos length', unconvertedAnnos.length)
 
   let ocrRecords: OcrRecord[] = []
 
@@ -70,10 +70,10 @@ async function main() {
         const clip = await (sharp(screenshot as Buffer)
           .rotate() // keep consistent with metadata
           .extract({
-            left: a.rect.x * sx,
-            top: a.rect.y * sy,
-            width: a.rect.width * sx,
-            height: a.rect.height * sy,
+            left: Math.round(a.rect.x * sx),
+            top: Math.round(a.rect.y * sy),
+            width: Math.round(a.rect.width * sx),
+            height: Math.round(a.rect.height * sy),
         }).toFormat('png')).toBuffer()
         ocrRecords.push({
           rect: a.rect,

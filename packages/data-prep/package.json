@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
+    "ocr": "npm run build && node dist/write_ocr.js",
     "start": "npm run build && node dist/index.js",
     "start:textregion": "npm run build && CLASS_NAMES=textRegion OUTPUT_ROOT=coco_textregion TAG=textregion node dist/index.js",
     "start:interactive": "npm run build && CLASS_NAMES=interactive OUTPUT_ROOT=coco_interactive TAG=interactive node dist/index.js",
