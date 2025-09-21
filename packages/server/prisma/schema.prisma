@@ -1,11 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["interactiveTransactions"]
 }
 
@@ -15,17 +9,36 @@ datasource db {
 }
 
 model Annotation {
-  id          Int      @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
+  scrollY    Int      @map("scroll_y")
+  viewWidth  Int      @map("view_width")
+  viewHeight Int      @map("view_height")
+  date       DateTime @db.Timestamptz(6)
+  url        String
+  payload    Json
+  screenshot Bytes?
+  published  Int      @default(0)
+  tag        String?
 
-  scrollY     Int      @map("scroll_y")
-  viewWidth   Int      @map("view_width")
-  viewHeight  Int      @map("view_height")
-
-  date        DateTime @db.Timestamptz(6)   // `timestamp with time zone`
-  url         String   @db.Text
-  payload     Json     @db.JsonB
-  screenshot  Bytes?   @db.ByteA            // nullable `bytea`
-  published   Int      @default(0)
-  tag         String?
-  @@map("annotations")                      // points back to the snake-case table
+  ocr   Ocr[]
+  @@map("annotations")
 }
+
+model Ocr {
+  id           Int       @id @default(autoincrement())
+  screenshot   Bytes
+  date         DateTime  @db.Timestamptz(6)
+  text         String
+
+  // optional foreign key to Annotation
+  annotationId Int?
+  annotation   Annotation? @relation(fields: [annotationId], references: [id])
+
+  // optional bounding box
+  x            Float?
+  y            Float?
+  width        Float?
+  height       Float?
+  @@map("ocr")
+}
+
