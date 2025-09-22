@@ -24,6 +24,15 @@ type OcrRecord = {
   textContent: string
 }
 
+function getClamp(min: number, max: number) {
+  if (min >= max) {
+    throw Error('invalid clamp factory args')
+  }
+  return function clamp(n: number) {
+    return Math.floor(Math.min(Math.max(n, min), max))
+  }
+}
+
 async function main() {
   const prisma = new PrismaClient();
   const convertedAnnos = new Set((await prisma.ocr.findMany({}))
@@ -66,14 +75,27 @@ async function main() {
 
       const sx = actualSize.width / viewWidth
       const sy = actualSize.height / viewHeight
+
+      const scaledRoundedRect = {
+        x: Math.round(a.rect.x * sx),
+        y: Math.round(a.rect.y * sy),
+        width: Math.round(a.rect.width * sx),
+        height: Math.round(a.rect.height * sy)
+      }
+
+      const left = getClamp(0, actualSize.width - 1)(scaledRoundedRect.x)
+      const top = getClamp(0, actualSize.height - 1)(scaledRoundedRect.y)
+      const width = getClamp(1, actualSize.width - left)(scaledRoundedRect.width)
+      const height = getClamp(1, actualSize.height - 1)(scaledRoundedRect.height)
+
       try {
         const clip = await (sharp(screenshot as Buffer)
           .rotate() // keep consistent with metadata
           .extract({
-            left: Math.round(a.rect.x * sx),
-            top: Math.round(a.rect.y * sy),
-            width: Math.round(a.rect.width * sx),
-            height: Math.round(a.rect.height * sy),
+            left,
+            top,
+            width,
+            height,
         }).toFormat('png')).toBuffer()
         ocrRecords.push({
           rect: a.rect,
