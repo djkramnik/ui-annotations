@@ -76,3 +76,33 @@ export function jpegSize(arr: Uint8Array): RasterSize {
 export function getRasterSize(arr: Uint8Array): RasterSize {
   return pngSize(arr) ?? jpegSize(arr);
 }
+
+/* =========================
+   Simple image type detection
+   ========================= */
+export function detectImageExt(buf: Buffer): 'png' | 'jpg' | 'gif' | 'bin' {
+  if (buf.length >= 8) {
+    // PNG: 89 50 4E 47 0D 0A 1A 0A
+    if (
+      buf[0] === 0x89 &&
+      buf[1] === 0x50 &&
+      buf[2] === 0x4e &&
+      buf[3] === 0x47 &&
+      buf[4] === 0x0d &&
+      buf[5] === 0x0a &&
+      buf[6] === 0x1a &&
+      buf[7] === 0x0a
+    ) {
+      return 'png';
+    }
+  }
+  if (buf.length >= 3) {
+    // JPG: FF D8 FF
+    if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return 'jpg';
+  }
+  if (buf.length >= 2) {
+    // GIF: 47 49
+    if (buf[0] === 0x47 && buf[1] === 0x49) return 'gif';
+  }
+  return 'bin';
+}

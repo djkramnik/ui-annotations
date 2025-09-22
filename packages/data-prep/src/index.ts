@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { getRasterSize } from './utils/raster';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import { trainTestSplit } from './utils/split_data';
 
 const prisma = new PrismaClient();
 
@@ -14,9 +15,6 @@ const OUTPUT_ROOT = path.resolve('dist', process.env.OUTPUT_ROOT ?? 'coco');    
 const IMG_DIR = path.join(OUTPUT_ROOT, 'images');           // dist/coco/images
 const TRAIN_JSON = path.join(OUTPUT_ROOT, 'train.json');
 const VAL_JSON = path.join(OUTPUT_ROOT, 'val.json');
-
-const TRAIN_FRACTION = 0.85;  // 85/15 split
-const RNG_SEED = 42;          // deterministic split
 
 // Your class set (contiguous 1..N in COCO)
 const CLASS_NAMES = typeof process.env.CLASS_NAMES === 'string'
@@ -37,54 +35,6 @@ type Payload = {
     label: UiLabel;
   }>;
 };
-
-/* =========================
-   PRNG + shuffle (deterministic)
-   ========================= */
-function mulberry32(seed: number) {
-  return function () {
-    let t = (seed += 0x6d2b79f5);
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-function shuffleInPlace<T>(arr: T[], rng: () => number) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-}
-
-/* =========================
-   Simple image type detection
-   ========================= */
-function detectImageExt(buf: Buffer): 'png' | 'jpg' | 'gif' | 'bin' {
-  if (buf.length >= 8) {
-    // PNG: 89 50 4E 47 0D 0A 1A 0A
-    if (
-      buf[0] === 0x89 &&
-      buf[1] === 0x50 &&
-      buf[2] === 0x4e &&
-      buf[3] === 0x47 &&
-      buf[4] === 0x0d &&
-      buf[5] === 0x0a &&
-      buf[6] === 0x1a &&
-      buf[7] === 0x0a
-    ) {
-      return 'png';
-    }
-  }
-  if (buf.length >= 3) {
-    // JPG: FF D8 FF
-    if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return 'jpg';
-  }
-  if (buf.length >= 2) {
-    // GIF: 47 49
-    if (buf[0] === 0x47 && buf[1] === 0x49) return 'gif';
-  }
-  return 'bin';
-}
 
 /* =========================
    COCO types
@@ -185,12 +135,11 @@ async function main() {
   }
 
   // Split by image id (deterministic)
-  const rng = mulberry32(RNG_SEED);
+
   const ids = usable.map(x => x.id);
-  shuffleInPlace(ids, rng);
-  const trainCount = Math.max(1, Math.floor(ids.length * TRAIN_FRACTION));
-  const trainSet = new Set(ids.slice(0, trainCount));
+
   // const valSet = new Set(ids.slice(trainCount));
+  const { train: trainSet } = trainTestSplit(ids)
 
   // COCO docs
   const categories: CocoCategory[] = CLASS_NAMES.map((n, i) => ({ id: i + 1, name: n }));
@@ -200,7 +149,7 @@ async function main() {
   let annId = 1;
 
   for (const it of usable) {
-    const split: 'train' | 'val' = trainSet.has(it.id) ? 'train' : 'val';
+    const split: 'train' | 'val' = trainSet.includes(it.id) ? 'train' : 'val';
 
     // Write image
     const buf = it.screenshot!;
