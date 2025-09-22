@@ -1,7 +1,7 @@
 /* src/index.ts */
 /* eslint-disable no-console */
 import { PrismaClient } from '@prisma/client';
-import { getRasterSize } from './utils/raster';
+import { detectImageExt, getRasterSize } from './utils/raster';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { trainTestSplit } from './utils/split_data';

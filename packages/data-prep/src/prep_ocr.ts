@@ -10,6 +10,9 @@ import { detectImageExt } from './utils/raster';
 // valid.txt containing image + text pairing per line {pathToImg}\t{text}
 // ppocr_char.txt.  One character per line
 
+const forbiddenChars = `øπχàłŻ›将域名从§ř→ï‘深圳最近文章⛺更新日志­←•✨🗄🗡️，ʕᴥ
+ʔńè中版积至公司与实验室：防火长城史上大规模件外泄分析^°öç├─│└ⲥⲟⲙé⟲äዓምሰኑይ📍`.replace(/\s/g, '').split('')
+
 const prisma = new PrismaClient();
 main()
   .catch(err => {
@@ -21,12 +24,15 @@ main()
   })
 
 async function main() {
+
+
   const PADDLE_DIR = path.join(__dirname, 'paddleocr')
   if (fs.existsSync(PADDLE_DIR)) {
-    fs.unlinkSync(PADDLE_DIR)
+    fs.rmSync(PADDLE_DIR, { recursive: true })
   }
   fs.mkdirSync(PADDLE_DIR)
   const IMG_DIR = path.join(PADDLE_DIR, 'images')
+  fs.mkdirSync(IMG_DIR)
   const TRAIN_LABELS = path.join(PADDLE_DIR, 'train.txt')
   const VAL_LABELS = path.join(PADDLE_DIR, 'val.txt')
   const DICT_CHARS = path.join(PADDLE_DIR, 'ppocr_char.txt')
@@ -51,6 +57,12 @@ async function main() {
   console.log('ocr length', ocrIds.length)
 
   for(const row of ocrRows) {
+    const containsForbidden = [...row.text].some(c => forbiddenChars.includes(c))
+    if (containsForbidden) {
+      console.log('skipping ', row.id, ' due to forbidden chars: ', row.text)
+      continue
+    }
+
     const buf = row.screenshot
     console.log('processing ', row.id)
     const imgPath = writeImage(row.id, buf as Buffer)
