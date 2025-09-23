@@ -9,3 +9,4 @@ env
 annotated_sample.png
 /**/*/.DS_Store
 **/*/*.pt
+ocr_driver.sh

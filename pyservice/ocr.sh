@@ -17,7 +17,7 @@ fi
 
 # Encode to base64 without line breaks
 B64=$(base64 -i "$IMG_PATH" | tr -d '\n')
-
+echo $B64
 # POST JSON payload
 curl -s -X POST "http://localhost:8000/ocr" \
   -H "Content-Type: application/json" \

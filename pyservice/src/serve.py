@@ -328,6 +328,8 @@ _rec = TextRecognition(
 
 class OCRReq(BaseModel):
     image_b64: str  # raw base64, no 'data:image/...;base64,' prefix
+class OCRReqBatch(BaseModel):
+    clips: List[str] # list of raw base64
 
 def _b64_to_np_rgb(b64: str) -> np.ndarray:
     try:
@@ -336,12 +338,35 @@ def _b64_to_np_rgb(b64: str) -> np.ndarray:
         try:
             raw = base64.b64decode(b64)
         except Exception as e:
+            print("invalid base64")
             raise HTTPException(status_code=400, detail=f"Invalid base64: {e}")
     try:
         img = Image.open(io.BytesIO(raw)).convert("RGB")
     except Exception as e:
+        print("cannot decode image")
         raise HTTPException(status_code=400, detail=f"Image decode error: {e}")
     return np.array(img)
+
+@app.post('/ocr/batch')
+def ocr_endpoint_multi(payload: OCRReqBatch):
+  print("hi!")
+  print(len(payload.clips))
+  try:
+      clips = [_b64_to_np_rgb(b64) for b64 in payload.clips]
+      print("clips", len(clips))
+
+      outs = _rec.predict(input=clips, batch_size=min(32, max(1, len(clips))))
+      print("batch prediction len: ", len(outs))
+      results = []
+      for o in outs:
+          results.append({
+              "text": o.get("rec_text", ""),
+              "score": float(o.get("rec_score", 0.0))
+          })
+      return { "results": results }
+
+  except Exception as e:
+      raise HTTPException(status_code=500)
 
 @app.post('/ocr')
 def ocr_endpoint(payload: OCRReq):
@@ -362,5 +387,6 @@ def ocr_endpoint(payload: OCRReq):
     text = out[0].get("rec_text", "")
     score = float(out[0].get("rec_score", 0.0))
     return {"text": text, "score": score}
+
 
 #---------- end big file stew: PaddleOCR --------
