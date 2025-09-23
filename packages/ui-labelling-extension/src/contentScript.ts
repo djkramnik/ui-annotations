@@ -880,6 +880,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
     }
     conf: number
     label: string
+    text?: string
   }
 
   function scaleYoloPreds(data: YoloPredictResponse, vw: number, vh: number): ScaledYoloPred[] {
@@ -892,7 +893,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
       box: d.box.map((n, i) => n * (i % 2 ? sy : sx)) as XyXy,
     }))
 
-    return scaledDetections.map(({ box, conf, label }) => ({
+    return scaledDetections.map(({ box, conf, label, text }) => ({
       rect: {
         x: box[0],
         y: box[1],
@@ -901,6 +902,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
       },
       conf,
       label,
+      text
     }))
   }
 
@@ -921,7 +923,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
     overlay.style.left = '0'
     overlay.style.zIndex = '999666999' // obscene
 
-    scaledPreds.forEach(({ rect, conf }) => {
+    scaledPreds.forEach(({ rect, conf, text }) => {
       const el = document.createElement("div");
       Object.assign(el.style, {
         position: "absolute",
@@ -935,7 +937,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
         pointerEvents: "none",
       });
       const label = document.createElement("div");
-      label.textContent = `${conf}`
+      label.textContent = text ? text : `${conf.toFixed(2)}`
       Object.assign(label.style, {
         position: "absolute",
         left: "0",
