@@ -318,3 +318,49 @@ async def predict_textregions(payload: YoloPayload) -> Dict[str, Any]:
       "label": label
     })
   return { "width": width, "height": height, "detections": detections }
+
+#------ big file stew: PaddleOCR ----------
+
+from paddleocr import TextRecognition
+_rec = TextRecognition(
+    model_name="latin_PP-OCRv5_mobile_rec"  # or "PP-OCRv5_server_rec"
+)
+
+class OCRReq(BaseModel):
+    image_b64: str  # raw base64, no 'data:image/...;base64,' prefix
+
+def _b64_to_np_rgb(b64: str) -> np.ndarray:
+    try:
+        raw = base64.b64decode(b64, validate=True)
+    except Exception:
+        try:
+            raw = base64.b64decode(b64)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid base64: {e}")
+    try:
+        img = Image.open(io.BytesIO(raw)).convert("RGB")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Image decode error: {e}")
+    return np.array(img)
+
+@app.post('/ocr')
+def ocr_endpoint(payload: OCRReq):
+    img_np = _b64_to_np_rgb(payload.image_b64)
+
+    try:
+        # TextRecognition supports numpy ndarrays as input and returns a list of results
+        out = _rec.predict(input=img_np, batch_size=1)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OCR error: {e}")
+
+    if not out:
+        return {"text": "", "score": 0.0}
+
+    print('ocr out:', out)
+    # Each item has a `.res` dict: {'rec_text', 'rec_score', ...}
+
+    text = out[0].get("rec_text", "")
+    score = float(out[0].get("rec_score", 0.0))
+    return {"text": text, "score": score}
+
+#---------- end big file stew: PaddleOCR --------
