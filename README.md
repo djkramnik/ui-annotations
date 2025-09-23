@@ -7,18 +7,21 @@ This repo also includes a web server for storing annotations in local postgres i
 
 #### Next step (this month):
 
-* need a frontend viewer button to turn all annotations on a given page to uppercase
-* need some script targeting the db to start and end trim textContent
-* retrain text model.. using the new data
-* new data prep script for ocr... cut out each bounding box and pair with the label.. upload to google colab
+* interactive granular label helper (frontend)
+* retrain text model.. using the additional data
 
 * automatic collection script for more interactive training data
   * auto interactive proposal
   * sanity check with existing yolo model
-  * frontend viewer integration to label each box with granular labels
 
+* new interactive proposal model
+* new granular classifier model
+
+* need a frontend viewer button to turn all annotations on a given page to uppercase
+* need some script targeting the db to start and end trim textContent
 * need something like a select mode in the frontend viewer.  if only to select and delete.
 * a way to draw multiple for a label, and delete multiple by clicking.   I need some refactoring, however mild, to manage keypress listener collisions
+
 
 then, layout elements
 
