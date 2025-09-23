@@ -907,6 +907,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
   }
 
   function showYoloPredictions(predictions: YoloPredictResponse) {
+    console.log('ho predictions', predictions)
     // scale the yolo detections
     const scaledPreds = scaleYoloPreds(predictions, window.innerWidth, window.innerHeight)
     const existingOverlay = document.getElementById('prediction-viewer')

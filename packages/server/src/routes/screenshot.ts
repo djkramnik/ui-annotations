@@ -158,7 +158,7 @@ screenshotRouter.post('/clips', async (req: Request, res: Response) => {
     return
   }
   try {
-    const buf = Buffer.from(fullScreen)
+    const buf = Buffer.from(fullScreen, 'base64')
     // if noscale is true we can omit the "expensive" instantiation of a sharp object
     // all of imgW, imgH, sx, sy are not needed in this scenario
     const img = noScale === true
@@ -175,7 +175,12 @@ screenshotRouter.post('/clips', async (req: Request, res: Response) => {
           ? r
           : scaleRect({ rect: r, sx, sy, imgW, imgH })
         return getExtract({
-          rect: scaled,
+          rect: {
+            x: Math.round(scaled.x),
+            y: Math.round(scaled.y),
+            width: Math.round(scaled.width),
+            height: Math.round(scaled.height),
+          },
           buf,
         })
       })
@@ -184,6 +189,7 @@ screenshotRouter.post('/clips', async (req: Request, res: Response) => {
       clips: base64Clips
     })
   } catch(e) {
+    console.error('failed to clip?', String(e))
     res.status(500).send({ error: String(e) })
   }
 })

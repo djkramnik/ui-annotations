@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
         width,
         height,
       } = (await res.json()) as YoloPredictResponse
-
+      console.log('response one', detections.length)
       const res2 = await fetch('http://localhost:4000/api/screenshot/clips', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -88,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
       })
 
       const { clips } = (await res2.json()) as { clips: string[] }
+      console.log('response two', clips.length)
       const res3 = await fetch('http://localhost:8000/ocr/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -96,9 +97,8 @@ document.addEventListener('DOMContentLoaded', () => {
         })
       })
       const { results } = (await res3.json()) as { results: Array<{text: string, score: number }> }
-      sendMessage(ExtensionMessage.predict, {
-        content: {
-          detections: detections.map((d, i) => {
+
+      const enhancedDetections = detections.map((d, i) => {
             const {text, score} = results[i] ?? {}
             return {
               ...d,
@@ -106,7 +106,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? `${text}:${score.toFixed(2)}`
                 : 'error'
             }
-          }),
+          })
+      console.log('response 3',
+        enhancedDetections
+      )
+
+
+      sendMessage(ExtensionMessage.predict, {
+        content: {
+          detections: enhancedDetections,
           width,
           height,
         },
