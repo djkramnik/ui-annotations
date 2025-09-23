@@ -66,14 +66,52 @@ document.addEventListener('DOMContentLoaded', () => {
         width,
         height,
       } = (await res.json()) as YoloPredictResponse
+
+      const res2 = await fetch('http://localhost:4000/api/screenshot/clips', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          noScale: true, // important!
+          rects: detections.map(d => {
+            const [x1,y1,x2,y2] = d.box
+            return {
+              x: x1,
+              y: y1,
+              width: x2 - x1,
+              height: y2 - y1
+            }
+          }),
+          vw: -1, // this is fine because we are not scaling
+          vh: -1,
+          fullScreen: b64,
+        })
+      })
+
+      const { clips } = (await res2.json()) as { clips: string[] }
+      const res3 = await fetch('http://localhost:8000/ocr/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clips
+        })
+      })
+      const { results } = (await res3.json()) as { results: Array<{text: string, score: number }> }
       sendMessage(ExtensionMessage.predict, {
         content: {
-          detections,
+          detections: detections.map((d, i) => {
+            const {text, score} = results[i] ?? {}
+            return {
+              ...d,
+              text: text
+                ? `${text}:${score.toFixed(2)}`
+                : 'error'
+            }
+          }),
           width,
           height,
         },
       })
-      window.close()
+      // window.close()
     } catch (e) {
       console.error('predict failed wtf', e)
     } finally {

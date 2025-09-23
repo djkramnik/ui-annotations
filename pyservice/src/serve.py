@@ -349,7 +349,6 @@ def _b64_to_np_rgb(b64: str) -> np.ndarray:
 
 @app.post('/ocr/batch')
 def ocr_endpoint_multi(payload: OCRReqBatch):
-  print("hi!")
   print(len(payload.clips))
   try:
       clips = [_b64_to_np_rgb(b64) for b64 in payload.clips]

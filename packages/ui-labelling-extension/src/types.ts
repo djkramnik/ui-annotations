@@ -101,6 +101,7 @@ export type YoloPredictResponse = {
     box: XyXy,
     conf: number
     label: string
+    text?: string
   }[]
 }
 

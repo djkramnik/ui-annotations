@@ -142,8 +142,9 @@ screenshotRouter.post('/clips', async (req: Request, res: Response) => {
     fullScreen: string
     vw: number
     vh: number
+    noScale?: boolean
   }
-  const { rects, fullScreen, vw, vh } = body || {}
+  const { rects, fullScreen, vw, vh, noScale } = body || {}
   if (!Array.isArray(rects)) {
     res.status(400).send({ reason: "request body requires array of rects "})
     return
@@ -158,7 +159,11 @@ screenshotRouter.post('/clips', async (req: Request, res: Response) => {
   }
   try {
     const buf = Buffer.from(fullScreen)
-    const img = await sharp(buf).metadata()
+    // if noscale is true we can omit the "expensive" instantiation of a sharp object
+    // all of imgW, imgH, sx, sy are not needed in this scenario
+    const img = noScale === true
+      ? { width: 0, height: 0 }
+      : (await sharp(buf).metadata())
     const imgW = img.width
     const imgH = img.height
     const sx = imgW / vw
@@ -166,7 +171,9 @@ screenshotRouter.post('/clips', async (req: Request, res: Response) => {
 
     const base64Clips = await Promise.all(
       rects.map(r => {
-        const scaled = scaleRect({ rect: r, sx, sy, imgW, imgH })
+        const scaled = noScale === true
+          ? r
+          : scaleRect({ rect: r, sx, sy, imgW, imgH })
         return getExtract({
           rect: scaled,
           buf,
