@@ -9,17 +9,18 @@ datasource db {
 }
 
 model Annotation {
-  id         Int      @id @default(autoincrement())
-  scrollY    Int      @map("scroll_y")
-  viewWidth  Int      @map("view_width")
-  viewHeight Int      @map("view_height")
-  date       DateTime @db.Timestamptz(6)
-  url        String
-  payload    Json
-  screenshot Bytes?
-  published  Int      @default(0)
-  tag        String?
-  ocr        ocr[]
+  id          Int           @id @default(autoincrement())
+  scrollY     Int           @map("scroll_y")
+  viewWidth   Int           @map("view_width")
+  viewHeight  Int           @map("view_height")
+  date        DateTime      @db.Timestamptz(6)
+  url         String
+  payload     Json
+  screenshot  Bytes?
+  published   Int           @default(0)
+  tag         String?
+  interactive interactive[]
+  ocr         ocr[]
 
   @@map("annotations")
 }
@@ -35,4 +36,15 @@ model ocr {
   width        Float?
   height       Float?
   annotations  Annotation? @relation(fields: [annotationId], references: [id])
+}
+
+model interactive {
+  id           Int         @id @default(autoincrement())
+  screenshot   Bytes
+  label        String?
+  true_id      String?     @db.Uuid
+  annotationId Int?
+  annotations  Annotation? @relation(fields: [annotationId], references: [id])
+
+  @@index([annotationId])
 }

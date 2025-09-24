@@ -3,25 +3,24 @@
 // crop out the bounding box into a standalone screenshot, and write that along with
 // the actual text + other meta into ocr table
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client'
 import sharp from 'sharp'
-import { getRasterSize } from "./utils/raster";
+import { getRasterSize } from './utils/raster'
 
 // the type of the annotation jsonb
 type Payload = {
   annotations?: Array<{
-    id: string;
-    rect: { x: number; y: number; width: number; height: number };
-    label: string;
+    id: string
+    rect: { x: number; y: number; width: number; height: number }
+    label: string
     textContent?: string
-  }>;
-};
+  }>
+}
 
-type OcrRecord = {
-  rect: { x: number; y: number; width: number; height: number }
+type InteractiveRecord = {
   screenshot: Buffer
   annotationId: number
-  textContent: string
+  trueId: string
 }
 
 function getClamp(min: number, max: number) {
@@ -34,28 +33,39 @@ function getClamp(min: number, max: number) {
 }
 
 async function main() {
-  const prisma = new PrismaClient();
-  const convertedAnnos = new Set((await prisma.ocr.findMany({}))
-    .map(a => a.annotationId)
-    .filter(id => id)) as Set<number>
+  const prisma = new PrismaClient()
+
+  // find annotations that are not linked to any existing interactive record
+  // this uses separate queries unoptimally but that is fine for now
+  const convertedAnnos = new Set(
+    (
+      await prisma.interactive.findMany({
+        where: {
+          annotationId: {
+            not: null,
+          },
+        },
+      })
+    ).map((a) => a.annotationId),
+  ) as Set<number>
 
   console.log('converted annos length', convertedAnnos.size)
   const unconvertedAnnos = await prisma.annotation.findMany({
     where: {
       id: {
-        notIn: Array.from(convertedAnnos)
+        notIn: Array.from(convertedAnnos),
       },
-      tag: 'ocr'
-    }
+      tag: 'interactive',
+    },
   })
   console.log('unconverted annos length', unconvertedAnnos.length)
 
-  let ocrRecords: OcrRecord[] = []
+  let interactiveRecords: InteractiveRecord[] = []
 
   for (const anno of unconvertedAnnos) {
     const payload = anno.payload as Payload
     if (!payload.annotations || !anno.screenshot) {
-      console.log('skipping annotation cause empty payload: ', anno.id)
+      console.log('skipping annotation because empty payload: ', anno.id)
       continue
     }
     const actualSize = getRasterSize(anno.screenshot)
@@ -65,15 +75,10 @@ async function main() {
     }
 
     for (const a of payload.annotations) {
-      if (a.label !== 'textRegion' || !a.textContent) {
+      if (a.label !== 'interactive' || typeof a.id !== 'string') {
         continue
       }
-      const {
-        screenshot,
-        viewWidth,
-        viewHeight,
-        id
-      } = anno
+      const { screenshot, viewWidth, viewHeight, id } = anno
 
       const sx = actualSize.width / viewWidth
       const sy = actualSize.height / viewHeight
@@ -82,28 +87,35 @@ async function main() {
         x: Math.round(a.rect.x * sx),
         y: Math.round(a.rect.y * sy),
         width: Math.round(a.rect.width * sx),
-        height: Math.round(a.rect.height * sy)
+        height: Math.round(a.rect.height * sy),
       }
 
       const left = getClamp(0, actualSize.width - 1)(scaledRoundedRect.x)
       const top = getClamp(0, actualSize.height - 1)(scaledRoundedRect.y)
-      const width = getClamp(1, actualSize.width - left)(scaledRoundedRect.width)
-      const height = getClamp(1, actualSize.height - 1)(scaledRoundedRect.height)
+      const width = getClamp(
+        1,
+        actualSize.width - left,
+      )(scaledRoundedRect.width)
+      const height = getClamp(
+        1,
+        actualSize.height - 1,
+      )(scaledRoundedRect.height)
 
       try {
-        const clip = await (sharp(screenshot as Buffer)
+        const clip = await sharp(screenshot as Buffer)
           .rotate() // keep consistent with metadata
           .extract({
             left,
             top,
             width,
             height,
-        }).toFormat('png')).toBuffer()
-        ocrRecords.push({
-          rect: a.rect,
+          })
+          .toFormat('png')
+          .toBuffer()
+        interactiveRecords.push({
           annotationId: id,
           screenshot: clip,
-          textContent: a.textContent
+          trueId: a.id
         })
       } catch (e) {
         console.error('wtf (sharp?)', e)
@@ -111,22 +123,21 @@ async function main() {
     }
   }
 
-  console.log('this many ocr records to write', ocrRecords.length)
-  if (ocrRecords.length > 0) {
-    const { textContent, annotationId } = ocrRecords[0]
-    console.log('sample ocr..', {
-      text: textContent,
+  console.log('this many interactive records to write', interactiveRecords.length)
+  if (interactiveRecords.length > 0) {
+    const { trueId, annotationId } = interactiveRecords[0]
+    console.log('sample interactive..', {
+      trueId,
       annotationId,
     })
   }
 
-  await prisma.ocr.createMany({
-    data: ocrRecords.map(r => ({
+  await prisma.interactive.createMany({
+    data: interactiveRecords.map((r) => ({
       screenshot: r.screenshot,
-      text: r.textContent,
-      date: new Date().toISOString(),
-      annotationId: r.annotationId
-    }))
+      trueId: r.trueId,
+      annotationId: r.annotationId,
+    })),
   })
 }
 
