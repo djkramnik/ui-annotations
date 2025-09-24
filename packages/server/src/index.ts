@@ -5,6 +5,7 @@ import { annotationRouter } from './routes/annotation'
 import { screenshotRouter } from './routes/screenshot'
 import { prisma } from './db'
 import { ocrRouter } from './routes/ocr'
+import { interactiveRouter } from './routes/interactive'
 
 dotenv.config({ path: path.join(__dirname, '.env') })
 
@@ -19,6 +20,7 @@ dotenv.config({ path: path.join(__dirname, '.env') })
     app.use('/api/annotation', annotationRouter)
     app.use('/api/screenshot', screenshotRouter)
     app.use('/api/ocr', ocrRouter)
+    app.use('/api/interactive', interactiveRouter)
 
     const server = app.listen(port, () => {
       console.log('serving listening on port', port)

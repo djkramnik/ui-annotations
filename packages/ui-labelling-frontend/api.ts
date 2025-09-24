@@ -18,9 +18,33 @@ export type Analytics = {
   'draft': CountBreakdown
 }
 
+export type InteractiveRecord = {
+  id: number
+  true_id: string
+  annotationId: number | null
+  screenshot: ArrayBuffer
+}
+
 export const getOcr = (id: number): Promise<{ screenshot: number[]; text: string }> => {
   return (
     fetch(`/api/ocr/${id}`)
+      .then(jsonOrThrow)
+  )
+}
+
+export const getInteractive = (id: number): Promise<{ screenshot: number[]; label: string | null }> => {
+  return (
+    fetch(`/api/interactive/${id}`)
+      .then(jsonOrThrow)
+  )
+}
+
+export const getInteractivePage = (page: number): Promise<{
+  items: InteractiveRecord[]
+  total: number
+}> => {
+  return (
+    fetch(`/api/interactive?page=${page}`)
       .then(jsonOrThrow)
   )
 }
