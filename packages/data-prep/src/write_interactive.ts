@@ -62,6 +62,7 @@ async function main() {
 
   let interactiveRecords: InteractiveRecord[] = []
 
+  let badAnnotationIds = []
   for (const anno of unconvertedAnnos) {
     const payload = anno.payload as Payload
     if (!payload.annotations || !anno.screenshot) {
@@ -75,7 +76,10 @@ async function main() {
     }
 
     for (const a of payload.annotations) {
-      if (a.label !== 'interactive' || typeof a.id !== 'string') {
+      if (a.label !== 'interactive' || typeof a.id !== 'string' || a.id.length !== 36) {
+        if (a.id && a.label === 'interactive') {
+          badAnnotationIds.push(a.id)
+        }
         continue
       }
       const { screenshot, viewWidth, viewHeight, id } = anno
@@ -124,6 +128,9 @@ async function main() {
   }
 
   console.log('this many interactive records to write', interactiveRecords.length)
+  console.log('this many bad boys', badAnnotationIds.length)
+  console.log('sample hunk', badAnnotationIds[0])
+
   if (interactiveRecords.length > 0) {
     const { trueId, annotationId } = interactiveRecords[0]
     console.log('sample interactive..', {
@@ -135,7 +142,7 @@ async function main() {
   await prisma.interactive.createMany({
     data: interactiveRecords.map((r) => ({
       screenshot: r.screenshot,
-      trueId: r.trueId,
+      true_id: r.trueId,
       annotationId: r.annotationId,
     })),
   })
