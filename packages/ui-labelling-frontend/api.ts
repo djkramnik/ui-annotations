@@ -41,12 +41,12 @@ export const getInteractive = (id: number): Promise<{ screenshot: number[]; labe
   )
 }
 
-export const getInteractivePage = (page: number): Promise<{
+export const getInteractivePage = (page: number, unlabelled?: boolean): Promise<{
   items: InteractiveRecord[]
   total: number
 }> => {
   return (
-    fetch(`/api/interactive?page=${page}`)
+    fetch(`/api/interactive?page=${page}${unlabelled === false ? '' : '&unlabelled=true'}`)
       .then(jsonOrThrow)
   )
 }
