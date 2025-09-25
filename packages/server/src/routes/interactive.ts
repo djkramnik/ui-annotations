@@ -3,8 +3,36 @@ import { prisma } from '../db'
 
 export const interactiveRouter = Router()
 
+interactiveRouter.patch('/:id', async (req: Request, res: Response) => {
+  const interactiveId = Number(String(req.params.id))
+  if (Number.isNaN(interactiveId)) {
+    res.status(400).send({ reason: 'invalid id'})
+    return
+  }
+  try {
+    const body = req.body as { label: string }
+    if (!body?.label || typeof body.label !== 'string') {
+      res.status(400).send({ reason: 'string label field equired in request body' })
+      return
+    }
+    await prisma.interactive.update({
+      where: {
+        id: interactiveId
+      },
+      data: {
+        label: body.label
+      }
+    })
+    res.status(200).send({ id: interactiveId })
+  } catch (e) {
+    console.error('Failed to update interactive record')
+    res.status(500).send({ error: String(e) })
+  }
+})
+
+// get single
 interactiveRouter.get('/:id', async (req: Request, res: Response) => {
-  const interactiveId = Number(req.params.id)
+  const interactiveId = Number(String(req.params.id))
   if (Number.isNaN(interactiveId)) {
     res.status(400).send()
     return
@@ -27,6 +55,7 @@ interactiveRouter.get('/:id', async (req: Request, res: Response) => {
   }
 })
 
+// paginated findMany
 interactiveRouter.get('/', async (req: Request, res: Response) => {
   try {
     const pageQ = typeof req.query.page === 'string'

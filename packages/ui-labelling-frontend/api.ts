@@ -54,7 +54,7 @@ export const getInteractivePage = (page: number): Promise<{
 export const updateInteractive = (id: number, label: string | null) => {
   return (
     fetch(`/api/interactive/${id}`, {
-      method: 'POST',
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json'
       },
