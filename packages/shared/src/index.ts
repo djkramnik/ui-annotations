@@ -14,6 +14,27 @@ export const annotationLabels: Record<AnnotationLabel, string> = {
   interactive: '#82b2c0'
 }
 
+export enum InteractiveLabel {
+  // form
+  button = 'button',
+  link = 'link',
+  radio = 'radio',
+  checkbox = 'checkbox',
+  toggle = 'toggle',
+  slider = 'slider',
+  dropdown = 'dropdown',
+  textinput = 'textinput',
+  textarea = 'textarea',
+  datepicker = 'datepicker',
+  filepicker = 'filepicker',
+  // nav
+  tab = 'tab',
+  pagination = 'pagination',
+  // misc
+  iconbutton = 'iconbutton', // clickable icon... no text
+  other = 'other'
+}
+
 /**
  * text region utility
  */

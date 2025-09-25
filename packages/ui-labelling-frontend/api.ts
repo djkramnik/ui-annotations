@@ -23,6 +23,7 @@ export type InteractiveRecord = {
   true_id: string
   annotationId: number | null
   screenshot: ArrayBuffer
+  label: string | null
 }
 
 export const getOcr = (id: number): Promise<{ screenshot: number[]; text: string }> => {
@@ -32,6 +33,7 @@ export const getOcr = (id: number): Promise<{ screenshot: number[]; text: string
   )
 }
 
+// interactive apis
 export const getInteractive = (id: number): Promise<{ screenshot: number[]; label: string | null }> => {
   return (
     fetch(`/api/interactive/${id}`)
@@ -48,6 +50,22 @@ export const getInteractivePage = (page: number): Promise<{
       .then(jsonOrThrow)
   )
 }
+
+export const updateInteractive = (id: number, label: string | null) => {
+  return (
+    fetch(`/api/interactive/${id}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        label
+      })
+    })
+  )
+}
+
+// end interactive apis
 
 export const occludeScreenshot = (id: number, rect: Pick<DOMRect, 'x' | 'y' | 'width' | 'height'>)
   : Promise<{ updatedScreen: ArrayBuffer }> => {
