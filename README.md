@@ -44,8 +44,6 @@ improvements
 * a way to draw multiple for a label, and delete multiple by clicking.   I need some refactoring, however mild, to manage keypress listener collisions
 
 
-
-
 #### QOL / BUGS
 
 * update automatically if you click next / prev (with the same warning)

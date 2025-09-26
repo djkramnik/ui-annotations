@@ -33,7 +33,11 @@ export enum InteractiveLabel {
   // misc
   iconbutton = 'iconbutton', // clickable icon... no text
   image = 'image',
+  thumbnail = 'thumbnail',
+  avatar = 'avatar',
   logo = 'logo',
+  menuitem = 'menuitem',
+  selectablecard = 'selectablecard',
   other = 'other'
 }
 
