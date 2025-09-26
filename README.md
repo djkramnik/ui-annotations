@@ -9,9 +9,11 @@ This repo also includes a web server for storing annotations in local postgres i
 
 moar building
 ====
-* single update button (bottom of table) for granular label helper
-* delete interactive record
-* create synthetic data generator for label balancing... (direct to annotation)
+* create synthetic data generator for label balancing...
+  * pull an annotation with interactive label..
+  * select bounding boxes to swap components for
+  * save the new annotation
+  * a bridge table, parent, clone
 * create synthetic composite data generator. have to use it on existing interactive label annotations that have granular labels on them, and prob filter out unknowns
 * automatic collection script for more interactive training data
   * auto interactive proposal
@@ -21,7 +23,7 @@ moar building
 training
 ====
 * generate more interactive proposals
-* create granular labels for all of them
+* create granular labels for all of them... classifying bad examples as OTHER for later confidence threshold creation
 * train interactive classifier
 * run the composite synthetic data generator
 * retrain interactive model.. using additional data
