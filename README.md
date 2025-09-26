@@ -9,27 +9,32 @@ This repo also includes a web server for storing annotations in local postgres i
 
 moar building
 ====
-* create synthetic data generator for label balancing...
-  * pull an annotation with interactive label..
+1) * create synthetic data generator for label balancing...
+
+2) * create synthetic composite data generator. have to use it on existing interactive label annotations that have granular labels on them, and prob filter out unknowns
+  * pull an annotation with interactive label. optionally with a condition that it has never been copied yet
   * select bounding boxes to swap components for
-  * save the new annotation
+  * save the task to create the synthetic (task table)
   * a bridge table, parent, clone
-* create synthetic composite data generator. have to use it on existing interactive label annotations that have granular labels on them, and prob filter out unknowns
-* automatic collection script for more interactive training data
+  * a script to manually kick off uncompleted synthetic creation tasks pulled from the db
+
+3) * automatic collection script for more interactive training data
   * auto interactive proposal
   * sanity check with existing yolo model
 
 
 training
 ====
-* generate more interactive proposals
-* create granular labels for all of them... classifying bad examples as OTHER for later confidence threshold creation
-* train interactive classifier
-* run the composite synthetic data generator
-* retrain interactive model.. using additional data
+4) * generate more interactive proposals data
+5) * run the composite synthetic data generator for further more balanced proposals
+6) * create granular labels for all of them... classifying bad examples as OTHER for later confidence threshold creation
+7) * train interactive classifier
+8) * retrain interactive proposals model.. using additional data
+
 * retrain text model.. using the additional data
 * given a screenshot, run all predictors.
 * evaluate where we at.
+* pass? layout detection -- broad and narrow
 
 improvements
 ====
@@ -39,7 +44,7 @@ improvements
 * a way to draw multiple for a label, and delete multiple by clicking.   I need some refactoring, however mild, to manage keypress listener collisions
 
 
-then, layout elements
+
 
 #### QOL / BUGS
 
