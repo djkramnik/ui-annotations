@@ -3,6 +3,74 @@ import { prisma } from '../db'
 
 export const interactiveRouter = Router()
 
+type BatchUpdate = {
+  id: number
+  label: string | null
+}
+
+type BatchUnrolled = {
+  ids: number[]
+  labels: (string | null)[]
+}
+
+interactiveRouter.delete('/:id', async (req: Request, res: Response) => {
+  const interactiveId = Number(String(req.params.id))
+  if (Number.isNaN(interactiveId)) {
+    res.status(400).send({ reason: 'invalid id'})
+    return
+  }
+  try {
+    await prisma.interactive.delete({
+      where: {
+        id: interactiveId
+      },
+    })
+    res.status(200).send({ id: interactiveId })
+  } catch (e) {
+    console.error('Failed to delete interactive record')
+    res.status(500).send({ error: String(e) })
+  }
+})
+
+interactiveRouter.put('/batch-update', async (req: Request, res: Response) => {
+  const body = req.body as {
+    updates: BatchUpdate
+  }
+  if (!Array.isArray(body?.updates)) {
+    res.status(400).send({
+      reason: 'no updates array field'
+    })
+    return
+  }
+  try {
+    const { ids, labels } = Object.values(body.updates)
+      .reduce((acc: BatchUnrolled, item) => {
+        return {
+          ids: acc.ids.concat(item.id),
+          labels: acc.labels.concat(item.label),
+        }
+      }, {ids:[], labels: []})
+
+    await prisma.$executeRawUnsafe(`
+      WITH data(id, val) AS (
+        SELECT * FROM UNNEST($1::int[], $2::text[])
+      )
+      UPDATE interactive i
+      SET label = d.val
+      FROM data d
+      WHERE i.id = d.id
+      `,
+      ids,
+      labels
+    )
+
+    res.status(200).send({ updated: ids.length })
+  } catch(e) {
+    console.error('Failed to batch update interactive records')
+    res.status(500).send({ error: String(e) })
+  }
+})
+
 interactiveRouter.patch('/:id', async (req: Request, res: Response) => {
   const interactiveId = Number(String(req.params.id))
   if (Number.isNaN(interactiveId)) {

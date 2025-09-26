@@ -32,6 +32,8 @@ export enum InteractiveLabel {
   pagination = 'pagination',
   // misc
   iconbutton = 'iconbutton', // clickable icon... no text
+  image = 'image',
+  logo = 'logo',
   other = 'other'
 }
 

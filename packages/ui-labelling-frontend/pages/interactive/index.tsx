@@ -1,6 +1,6 @@
 import { useRouter } from "next/router"
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react"
-import { getInteractivePage, InteractiveRecord, updateInteractive } from "../../api"
+import { batchUpdateInteractive, deleteInteractive, getInteractivePage, InteractiveRecord, updateInteractive } from "../../api"
 import { toImgSrc } from "../../utils/img"
 import { InteractiveLabel } from "ui-labelling-shared"
 import { Flex } from "../../components/flex"
@@ -10,11 +10,13 @@ const interactiveLabels = Object.values(InteractiveLabel)
 const LabelForm = ({
     id,
     label,
-    onUpdate
+    onUpdate,
+    onDelete,
   }: {
     id: number,
     label: string
     onUpdate: (id: number, label: string) => void
+    onDelete: (id: number) => void
   }) => {
   const selectRef = useRef<HTMLSelectElement | null>(null)
 
@@ -34,14 +36,14 @@ const LabelForm = ({
     if (label === '') {
       return
     }
-    const resp = await updateInteractive(id, label)
+    await updateInteractive(id, label)
     onUpdate(id, label)
   }, [onUpdate])
 
   return (
     <form onSubmit={handleSubmit}>
-      <select ref={selectRef} required>
-        <option value="" disabled selected>Select label</option>
+      <select id={`label_${id}`} ref={selectRef} required>
+        <option value="" selected>Select label</option>
           {
             interactiveLabels.map(label => {
               return (
@@ -52,9 +54,14 @@ const LabelForm = ({
             })
           }
       </select>
-      <button type="submit">
-        Update
-      </button>
+      <div style={{ display: 'flex', gap: '4px', marginTop: '4px'}}>
+        <button type="submit">
+          Update
+        </button>
+        <button type="button" onClick={() => onDelete(id)}>
+          Delete
+        </button>
+      </div>
     </form>
   )
 }
@@ -70,10 +77,10 @@ const NavButton = ({ label, page, unlabelled }: { label: string; page: number; u
 }
 
 export default function InteractiveLabellingPage() {
-  const { query, push } = useRouter()
+  const { query } = useRouter()
   const page = Number(String(query.page ?? '0'))
   const unlabelled = String(query.unlabelled) !== 'false'
-  console.log('unlabelled', unlabelled)
+
   const [records, setRecords] = useState<InteractiveRecord[] | null>(null)
 
   const handleLabelUpdate = useCallback((id: number, label: string) => {
@@ -85,6 +92,32 @@ export default function InteractiveLabellingPage() {
       }
       records[index].label = label
       return records.slice(0)
+    })
+  }, [setRecords])
+
+  const updateAll = useCallback(async () => {
+    const updates: Array<{id: number; label: string | null}> =
+      records.map(r => {
+        return {
+          id: r.id,
+          label: (document.querySelector(`#label_${r.id}`) as HTMLSelectElement).value || null
+        }
+      })
+    await batchUpdateInteractive(updates)
+    setRecords(records => {
+      return records.map(r => {
+        return {
+          ...r,
+          label: (document.querySelector(`#label_${r.id}`) as HTMLSelectElement).value || null,
+        }
+      })
+    })
+  }, [records, setRecords])
+
+  const handleDelete = useCallback(async (id: number) => {
+    await deleteInteractive(id)
+    setRecords(records => {
+      return records.filter(r => r.id !== id)
     })
   }, [setRecords])
 
@@ -137,6 +170,7 @@ export default function InteractiveLabellingPage() {
                   <td style={cellStyle}>
                     <LabelForm id={r.id} label={r.label}
                       onUpdate={handleLabelUpdate}
+                      onDelete={handleDelete}
                     />
                   </td>
                 </tr>
@@ -148,6 +182,7 @@ export default function InteractiveLabellingPage() {
       <Flex gap="4px">
         {page > 0 ? <NavButton label="Prev" page={page - 1}/> : null}
         <NavButton label="Next" page={page + 1} unlabelled={unlabelled} />
+        <button onClick={updateAll}>Update all</button>
       </Flex>
     </Flex>
   )

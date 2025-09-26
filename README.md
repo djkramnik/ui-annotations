@@ -5,18 +5,32 @@ This repo also includes a web server for storing annotations in local postgres i
 
 #### TODO
 
-#### Next step (this month):
+#### Next steps
 
-* interactive granular label helper (frontend)
-* retrain text model.. using the additional data
-
+moar building
+====
+* single update button (bottom of table) for granular label helper
+* delete interactive record
+* create synthetic data generator for label balancing... (direct to annotation)
+* create synthetic composite data generator. have to use it on existing interactive label annotations that have granular labels on them, and prob filter out unknowns
 * automatic collection script for more interactive training data
   * auto interactive proposal
   * sanity check with existing yolo model
 
-* new interactive proposal model
-* new granular classifier model
 
+training
+====
+* generate more interactive proposals
+* create granular labels for all of them
+* train interactive classifier
+* run the composite synthetic data generator
+* retrain interactive model.. using additional data
+* retrain text model.. using the additional data
+* given a screenshot, run all predictors.
+* evaluate where we at.
+
+improvements
+====
 * need a frontend viewer button to turn all annotations on a given page to uppercase
 * need some script targeting the db to start and end trim textContent
 * need something like a select mode in the frontend viewer.  if only to select and delete.

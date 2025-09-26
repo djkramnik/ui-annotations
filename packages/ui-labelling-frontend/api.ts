@@ -34,6 +34,7 @@ export const getOcr = (id: number): Promise<{ screenshot: number[]; text: string
 }
 
 // interactive apis
+
 export const getInteractive = (id: number): Promise<{ screenshot: number[]; label: string | null }> => {
   return (
     fetch(`/api/interactive/${id}`)
@@ -63,6 +64,20 @@ export const updateInteractive = (id: number, label: string | null) => {
       })
     })
   )
+}
+
+export const batchUpdateInteractive = (updates: Array<{id: number, label: string | null}>) => {
+  return fetch(`/api/interactive/batch-update`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ updates })
+  }).then(jsonOrThrow)
+}
+
+export const deleteInteractive = (id: number) => {
+  return fetch(`/api/interactive/${id}`, { method: 'DELETE' }).then(jsonOrThrow)
 }
 
 // end interactive apis
