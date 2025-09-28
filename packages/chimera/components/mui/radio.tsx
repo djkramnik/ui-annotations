@@ -20,7 +20,7 @@ export const MuiRadioGroup = ({
         {
           options.map(o => {
             return (
-              <FormControlLabel value={o} control={<Radio id={o} />} label={o} />
+              <FormControlLabel key={o} value={o} control={<Radio id={o} />} label={o} />
             )
           })
         }
