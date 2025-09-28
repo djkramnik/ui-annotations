@@ -9,18 +9,25 @@ This repo also includes a web server for storing annotations in local postgres i
 
 moar building
 ====
-1) * create synthetic data generator for label balancing...
+1) moondream v3 detect locally
 
-2) * create synthetic composite data generator. have to use it on existing interactive label annotations that have granular labels on them, and prob filter out unknowns
+2) * automatic collection script for more interactive training data
+   * dom based proposal
+   * yolo model
+   * dom + yolo agreement keep
+   * moondream proposal
+   * remove dups
+
+3) * create synthetic data generator for label balancing...
+
+4) * create synthetic composite data generator. have to use it on existing interactive label annotations that have granular labels on them, and prob filter out unknowns
   * pull an annotation with interactive label. optionally with a condition that it has never been copied yet
   * select bounding boxes to swap components for
   * save the task to create the synthetic (task table)
   * a bridge table, parent, clone
   * a script to manually kick off uncompleted synthetic creation tasks pulled from the db
 
-3) * automatic collection script for more interactive training data
-  * auto interactive proposal
-  * sanity check with existing yolo model
+
 
 
 training

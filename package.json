@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "dev:chimera": "npm run -w chimera dev",
     "dev:api": "npm run -w ui-labelling-server dev",
     "dev:ui": "npm run -w ui-labelling-frontend dev",
     "build:shared": "npm run -w ui-labelling-shared build",
