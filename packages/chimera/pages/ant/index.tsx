@@ -1,6 +1,6 @@
 "use client";
 
-import { ConfigProvider, Radio } from "antd";
+import { ConfigProvider } from "antd";
 import { useRouter } from "next/router";
 import { InteractiveLabel } from "ui-labelling-shared";
 import { AntRadioGroup } from "../../components/ant/radio";
