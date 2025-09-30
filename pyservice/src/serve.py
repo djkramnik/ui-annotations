@@ -250,34 +250,46 @@ async def visualize_base64(payload: ImagePayload, min_score: float = SCORE_THRES
 
 #--------- yolo setup -------------
 
-YOLO_MODEL_PATH = os.path.join(SCRIPT_DIR, "textregion.pt")
+YOLO_MODEL_TEXT_PATH = os.path.join(SCRIPT_DIR, "yolo/text/textregion.pt")
+YOLO_MODEL_INTERACTIVE_PATH = os.path.join(SCRIPT_DIR, "yolo/interactive/interactive.pt")
 YOLO_CONF = 0.25
 YOLO_IOU = 0.45
 YOLO_IMGSZ = 640
-yolo_model = None
-names = {}
+yolo_text_model = None
+text_names = {}
+yolo_interactive_model = None
+interactive_names = {}
 
 def _device():
   return "mps" if torch.backends.mps.is_available() else "cpu"
 
-def setup_yolo():
-    global model, names
-    model = YOLO(YOLO_MODEL_PATH)
-    mn = getattr(model, "names", None)
-    names = mn
-    print("yolo model names", mn)
+def setup_text_yolo():
+    global yolo_text_model, text_names
+    yolo_text_model = YOLO(YOLO_MODEL_TEXT_PATH)
+    mn = getattr(yolo_text_model, "names", None)
+    text_names = mn
+    print("yolo text names", mn)
     dummy = np.zeros((640, 640, 3), dtype=np.uint8)
-    model.predict(source=dummy, imgsz=640, conf=0.25, iou=0.45,
+    yolo_text_model.predict(source=dummy, imgsz=640, conf=0.25, iou=0.45,
       device=_device(), verbose=False)
 
-setup_yolo()
+def setup_interactive_yolo():
+    global yolo_interactive_model, interactive_names
+    yolo_interactive_model = YOLO(YOLO_MODEL_INTERACTIVE_PATH)
+    mn = getattr(yolo_interactive_model, "names", None)
+    interactive_names = mn
+    print("yolo interactive names", mn)
+    dummy = np.zeros((640, 640, 3), dtype=np.uint8)
+    yolo_interactive_model.predict(source=dummy, imgsz=640, conf=0.25, iou=0.45,
+      device=_device(), verbose=False)
+
 #--------- end yolo setup -------------
 
 @app.post('/predict_textregions')
 async def predict_textregions(payload: YoloPayload) -> Dict[str, Any]:
-  global model, names
-  if model is None:
-    setup_yolo()
+  global yolo_text_model, text_names
+  if yolo_text_model is None:
+    setup_text_yolo()
 
   conf = float(payload.conf)
   iou = float(payload.iou)
@@ -292,7 +304,7 @@ async def predict_textregions(payload: YoloPayload) -> Dict[str, Any]:
 
   width, height = img.size
 
-  results = model.predict(
+  results = yolo_text_model.predict(
     source=img,
     imgsz=imgsz,
     conf=conf,
@@ -311,13 +323,61 @@ async def predict_textregions(payload: YoloPayload) -> Dict[str, Any]:
   classes = [int(x) for x in r.boxes.cls.cpu().tolist()]
 
   for (x1,y1,x2,y2), conf, cls in zip(xyxy, confs, classes):
-    label = names[cls]
+    label = text_names[cls]
     detections.append({
       "box": [float(x1), float(y1), float(x2), float(y2)],
       "conf": float(conf),
       "label": label
     })
   return { "width": width, "height": height, "detections": detections }
+
+
+@app.post('/predict_interactive')
+async def predict_interactive(payload: YoloPayload) -> Dict[str, Any]:
+  global yolo_interactive_model, interactive_names
+  if yolo_interactive_model is None:
+    setup_interactive_yolo()
+
+  conf = float(payload.conf)
+  iou = float(payload.iou)
+  imgsz = int(payload.imgsz)
+
+  if (not 0.0 <= conf <= 1.0 and 0.0 <= iou <= 1.0):
+    raise HTTPException(status_code=400, detail="bad conf or iou (0. - 1.)")
+
+  image_b64 = payload.image_base64
+  img_bytes = base64.b64decode(image_b64, validate=True)
+  img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+
+  width, height = img.size
+
+  results = yolo_interactive_model.predict(
+    source=img,
+    imgsz=imgsz,
+    conf=conf,
+    iou=iou,
+    device=_device(),
+    verbose=False
+  )
+  r = results[0]
+  detections: List[Dict[str, Any]] = []
+  if getattr(r, "boxes", None) is None:
+    return { "width": width, "height": height, "detections": detections }
+
+  # [[x1,y1,x2,y2]]
+  xyxy = r.boxes.xyxy.cpu().tolist()
+  confs = r.boxes.conf.cpu().tolist()
+  classes = [int(x) for x in r.boxes.cls.cpu().tolist()]
+
+  for (x1,y1,x2,y2), conf, cls in zip(xyxy, confs, classes):
+    label = interactive_names[cls]
+    detections.append({
+      "box": [float(x1), float(y1), float(x2), float(y2)],
+      "conf": float(conf),
+      "label": label
+    })
+  return { "width": width, "height": height, "detections": detections }
+
 
 #------ big file stew: PaddleOCR ----------
 

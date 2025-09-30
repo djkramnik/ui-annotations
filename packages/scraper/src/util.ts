@@ -1,5 +1,13 @@
+import { Page } from 'puppeteer-core'
 import * as readline from 'readline'
 import { AnnotationPayload, AnnotationRequest } from 'ui-labelling-shared'
+
+export type ProcessAnnotations = (page: Page, link: string) => Promise<Omit<AnnotationRequest, "screenshot" | "annotations"> | undefined>
+export type ApplyTransformations = (page: Page) => Promise<() => Promise<void>> // return async cleanup function
+
+export async function snooze(ms: number = 2000) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
 
 export interface CliOptions {
   handleInput: (s: string) => any
