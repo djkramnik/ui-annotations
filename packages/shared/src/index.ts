@@ -176,7 +176,6 @@ export function getTextNodeLineFragments(
   return out;
 }
 
-
 export async function* gatherTextRegions(
   opts: Partial<{
     batchSize: number

@@ -1,30 +1,43 @@
 import puppeteer, { Browser, Page } from 'puppeteer-core'
 import {
   ApplyTransformations,
+  getNumberArg,
   ProcessAnnotations,
   waitForEnter,
 } from './util'
 import { PrismaClient } from '@prisma/client'
 import { getHnHrefs, scrolledToBottom, scrollY } from './dom'
 import { applyTextTransforms, processScreenText } from './configs/text'
+import { processScreenForInteractive } from './configs/interactive'
 
 const prisma = new PrismaClient()
 
+let processScreen: ProcessAnnotations | null = null
+const labelType = process.argv[2]
+switch(labelType) {
+  case 'interactive':
+    processScreen = processScreenForInteractive
+    break
+  default:
+    processScreen = processScreenText
+    break
+}
+
 main({
   config: {
-    processScreen: processScreenText,
+    processScreen,
     transform: applyTextTransforms,
   },
-  linkType: 'hn',
-  maxPages: 5,
-  maxScrollIndex: 2,
+  linkType: process.argv[3] ?? 'hn',
+  maxPages: getNumberArg(process.argv[4]) ?? 5,
+  maxScrollIndex: getNumberArg(process.argv[5]) ?? 2,
 })
 
-async function fetchUrls(): Promise<string[]> {
+async function fetchUrls(tag: string): Promise<string[]> {
   const urls = await prisma.annotation
     .findMany({
       where: {
-        tag: 'ocr',
+        tag,
       },
     })
     .then((annotation) => {
@@ -86,7 +99,9 @@ async function main({
     '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 
   let browser: Browser | null = null
-  const urls = await fetchUrls()
+  const urls = await fetchUrls(labelType === 'interactive'
+    ? 'interactive'
+    : 'ocr')
   try {
     browser = await puppeteer.launch({
       headless: false, // run with a visible browser window

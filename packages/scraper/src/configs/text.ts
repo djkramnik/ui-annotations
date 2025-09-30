@@ -7,7 +7,7 @@ import {
   adjustViewport,
   adjustZoom,
   changeFontFamily,
-  getFirstTextProposal,
+  getDomTextProposal,
   getMetadata,
 } from '../dom'
 import {
@@ -23,7 +23,7 @@ import {
 import { Page } from 'puppeteer-core'
 
 export async function processScreenText(page: Page, link: string) {
-  const proposals = await getFirstTextProposal(page)
+  const proposals = await getDomTextProposal(page)
   // console.log('PROPOSALS', proposals)
   if (proposals.length < 1) {
     return

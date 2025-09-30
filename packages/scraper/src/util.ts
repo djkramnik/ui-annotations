@@ -90,8 +90,10 @@ type YoloPredictResponse = {
 }
 
 // fetch yolo predictions
-export const getYoloPredictions = (payload: YoloPredictRequest) => {
-  return fetch('http://localhost:8000/predict_textregions', {
+export const getYoloPredictions = (
+  payload: YoloPredictRequest,
+  type: 'text' | 'interactive' = 'text') => {
+  return fetch(`http://localhost:8000/predict_${type === 'text' ? 'textregions': 'interactive'}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -227,4 +229,15 @@ export function getRandomZoom() {
     1.2
   ]
   return zooms[randInt(0, zooms.length)] as number
+}
+
+export function getNumberArg(s: unknown): number | undefined {
+  if (typeof s !== 'string') {
+    return
+  }
+  const n = Number(s)
+  if (Number.isNaN(n)) {
+    return
+  }
+  return n
 }

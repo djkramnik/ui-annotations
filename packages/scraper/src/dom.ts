@@ -85,7 +85,7 @@ export async function changeFontFamily(
   };
 }
 
-export async function getFirstTextProposal(page: Page): Promise<TextProposal[]> {
+export async function getDomTextProposal(page: Page): Promise<TextProposal[]> {
   const out = await page.evaluate(async () => {
     function elVisible(el: Element) {
       const st = getComputedStyle(el)
@@ -279,5 +279,204 @@ export async function getFirstTextProposal(page: Page): Promise<TextProposal[]> 
 
     return textProposals
   })
+  return out
+}
+
+export async function getDomInteractiveProposal(page: Page): Promise<DOMRect[]> {
+  const out = await page.evaluate(async () => {
+
+    function isInteractive(el: Element): boolean {
+      console.log('the great interactive filter!')
+
+      const isDisabled =
+        (el as any).disabled === true || el.getAttribute('aria-disabled') === 'true'
+      if (isDisabled) {
+        return false
+      }
+      const tag = el.tagName.toLowerCase()
+
+      // true because button good
+      if (tag === 'button') {
+        return true
+      }
+
+      // true because anchor tag with href
+      if (tag === 'a' && (el as HTMLAnchorElement).href) {
+        return true
+      }
+
+      // true because input and not hidden
+      if (tag === 'input') {
+        const t = (el as HTMLInputElement).type?.toLowerCase()
+        if (t !== 'hidden') return true
+      }
+
+      // true because blue blooded form components
+      if (tag === 'textarea' || tag === 'select' || tag === 'summary') {
+        return true
+      }
+
+      // true because funky contenteditable
+      if ((el as HTMLElement).isContentEditable) {
+        return true
+      }
+
+      // true because screenreader said so
+      const role = (el.getAttribute('role') || '').trim()
+      if ([
+        'button',
+        'link',
+        'checkbox',
+        'radio',
+        'switch',
+        'textbox',
+        'combobox',
+        'menuitem',
+        'tab',
+        'slider',
+      ].includes(role)) {
+        return true
+      }
+
+      // true because tab index???
+      // const ti = (el as HTMLElement).tabIndex
+      // if (Number.isInteger(ti) && ti >= 0) return true
+
+      // true because mouse cursor
+      const st = getComputedStyle(el)
+      if (st.cursor === 'pointer') {
+        return true
+      }
+      // true because javascript
+      if ((el as any).onclick) {
+        return true
+      }
+      return false
+    }
+
+    function elVisible(el: Element) {
+      const st = getComputedStyle(el)
+      if (
+        st.display === 'none' ||
+        st.visibility === 'hidden' ||
+        parseFloat(st.opacity) === 0
+      ) {
+        return false
+      }
+      return true
+    }
+
+    function nodeVisible(n: Node) {
+      let el: Element | null =
+        (n as any).parentElement ?? (n.parentNode as Element | null)
+      while (el) {
+        if (!elVisible(el)) return false
+        el = el.parentElement
+      }
+      return true
+    }
+
+    function rectInViewport(r: DOMRect) {
+      const viewport = {
+        left: 0,
+        top: 0,
+        right: window.innerWidth,
+        bottom: window.innerHeight,
+      }
+      return (
+        r.right > viewport.left &&
+        r.left < viewport.right &&
+        r.bottom > viewport.top &&
+        r.top < viewport.bottom
+      )
+    }
+
+    async function* gatherInteractiveRegions(
+      opts: Partial<{
+        batchSize: number
+        minSize: number
+        includeIFrames: boolean
+        isInteractive: (el: Element) => boolean
+      }>,
+    ): AsyncGenerator<DOMRect[]> {
+      const batchSize = opts.batchSize ?? 200
+      const minSize = opts.minSize ?? 11
+      const includeIFrames = opts.includeIFrames ?? false
+      const filter = opts.isInteractive ?? isInteractive
+
+      const roots: (Document | ShadowRoot)[] = [document]
+      document.querySelectorAll<HTMLElement>('*').forEach((el) => {
+        if (el.shadowRoot) roots.push(el.shadowRoot as ShadowRoot)
+      })
+      if (includeIFrames) {
+        document.querySelectorAll('iframe').forEach((f) => {
+          try {
+            const d = (f as HTMLIFrameElement).contentDocument
+            if (d) roots.push(d as Document)
+          } catch {
+            /* cross-origin iframe */
+          }
+        })
+      }
+
+      const out: DOMRect[] = []
+      console.log('processing interactive roots!')
+      for (const root of roots) {
+        if (typeof (root as any).createTreeWalker !== 'function') {
+          console.log('cannot create tree walker!', root)
+          continue
+        }
+        const walker = (root as any).createTreeWalker(
+          root,
+          NodeFilter.SHOW_ELEMENT,
+          {
+            acceptNode: (node: Node) => {
+              const el = node as Element
+              return filter(el)
+                ? NodeFilter.FILTER_ACCEPT
+                : NodeFilter.FILTER_SKIP
+            },
+          } as any,
+        )
+
+        for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+          const el = n as Element
+          if (!nodeVisible(el)) {
+            console.log('interactive candidate not visible')
+            continue
+          }
+
+          const r = el.getBoundingClientRect()
+          if (!rectInViewport(r)) {
+            console.log('interactive candidate not in viewport')
+            continue
+          }
+          if (r.width < minSize || r.height < minSize) {
+            console.log('interactive candidate too small')
+            continue
+          }
+
+          out.push(r)
+          if (out.length >= batchSize) {
+            yield out.splice(0, out.length)
+            await new Promise(requestAnimationFrame)
+          }
+        }
+      }
+      yield out
+    }
+    let interactiveProposals: DOMRect[] = []
+    for await (const proposals of gatherInteractiveRegions({ batchSize: 50 })) {
+      if (Array.isArray(proposals)) {
+        console.log("Batch size:", proposals.length);
+        interactiveProposals = interactiveProposals.concat(proposals)
+      } else {
+        console.warn("Unknown chunk type:", proposals);
+      }
+    }
+
+    return interactiveProposals
+  })
+
   return out
 }

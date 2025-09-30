@@ -1,10 +1,10 @@
 import { Page } from "puppeteer-core"
-import { getFirstTextProposal, getMetadata } from "../dom"
+import { getDomInteractiveProposal, getDomTextProposal, getMetadata } from "../dom"
 import { AnnotationLabel, AnnotationPayload, postProcessNested } from "ui-labelling-shared"
 import { filterByOverlap, getYoloPredictions, postAnnotations, scaleYoloPreds, snooze } from "../util"
 
 export async function processScreenForInteractive(page: Page, link: string) {
-  const proposals = await getFirstTextProposal(page)
+  const proposals = await getDomInteractiveProposal(page)
   // console.log('PROPOSALS', proposals)
   if (proposals.length < 1) {
     return
@@ -12,10 +12,9 @@ export async function processScreenForInteractive(page: Page, link: string) {
 
   const rawAnnotations = proposals.map((p) => {
     return {
-      rect: p.rect,
-      label: AnnotationLabel.textRegion,
+      rect: p,
+      label: AnnotationLabel.interactive,
       id: crypto.randomUUID(),
-      textContent: p.textContent,
     }
   })
   console.log('unprocessed annotation len:', rawAnnotations.length)
@@ -37,7 +36,7 @@ export async function processScreenForInteractive(page: Page, link: string) {
     image_base64: screenshot,
     imgsz: 1024,
     conf: 0.1,
-  })
+  }, 'interactive')
   const yoloRawPreds = await yoloResp.json()
   const scaledYoloPreds = scaleYoloPreds(
     yoloRawPreds,
@@ -47,7 +46,7 @@ export async function processScreenForInteractive(page: Page, link: string) {
   const annotationsVerifiedByAi = filterByOverlap(
     processedAnnotations,
     scaledYoloPreds,
-    { overlapPct: 0.1, matchLabel: 'textRegion' },
+    { overlapPct: 0.1, matchLabel: 'interactive' },
   )
   console.log('verified by ai length', annotationsVerifiedByAi.length)
 

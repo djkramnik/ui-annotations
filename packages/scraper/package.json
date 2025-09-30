@@ -5,6 +5,7 @@
   "scripts": {
     "build": "tsc",
     "start": "npm run build && node dist/index.js",
+    "start:interactive": "npm run build && node dist/index.js interactive",
     "prisma:db:pull": "npx prisma db pull"
   },
   "keywords": [],
