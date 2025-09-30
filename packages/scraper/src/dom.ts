@@ -282,7 +282,16 @@ export async function getDomTextProposal(page: Page): Promise<TextProposal[]> {
   return out
 }
 
-export async function getDomInteractiveProposal(page: Page): Promise<DOMRect[]> {
+export async function getDomInteractiveProposal(page: Page): Promise<{
+  x: number,
+  y: number,
+  width: number
+  height: number
+  top: number
+  left: number
+  right: number
+  bottom: number
+}[]> {
   const out = await page.evaluate(async () => {
 
     function isInteractive(el: Element): boolean {
@@ -469,13 +478,22 @@ export async function getDomInteractiveProposal(page: Page): Promise<DOMRect[]> 
     for await (const proposals of gatherInteractiveRegions({ batchSize: 50 })) {
       if (Array.isArray(proposals)) {
         console.log("Batch size:", proposals.length);
-        interactiveProposals = interactiveProposals.concat(proposals)
+        interactiveProposals = interactiveProposals.concat(...proposals)
       } else {
         console.warn("Unknown chunk type:", proposals);
       }
     }
-
-    return interactiveProposals
+    // need a plain js object, DOMRect will not survive the great barrier
+    return interactiveProposals.map((r) => ({
+      bottom: r.bottom,
+      top: r.top,
+      left: r.left,
+      right: r.right,
+      height: r.height,
+      width: r.width,
+      x: r.x,
+      y: r.y,
+    }))
   })
 
   return out

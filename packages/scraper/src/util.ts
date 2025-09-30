@@ -61,6 +61,7 @@ export const waitForEnter = (): Promise<void> => {
 }
 
 export const postAnnotations = (payload: AnnotationRequest) => {
+  console.log('posting this shit', payload.annotations[0])
   return fetch('http://localhost:4000/api/annotation', {
     method: 'POST',
     headers: {

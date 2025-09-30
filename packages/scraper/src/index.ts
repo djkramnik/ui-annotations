@@ -8,7 +8,7 @@ import {
 import { PrismaClient } from '@prisma/client'
 import { getHnHrefs, scrolledToBottom, scrollY } from './dom'
 import { applyTextTransforms, processScreenText } from './configs/text'
-import { processScreenForInteractive } from './configs/interactive'
+import { applyInteractiveTransforms, processScreenForInteractive } from './configs/interactive'
 
 const prisma = new PrismaClient()
 
@@ -26,11 +26,12 @@ switch(labelType) {
 main({
   config: {
     processScreen,
-    transform: applyTextTransforms,
+    transform: applyInteractiveTransforms,
   },
   linkType: process.argv[3] ?? 'hn',
   maxPages: getNumberArg(process.argv[4]) ?? 5,
-  maxScrollIndex: getNumberArg(process.argv[5]) ?? 2,
+  maxLinks: getNumberArg(process.argv[5]) ?? undefined,
+  maxScrollIndex: 2,
 })
 
 async function fetchUrls(tag: string): Promise<string[]> {
@@ -94,6 +95,13 @@ async function main({
   maxScrollIndex: number
   maxLinks?: number
 }) {
+  console.log('scraper params:', {
+    linkType,
+    maxPages,
+    maxScrollIndex,
+    maxLinks,
+    labelType,
+  })
   // On macOS, Chrome is typically installed at this path
   const chromePath =
     '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'

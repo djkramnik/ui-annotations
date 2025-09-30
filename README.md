@@ -10,31 +10,27 @@ This repo also includes a web server for storing annotations in local postgres i
 moar building
 ====
 
+test out the auto interactive collector
+gather moar data
 
-1) * automatic collection script for more interactive training data
-   * need yolo endpoints for interactive
-   * dom based proposal
-   * postprocessing (contains)
-   * yolo model
-   * dom + yolo agreement keep
+finish chimera
 
-2) * create synthetic data generator for label balancing...
+1) * run interactive auto scraper
 
-3) * create synthetic composite data generator. have to use it on existing interactive label annotations that have granular labels on them, and prob filter out unknowns
+2) * create synthetic element generator for label balancing...
+
+3) * train ViT based classification model
+
+4) * create synthetic composite data generator. have to use it on existing interactive label annotations that have granular labels on them, and prob filter out unknowns
   * pull an annotation with interactive label. optionally with a condition that it has never been copied yet
   * select bounding boxes to swap components for
   * save the task to create the synthetic (task table)
   * a bridge table, parent, clone
   * a script to manually kick off uncompleted synthetic creation tasks pulled from the db
 
-
 training
 ====
-4) * generate more interactive proposals data
-5) * run the composite synthetic data generator for further more balanced proposals
-6) * create granular labels for all of them... classifying bad examples as OTHER for later confidence threshold creation
-7) * train interactive classifier
-8) * retrain interactive proposals model.. using additional data
+5) * retrain interactive proposals model.. using additional data
 
 * retrain text model.. using the additional data
 * given a screenshot, run all predictors.
