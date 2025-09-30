@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const startBtn = document.getElementById('start-btn')
   const endBtn = document.getElementById('end-btn')
   const predictBtn = document.getElementById('predict-btn')
+  const predictBtnDeux = document.getElementById('predict-btn2')
   const textRegionBtn = document.getElementById('text-region-btn')
   const interactiveBtn = document.getElementById('interactive-btn')
 
@@ -27,7 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
     endBtn,
     predictBtn,
     textRegionBtn,
-    interactiveBtn
+    interactiveBtn,
+    predictBtnDeux
   ]
 
   if (btns.some(b => !b)) {
@@ -111,7 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
         enhancedDetections
       )
 
-
       sendMessage(ExtensionMessage.predict, {
         content: {
           detections: enhancedDetections,
@@ -123,6 +124,35 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
       console.error('predict failed wtf', e)
     } finally {
+    }
+  })
+
+  predictBtnDeux!.addEventListener('click', async () => {
+    disableAllButtons()
+    try {
+      const screenshotUrl = await chrome.tabs.captureVisibleTab()
+      const b64 = screenshotUrl.split(';base64,')[1]
+      const res = await fetch('http://localhost:8000/predict_interactive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_base64: b64, conf: 0.5, imgsz: 1024 }),
+      })
+      const {
+        detections,
+        width,
+        height,
+      } = (await res.json()) as YoloPredictResponse
+
+      sendMessage(ExtensionMessage.predict, {
+        content: {
+          detections,
+          width,
+          height,
+        },
+      })
+      // window.close()
+    } catch(e) {
+      console.error('predict failed wtf', e)
     }
   })
 
