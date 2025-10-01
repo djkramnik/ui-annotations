@@ -7,7 +7,7 @@ import {
 } from './util'
 import { PrismaClient } from '@prisma/client'
 import { getHnHrefs, scrolledToBottom, scrollY } from './dom'
-import { applyTextTransforms, processScreenText } from './configs/text'
+import { processScreenText } from './configs/text'
 import { applyInteractiveTransforms, processScreenForInteractive } from './configs/interactive'
 
 const prisma = new PrismaClient()
@@ -69,6 +69,7 @@ async function getLinks({
           !link.startsWith('https://news.ycombinator.com') &&
           !link.startsWith('https://github.com') &&
           !link.startsWith('https://arxiv.org') &&
+          !link.startsWith('https://openai') &&
           !link.endsWith('.pdf')
       )
     case 'local':

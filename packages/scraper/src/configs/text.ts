@@ -24,7 +24,6 @@ import { Page } from 'puppeteer-core'
 
 export async function processScreenText(page: Page, link: string) {
   const proposals = await getDomTextProposal(page)
-  // console.log('PROPOSALS', proposals)
   if (proposals.length < 1) {
     return
   }
@@ -88,19 +87,19 @@ export async function applyTextTransforms(page: Page) {
     width: randInt(800, 1600),
     height: randInt(500, 992),
   })
-  await snooze()
+  await snooze(5000)
 
   let removeFont = null
   // a quarter of the time change the font?
   if (Math.random() >= 0.75) {
     removeFont = await changeFontFamily(page, getRandomLocalFont())
-    await snooze()
+    await snooze(5000)
   }
   let zoom = 1
   if (Math.random() >= 0.5) {
     zoom = getRandomZoom()
     await adjustZoom({ page, scale: zoom })
-    await snooze()
+    await snooze(5000)
   }
 
   return async () => {

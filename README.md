@@ -28,9 +28,15 @@ finish chimera
   * a bridge table, parent, clone
   * a script to manually kick off uncompleted synthetic creation tasks pulled from the db
 
+5) special state screenshots
+  * need a way to perhaps run some logic on the screen to focus certain elements
+  * or to do things like close popups
+  * can be generic and hopeful or targeted to the domain
+  * so that we get special states in the corpus
+
 training
 ====
-5) * retrain interactive proposals model.. using additional data
+6) * retrain interactive proposals model.. using additional data
 
 * retrain text model.. using the additional data
 * given a screenshot, run all predictors.

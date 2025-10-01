@@ -5,7 +5,7 @@ import { filterByOverlap, getRandomLocalFont, getRandomZoom, getYoloPredictions,
 
 export async function processScreenForInteractive(page: Page, link: string) {
   const proposals = await getDomInteractiveProposal(page)
-  console.log('PROPOSALS', proposals)
+
   if (proposals.length < 1) {
     return
   }
