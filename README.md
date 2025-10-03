@@ -10,12 +10,11 @@ This repo also includes a web server for storing annotations in local postgres i
 moar building
 ====
 
-test out the auto interactive collector
-gather moar data
-
-finish chimera
-
 1) * run interactive auto scraper
+
+* why so many bad extracts in write_interactive?
+  * a url to view a single annotation on a screen
+* why persistent bad scrape examples
 
 2) * create synthetic element generator for label balancing...
 

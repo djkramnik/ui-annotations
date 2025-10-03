@@ -159,7 +159,7 @@ interactiveRouter.get('/', async (req: Request, res: Response) => {
         ...(unlabelledOnly ? {
           where: { label: { equals: null } }
         } : undefined),
-        orderBy: { id: 'asc' },
+        orderBy: { id: 'desc' },
         skip:  page * pageSize, // page is 0 based index,
         take: pageSize
       }),
