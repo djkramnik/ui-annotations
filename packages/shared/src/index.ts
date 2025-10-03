@@ -40,7 +40,7 @@ export enum InteractiveLabel {
   selectablecard = 'selectablecard',
   accordion = 'accordion',
   ad = 'ad',
-  misc = 'miuc',
+  misc = 'misc',
   other = 'other' // will get filtered out of interaction yolo, but used for conf threshold of granular
 }
 
