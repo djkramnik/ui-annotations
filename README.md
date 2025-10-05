@@ -12,8 +12,15 @@ moar building
 
 1) * run interactive auto scraper
 
+
+* a url to view a single annotation on a screen
+* link from the labelling section to this view
+* complete labelling efforts
+* view per label
+
 * why so many bad extracts in write_interactive?
-  * a url to view a single annotation on a screen
+* rewrite write_interactive to find missed annotations + get the failed extracts
+
 * why persistent bad scrape examples
 
 2) * create synthetic element generator for label balancing...
