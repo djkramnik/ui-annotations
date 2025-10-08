@@ -98,6 +98,20 @@ interactiveRouter.patch('/:id', async (req: Request, res: Response) => {
   }
 })
 
+interactiveRouter.get('/analytics', async (req: Request, res: Response) => {
+  const labelCounts = await prisma.$queryRaw<{
+    label: string
+    count: bigint,
+  }[]>` select label, count(*) from interactive group by label order by 1 desc`
+
+  res.status(200).send({
+    labelCounts: labelCounts.map(lc => ({
+      ...lc,
+      count: Number(lc.count)
+    }))
+  })
+})
+
 // get single
 interactiveRouter.get('/:id', async (req: Request, res: Response) => {
   const interactiveId = Number(String(req.params.id))

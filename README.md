@@ -12,7 +12,6 @@ moar building
 
 1) * run interactive auto scraper
 
-
 * a url to view a single annotation on a screen
 * link from the labelling section to this view
 * complete labelling efforts

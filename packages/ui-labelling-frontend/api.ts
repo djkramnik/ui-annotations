@@ -1,6 +1,7 @@
 import {
   AnnotationLabel,
   AnnotationPayload,
+  Annotations,
   annotationLabels
 } from "ui-labelling-shared"
 
@@ -34,6 +35,18 @@ export const getOcr = (id: number): Promise<{ screenshot: number[]; text: string
 }
 
 // interactive apis
+
+export const getInteractiveAnalytics = (): Promise<{
+  labelCounts: {
+    label: string
+    count: number
+  }[]
+}> => {
+  return (
+    fetch(`/api/interactive/analytics`)
+      .then(jsonOrThrow)
+  )
+}
 
 export const getInteractive = (id: number): Promise<{ screenshot: number[]; label: string | null }> => {
   return (
@@ -117,7 +130,7 @@ export const getPublishedAnnotations = (tag?: string) => {
   )
 }
 
-export const getAnnotation = (id: number) => {
+export const getAnnotation = (id: number): Promise<{data: Annotations}> => {
   return (
     fetch(`/api/annotation/${id}`)
       .then(jsonOrThrow)

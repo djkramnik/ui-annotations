@@ -1,6 +1,6 @@
 import { useRouter } from "next/router"
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react"
-import { batchUpdateInteractive, deleteInteractive, getInteractivePage, InteractiveRecord, updateInteractive } from "../../api"
+import { batchUpdateInteractive, deleteInteractive, getInteractiveAnalytics, getInteractivePage, InteractiveRecord, updateInteractive } from "../../api"
 import { toImgSrc } from "../../utils/img"
 import { InteractiveLabel } from "ui-labelling-shared"
 import { Flex } from "../../components/flex"
@@ -80,7 +80,10 @@ export default function InteractiveLabellingPage() {
   const { query } = useRouter()
   const page = Number(String(query.page ?? '0'))
   const unlabelled = String(query.unlabelled) !== 'false'
-
+  const [
+    analytics,
+    setAnalytics
+  ] = useState<{label: string, count: number}[]>()
   const [records, setRecords] = useState<InteractiveRecord[] | null>(null)
 
   const handleLabelUpdate = useCallback((id: number, label: string) => {
@@ -131,9 +134,17 @@ export default function InteractiveLabellingPage() {
       }
       setRecords(resp.items)
     }
-    fetchPage()
+    async function fetchAnalytics() {
+      const resp = await getInteractiveAnalytics()
+      if (cancelled) {
+        return
+      }
+      setAnalytics(resp.labelCounts)
+    }
+
+    Promise.all([fetchPage(), fetchAnalytics()])
     return () => { cancelled = true }
-  }, [page, setRecords, unlabelled])
+  }, [page, setRecords, setAnalytics, unlabelled])
 
   if (Number.isNaN(page) || page < 0) {
     return 'bad page param'
@@ -142,48 +153,83 @@ export default function InteractiveLabellingPage() {
     return null
   }
   const cellStyle = { padding: '10px', border: '1px solid black' }
+  const borderStyle = { border: '1px solid black '}
   return (
-    <Flex dir="column" gap="8px">
-      <Flex gap="4px">
-        {page > 0 ? <NavButton label="Prev" page={page - 1}/> : null}
-        <NavButton label="Next" page={page + 1} unlabelled={unlabelled} />
+    <>
+      {
+        analytics
+          ? (
+            <div style={{
+              position: 'fixed',
+              right: '0',
+              top: '12px',
+              width: 'fit-content',
+              backgroundColor: 'white'
+              }}>
+              <table>
+                <thead>
+                  <th style={borderStyle}>Label</th>
+                  <th style={borderStyle}>Count</th>
+                </thead>
+                <tbody>
+                  {
+                    analytics.map(a => {
+                      return (
+                        <tr key={a.label ?? 'null'}>
+                          <td style={borderStyle}>{a.label ?? 'null'}</td>
+                          <td style={borderStyle}>{a.count}</td>
+                        </tr>
+                      )
+                    })
+                  }
+                </tbody>
+              </table>
+            </div>
+          )
+          : null
+      }
+      <Flex dir="column" gap="8px">
+        <Flex gap="4px">
+          {page > 0 ? <NavButton label="Prev" page={page - 1}/> : null}
+          <NavButton label="Next" page={page + 1} unlabelled={unlabelled} />
+        </Flex>
+        <table style={{ tableLayout: 'fixed', border: '1px solid black' }}>
+          <thead>
+            <tr>
+              <th style={{ width: '400px', ...cellStyle}}>Image</th>
+              <th style={cellStyle}>Label</th>
+              <th style={cellStyle}>Update</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              records.map(r => {
+                return (
+                  <tr key={r.id}>
+                    <td style={cellStyle}>
+                      <img style={{ width: '100%' }} src={toImgSrc(r.screenshot)} />
+                    </td>
+                    <td style={cellStyle}>
+                      {r.label ?? 'UNLABELLED'}
+                    </td>
+                    <td style={cellStyle}>
+                      <LabelForm id={r.id} label={r.label}
+                        onUpdate={handleLabelUpdate}
+                        onDelete={handleDelete}
+                      />
+                    </td>
+                  </tr>
+                )
+              })
+            }
+          </tbody>
+        </table>
+        <Flex gap="4px">
+          {page > 0 ? <NavButton label="Prev" page={page - 1}/> : null}
+          <NavButton label="Next" page={page + 1} unlabelled={unlabelled} />
+          <button onClick={updateAll}>Update all</button>
+        </Flex>
       </Flex>
-      <table style={{ tableLayout: 'fixed', border: '1px solid black' }}>
-        <thead>
-          <tr>
-            <th style={{ width: '400px', ...cellStyle}}>Image</th>
-            <th style={cellStyle}>Label</th>
-            <th style={cellStyle}>Update</th>
-          </tr>
-        </thead>
-        <tbody>
-          {
-            records.map(r => {
-              return (
-                <tr key={r.id}>
-                  <td style={cellStyle}>
-                    <img style={{ width: '100%' }} src={toImgSrc(r.screenshot)} />
-                  </td>
-                  <td style={cellStyle}>
-                    {r.label ?? 'UNLABELLED'}
-                  </td>
-                  <td style={cellStyle}>
-                    <LabelForm id={r.id} label={r.label}
-                      onUpdate={handleLabelUpdate}
-                      onDelete={handleDelete}
-                    />
-                  </td>
-                </tr>
-              )
-            })
-          }
-        </tbody>
-      </table>
-      <Flex gap="4px">
-        {page > 0 ? <NavButton label="Prev" page={page - 1}/> : null}
-        <NavButton label="Next" page={page + 1} unlabelled={unlabelled} />
-        <button onClick={updateAll}>Update all</button>
-      </Flex>
-    </Flex>
+    </>
   )
 }
