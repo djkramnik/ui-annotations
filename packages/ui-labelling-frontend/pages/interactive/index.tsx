@@ -4,6 +4,7 @@ import { batchUpdateInteractive, deleteInteractive, getInteractiveAnalytics, get
 import { toImgSrc } from "../../utils/img"
 import { InteractiveLabel } from "ui-labelling-shared"
 import { Flex } from "../../components/flex"
+import Link from "next/link"
 
 const interactiveLabels = Object.values(InteractiveLabel)
 
@@ -196,9 +197,16 @@ export default function InteractiveLabellingPage() {
         <table style={{ tableLayout: 'fixed', border: '1px solid black' }}>
           <thead>
             <tr>
-              <th style={{ width: '400px', ...cellStyle}}>Image</th>
-              <th style={cellStyle}>Label</th>
-              <th style={cellStyle}>Update</th>
+              <th style={{ width: '300px', ...cellStyle}}>Image</th>
+              <th style={{
+                ...cellStyle,
+                width: '100px'
+              }}>Label</th>
+              <th style={{
+                ...cellStyle,
+                width: '100px'
+              }}>Update</th>
+              <th style={{ width: '100px'}}>View</th>
             </tr>
           </thead>
           <tbody>
@@ -217,6 +225,11 @@ export default function InteractiveLabellingPage() {
                         onUpdate={handleLabelUpdate}
                         onDelete={handleDelete}
                       />
+                    </td>
+                    <td>
+                      <Link href={`/interactive/${r.annotationId}?boxId=${r.true_id}`} target="_blank">
+                        View
+                      </Link>
                     </td>
                   </tr>
                 )
