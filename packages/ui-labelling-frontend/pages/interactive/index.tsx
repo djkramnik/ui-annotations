@@ -174,7 +174,7 @@ export default function InteractiveLabellingPage() {
                 </thead>
                 <tbody>
                   {
-                    analytics.map(a => {
+                    analytics.sort((a, b) => b.count - a.count).map(a => {
                       return (
                         <tr key={a.label ?? 'null'}>
                           <td style={borderStyle}>{a.label ?? 'null'}</td>
