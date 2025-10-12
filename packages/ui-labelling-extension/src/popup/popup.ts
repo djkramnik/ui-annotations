@@ -1,5 +1,9 @@
 import { AnnotationPayload, AnnotationRequest } from 'ui-labelling-shared'
-import { PredictResponse, ExtensionMessage, YoloPredictResponse } from '../types'
+import {
+  PredictResponse,
+  ExtensionMessage,
+  YoloPredictResponse,
+} from '../types'
 import { snooze } from '../util'
 
 function getMessagePromise(message: string): Promise<void> {
@@ -29,16 +33,16 @@ document.addEventListener('DOMContentLoaded', () => {
     predictBtn,
     textRegionBtn,
     interactiveBtn,
-    predictBtnDeux
+    predictBtnDeux,
   ]
 
-  if (btns.some(b => !b)) {
+  if (btns.some((b) => !b)) {
     console.error('cannot get reference to popup button(s)!')
     return
   }
 
   function disableAllButtons() {
-    btns.forEach(b => b?.setAttribute('disabled', 'disabled'))
+    btns.forEach((b) => b?.setAttribute('disabled', 'disabled'))
   }
 
   interactiveBtn!.addEventListener('click', async () => {
@@ -63,30 +67,27 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image_base64: b64, conf: 0.1, imgsz: 1024 }),
       })
-      const {
-        detections,
-        width,
-        height,
-      } = (await res.json()) as YoloPredictResponse
+      const { detections, width, height } =
+        (await res.json()) as YoloPredictResponse
       console.log('response one', detections.length)
       const res2 = await fetch('http://localhost:4000/api/screenshot/clips', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           noScale: true, // important!
-          rects: detections.map(d => {
-            const [x1,y1,x2,y2] = d.box
+          rects: detections.map((d) => {
+            const [x1, y1, x2, y2] = d.box
             return {
               x: x1,
               y: y1,
               width: x2 - x1,
-              height: y2 - y1
+              height: y2 - y1,
             }
           }),
           vw: -1, // this is fine because we are not scaling
           vh: -1,
           fullScreen: b64,
-        })
+        }),
       })
 
       const { clips } = (await res2.json()) as { clips: string[] }
@@ -95,23 +96,21 @@ document.addEventListener('DOMContentLoaded', () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          clips
-        })
+          clips,
+        }),
       })
-      const { results } = (await res3.json()) as { results: Array<{text: string, score: number }> }
+      const { results } = (await res3.json()) as {
+        results: Array<{ text: string; score: number }>
+      }
 
       const enhancedDetections = detections.map((d, i) => {
-            const {text, score} = results[i] ?? {}
-            return {
-              ...d,
-              text: text
-                ? `${text}:${score.toFixed(2)}`
-                : 'error'
-            }
-          })
-      console.log('response 3',
-        enhancedDetections
-      )
+        const { text, score } = results[i] ?? {}
+        return {
+          ...d,
+          text: text ? `${text}:${score.toFixed(2)}` : 'error',
+        }
+      })
+      console.log('response 3', enhancedDetections)
 
       sendMessage(ExtensionMessage.predict, {
         content: {
@@ -137,11 +136,8 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image_base64: b64, conf: 0.5, imgsz: 1024 }),
       })
-      const {
-        detections,
-        width,
-        height,
-      } = (await res.json()) as YoloPredictResponse
+      const { detections, width, height } =
+        (await res.json()) as YoloPredictResponse
 
       sendMessage(ExtensionMessage.predict, {
         content: {
@@ -151,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
       })
       // window.close()
-    } catch(e) {
+    } catch (e) {
       console.error('predict failed wtf', e)
     }
   })
@@ -264,7 +260,9 @@ function sendMessage(
 async function getExportPayload(): Promise<AnnotationRequest> {
   const obj = await chrome.storage.local.get(['annotations', 'meta'])
 
-  const annotations = JSON.parse(obj['annotations']) as AnnotationPayload['annotations']
+  const annotations = JSON.parse(
+    obj['annotations'],
+  ) as AnnotationPayload['annotations']
   const meta = obj['meta'] as {
     url: string
     date: string
@@ -280,11 +278,11 @@ async function getExportPayload(): Promise<AnnotationRequest> {
   const base64Image = screenshotUrl.split(';base64,')[1]
 
   return {
-    annotations: annotations.map(a => ({
+    annotations: annotations.map((a) => ({
       id: a.id,
       label: a.label,
       rect: a.rect,
-      textContent: a.textContent
+      textContent: a.textContent,
     })),
     screenshot: base64Image,
     ...meta,

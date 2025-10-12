@@ -12,9 +12,8 @@ module.exports = (_, argv) => ({
   /** One entry per extension script you care about. */
   entry: {
     contentScript: path.resolve(__dirname, 'src/contentScript.ts'),
-    'popup/popup': path.resolve(__dirname, 'src/popup/popup.ts')
-    // popup:   path.resolve(__dirname, 'src/popup.tsx'),
-    // background: path.resolve(__dirname, 'src/background.ts'),
+    'popup/popup': path.resolve(__dirname, 'src/popup/popup.ts'),
+    background: path.resolve(__dirname, 'src/background.ts'),
   },
 
   output: {

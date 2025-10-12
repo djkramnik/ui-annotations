@@ -1092,6 +1092,9 @@ import {
     )
   })
 
+
+  // adhoc screenshot logic.  take a screenshot at any time before the extension is otherwise initialized
+  // allows for taking screenshots of special state (focus / hover etc)
   let keysPressed: {
     q: boolean
     w: boolean
@@ -1114,6 +1117,7 @@ import {
   // when you have q and w keys pressed simultaneously
   // this listener is removed once any popup button is clicked
   async function takeScreenshot(event: KeyboardEvent) {
+    event.preventDefault()
     if (event.key !== 'q' && event.key !== 'w') {
       return
     }
@@ -1130,8 +1134,9 @@ import {
     if (!Object.values(keysPressed).every(v => v)) {
       return
     }
-
-    const meta = {
+    window.alert('it aint me')
+    const payload = {
+      annotations: [],
       url: window.location.href,
       date: new Date().toLocaleString('en-US', {
         timeZone: 'America/New_York',
@@ -1143,43 +1148,22 @@ import {
       },
       tag: 'adhoc_screen',
     }
-
-    const screenshotUrl = await chrome.tabs.captureVisibleTab()
-    const base64Image = screenshotUrl.split(';base64,')[1]
-
-    const payload = {
-      annotations: [],
-      screenshot: base64Image,
-      ...meta,
-    }
-
-    try {
-      fetch('http://localhost:4000/api/annotation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      }).then((response) => {
-        if (response.ok) {
-          window.alert('screenshot exported')
-          return
-        }
-        throw `Bad status: ${response.status}`
-      })
-    } catch (e) {
-      window.alert('screenshot failed')
-      console.error('could not export', e)
-    }
+    chrome.runtime.sendMessage({
+      content: payload,
+      type: 'adhoc_screen'
+    })
   }
 
-  window.addEventListener('keydown', takeScreenshot)
-  window.addEventListener('keyup', handleKeyup)
+  window.addEventListener('keydown', takeScreenshot, true)
+  window.addEventListener('keyup', handleKeyup, true)
+
+  // end ad hoc screenshot logic
 
   chrome.runtime.onMessage.addListener(
     (message: { type?: string; content: null | Record<string, any> }) => {
-      window.removeEventListener('keydown', takeScreenshot)
-      window.removeEventListener('keyup', handleKeyup)
+      // remove
+      window.removeEventListener('keydown', takeScreenshot, true)
+      window.removeEventListener('keyup', handleKeyup, true)
 
       log.info('content script received message', message)
       if (typeof message?.type !== 'string') {
