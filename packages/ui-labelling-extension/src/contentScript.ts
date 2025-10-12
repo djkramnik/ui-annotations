@@ -1,4 +1,10 @@
-import { AnnotationLabel, annotationLabels, gatherInteractiveRegions, gatherTextRegions, isInViewport } from 'ui-labelling-shared'
+import {
+  AnnotationLabel,
+  annotationLabels,
+  gatherInteractiveRegions,
+  gatherTextRegions,
+  isInViewport,
+} from 'ui-labelling-shared'
 import {
   _GlobalState,
   Annotation,
@@ -33,9 +39,16 @@ import {
   uuidv4,
 } from './util'
 import { findSimilarUiAsync } from './find-similar-ui'
-import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSiblingsWithShadow, isInShadowRoot, normalizeForNav } from './navigation';
+import {
+  deepElementFromPoint,
+  getChildrenWithShadow,
+  getParentWithShadow,
+  getSiblingsWithShadow,
+  isInShadowRoot,
+  normalizeForNav,
+} from './navigation'
 
-(function () {
+;(function () {
   let addKeyDownListener: (listener: (event: KeyboardEvent) => void) => void
   let removeKeyDownListener: (listener: (event: KeyboardEvent) => void) => void
 
@@ -119,7 +132,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
           showToast({
             type: 'error',
             message: 'No label selected',
-            overlay
+            overlay,
           })
           return
         }
@@ -135,12 +148,12 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
           .concat(
             globals.currEl !== null
               ? {
-                id: uuidv4(),
-                ref: globals.currEl,
-                rect: globals.currEl.getBoundingClientRect(),
-                label: annotationSelect.value as AnnotationLabel,
-                useTextNode: globals.projectTextNode,
-              }
+                  id: uuidv4(),
+                  ref: globals.currEl,
+                  rect: globals.currEl.getBoundingClientRect(),
+                  label: annotationSelect.value as AnnotationLabel,
+                  useTextNode: globals.projectTextNode,
+                }
               : [],
           )
 
@@ -282,11 +295,11 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
             removeRects()
             globals.projections = []
             globals.projectTextNode = false
-              ; (
-                projectionForm.querySelector(
-                  '#usetextnodeprojection_cb',
-                ) as HTMLInputElement
-              ).checked = false // beyond good and evil
+            ;(
+              projectionForm.querySelector(
+                '#usetextnodeprojection_cb',
+              ) as HTMLInputElement
+            ).checked = false // beyond good and evil
             overlay.addEventListener('mousedown', _handleMouseWrap)
             log.info('added mousedown listener')
           } else if (value === 'projection') {
@@ -317,10 +330,18 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
             annotationList.style.display = 'initial'
             populateAnnotationList({
               container: annotationListInner,
-              handler: (annotation: Annotation, action: 'select' | 'remove') => {
-                const element = getOverlay(globals)!.querySelector('#show_annotation_' + annotation.id) as HTMLElement
+              handler: (
+                annotation: Annotation,
+                action: 'select' | 'remove',
+              ) => {
+                const element = getOverlay(globals)!.querySelector(
+                  '#show_annotation_' + annotation.id,
+                ) as HTMLElement
                 if (!element) {
-                  log.warn('could not find element from annotation list', annotation)
+                  log.warn(
+                    'could not find element from annotation list',
+                    annotation,
+                  )
                   return
                 }
                 switch (action) {
@@ -332,7 +353,8 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
                     element.style.border = `2px solid red`
                     // in three seconds abruptly change back
                     window.setTimeout(() => {
-                      element.style.border = `2px solid` + annotationLabels[annotation.label]
+                      element.style.border =
+                        `2px solid` + annotationLabels[annotation.label]
                     }, 3000)
                     break
                   case 'remove':
@@ -345,7 +367,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
                     break
                 }
               },
-              annotations: globals.annotations
+              annotations: globals.annotations,
             })
 
             globals.annotations.forEach((anno) => {
@@ -360,7 +382,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
                 )
                 // fragile
                 removeIcon?.parentElement?.remove()
-              }).then(svg => {
+              }).then((svg) => {
                 removeIcon = svg
                 drawRect({
                   id: 'show_annotation_' + id,
@@ -483,7 +505,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
             showToast({
               type: 'success',
               message: 'Preview Mode. Press any key to end preview',
-              overlay
+              overlay,
             })
             addKeyDownListener(function endPreview() {
               form.style.display = 'initial'
@@ -569,8 +591,8 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
     }
 
     function removeRects(selector: string = '[id*="candidate_annotation_"]') {
-      Array.from(getOverlay(globals)!.querySelectorAll(selector)).forEach((el) =>
-        el.remove(),
+      Array.from(getOverlay(globals)!.querySelectorAll(selector)).forEach(
+        (el) => el.remove(),
       )
     }
 
@@ -581,7 +603,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
       id,
       child,
     }: {
-      bbox: DOMRect,
+      bbox: DOMRect
       parent: HTMLElement
       styles?: Partial<Record<keyof CSSStyleDeclaration, string>>
       id?: string
@@ -675,9 +697,12 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
         // arrow left
         case 'j':
           if (!parent || currIndex === -1) {
-            log.warn('arrowleft', parent
-              ? 'could not find current node among children'
-              : 'cannot find parent node')
+            log.warn(
+              'arrowleft',
+              parent
+                ? 'could not find current node among children'
+                : 'cannot find parent node',
+            )
             break
           }
           if (thisGeneration.length < 2) {
@@ -693,9 +718,12 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
         // arrow right
         case 'l':
           if (!parent || currIndex === -1) {
-            log.warn('arrowright', parent
-              ? 'could not find curr node among children'
-              : 'cannot find parent node')
+            log.warn(
+              'arrowright',
+              parent
+                ? 'could not find curr node among children'
+                : 'cannot find parent node',
+            )
             break
           }
           if (thisGeneration.length < 2) {
@@ -710,12 +738,11 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
           break
         // arrow up
         case 'i':
-          if (
-            !parent || parent === document.body
-          ) {
-            log.warn('arrowup', parent
-              ? 'parent is document body'
-              : 'no parent node')
+          if (!parent || parent === document.body) {
+            log.warn(
+              'arrowup',
+              parent ? 'parent is document body' : 'no parent node',
+            )
             break
           }
 
@@ -755,9 +782,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
 
     // SO CALLED UTILS
 
-    function traverseUp(
-      el: HTMLElement,
-    ): HTMLElement | null {
+    function traverseUp(el: HTMLElement): HTMLElement | null {
       if (el === document.body) {
         return null
       }
@@ -768,9 +793,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
       return parent
     }
 
-    function traverseDown(
-      el: HTMLElement,
-    ): HTMLElement | null {
+    function traverseDown(el: HTMLElement): HTMLElement | null {
       if (el.children.length < 1) {
         return null
       }
@@ -785,7 +808,7 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
     type,
     message,
     persist,
-    overlay
+    overlay,
   }: {
     overlay: HTMLElement
     type: 'error' | 'success'
@@ -883,12 +906,16 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
     text?: string
   }
 
-  function scaleYoloPreds(data: YoloPredictResponse, vw: number, vh: number): ScaledYoloPred[] {
+  function scaleYoloPreds(
+    data: YoloPredictResponse,
+    vw: number,
+    vh: number,
+  ): ScaledYoloPred[] {
     const { width, height, detections } = data
     const sx = vw / width
     const sy = vh / height
 
-    const scaledDetections = detections.map(d => ({
+    const scaledDetections = detections.map((d) => ({
       ...d,
       box: d.box.map((n, i) => n * (i % 2 ? sy : sx)) as XyXy,
     }))
@@ -898,18 +925,22 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
         x: box[0],
         y: box[1],
         width: box[2] - box[0],
-        height: box[3] - box[1]
+        height: box[3] - box[1],
       },
       conf,
       label,
-      text
+      text,
     }))
   }
 
   function showYoloPredictions(predictions: YoloPredictResponse) {
     console.log('ho predictions', predictions)
     // scale the yolo detections
-    const scaledPreds = scaleYoloPreds(predictions, window.innerWidth, window.innerHeight)
+    const scaledPreds = scaleYoloPreds(
+      predictions,
+      window.innerWidth,
+      window.innerHeight,
+    )
     const existingOverlay = document.getElementById('prediction-viewer')
     if (existingOverlay) {
       existingOverlay.remove()
@@ -925,42 +956,44 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
     overlay.style.zIndex = '999666999' // obscene
 
     scaledPreds.forEach(({ rect, conf, text }) => {
-      const el = document.createElement("div");
+      const el = document.createElement('div')
       Object.assign(el.style, {
-        position: "absolute",
+        position: 'absolute',
         left: `${rect.x}px`,
         top: `${rect.y}px`,
         width: `${rect.width}px`,
         height: `${rect.height}px`,
-        border: "2px solid #00ff00",
-        boxSizing: "border-box",
-        background: "rgba(0,255,0,0.10)",
-        pointerEvents: "none",
-      });
-      const label = document.createElement("div");
+        border: '2px solid #00ff00',
+        boxSizing: 'border-box',
+        background: 'rgba(0,255,0,0.10)',
+        pointerEvents: 'none',
+      })
+      const label = document.createElement('div')
       label.textContent = text ? text : `${conf.toFixed(2)}`
       Object.assign(label.style, {
-        position: "absolute",
-        left: "0",
-        top: "-18px",
-        font: "12px/1.2 system-ui, sans-serif",
-        color: "#fff",
-        background: "rgba(0,0,0,0.7)",
-        padding: "1px 4px",
-        borderRadius: "3px",
-        pointerEvents: "none",
-        whiteSpace: "nowrap",
-      });
-      el.appendChild(label);
-      overlay!.appendChild(el);
+        position: 'absolute',
+        left: '0',
+        top: '-18px',
+        font: '12px/1.2 system-ui, sans-serif',
+        color: '#fff',
+        background: 'rgba(0,0,0,0.7)',
+        padding: '1px 4px',
+        borderRadius: '3px',
+        pointerEvents: 'none',
+        whiteSpace: 'nowrap',
+      })
+      el.appendChild(label)
+      overlay!.appendChild(el)
     })
     document.body.appendChild(overlay)
   }
 
-  function showPredictionsD2(prediction: Pick<PredictResponse, 'boxes' | 'class_names'> & {
-    imgW: number
-    imgH: number
-  }) {
+  function showPredictionsD2(
+    prediction: Pick<PredictResponse, 'boxes' | 'class_names'> & {
+      imgW: number
+      imgH: number
+    },
+  ) {
     console.log('very exciting to show this prediction!!!')
     const { boxes, class_names, imgW, imgH } = prediction
     const existingOverlay = document.getElementById('prediction-viewer')
@@ -977,49 +1010,49 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
     overlay.style.left = '0'
     overlay.style.zIndex = '999666999' // obscene
 
-    const viewportCssW = window.innerWidth;
-    const viewportCssH = window.innerHeight;
-    const scaleX = imgW / viewportCssW;
-    const scaleY = imgH / viewportCssH;
+    const viewportCssW = window.innerWidth
+    const viewportCssH = window.innerHeight
+    const scaleX = imgW / viewportCssW
+    const scaleY = imgH / viewportCssH
 
     boxes.forEach((b: number[], i: number) => {
-      const [x1, y1, x2, y2] = b;
-      const left = x1 / scaleX;
-      const top = y1 / scaleY;
-      const width = (x2 - x1) / scaleX;
-      const height = (y2 - y1) / scaleY;
+      const [x1, y1, x2, y2] = b
+      const left = x1 / scaleX
+      const top = y1 / scaleY
+      const width = (x2 - x1) / scaleX
+      const height = (y2 - y1) / scaleY
 
-      const el = document.createElement("div");
+      const el = document.createElement('div')
       Object.assign(el.style, {
-        position: "absolute",
+        position: 'absolute',
         left: `${left}px`,
         top: `${top}px`,
         width: `${width}px`,
         height: `${height}px`,
-        border: "2px solid #00ff00",
-        boxSizing: "border-box",
-        background: "rgba(0,255,0,0.10)",
-        pointerEvents: "none",
-      });
+        border: '2px solid #00ff00',
+        boxSizing: 'border-box',
+        background: 'rgba(0,255,0,0.10)',
+        pointerEvents: 'none',
+      })
 
       // label
-      const label = document.createElement("div");
-      label.textContent = `${class_names?.[i] ?? ""}`.trim();
+      const label = document.createElement('div')
+      label.textContent = `${class_names?.[i] ?? ''}`.trim()
       Object.assign(label.style, {
-        position: "absolute",
-        left: "0",
-        top: "-18px",
-        font: "12px/1.2 system-ui, sans-serif",
-        color: "#fff",
-        background: "rgba(0,0,0,0.7)",
-        padding: "1px 4px",
-        borderRadius: "3px",
-        pointerEvents: "none",
-        whiteSpace: "nowrap",
-      });
-      el.appendChild(label);
+        position: 'absolute',
+        left: '0',
+        top: '-18px',
+        font: '12px/1.2 system-ui, sans-serif',
+        color: '#fff',
+        background: 'rgba(0,0,0,0.7)',
+        padding: '1px 4px',
+        borderRadius: '3px',
+        pointerEvents: 'none',
+        whiteSpace: 'nowrap',
+      })
+      el.appendChild(label)
 
-      overlay!.appendChild(el);
+      overlay!.appendChild(el)
     })
 
     document.body.appendChild(overlay)
@@ -1029,227 +1062,297 @@ import { deepElementFromPoint, getChildrenWithShadow, getParentWithShadow, getSi
   }
 
   let globalsRef: null | GlobalState = null
-  const keyDownController = getSelfishKeyDown(
-    function omitHandling(e: KeyboardEvent) {
-      // if the active / focused element is within the shadow dom, document.activeElement will only return the host
-      const activeEl = getDeepActiveElement(document)
 
-      if (!activeEl) {
-        return false
-      }
-      const shadowMount = document.getElementById(shadowId)
-      if (!(shadowMount?.shadowRoot)) {
-        console.error('could not get a reference to our own shadow root smh')
-        return false
-      }
-      if (!isInShadowRoot(activeEl, shadowMount.shadowRoot)) {
-        return false
-      }
-      console.log('so this element is guaranteed to be in our shadow root huh', activeEl)
-      // we don't want our keydown handlers invoked if the focus is on a form element
-      return activeEl.tagName === 'INPUT' ||
-        activeEl.tagName === 'TEXTAREA' ||
-        (activeEl as HTMLElement).isContentEditable
+  const keyDownController = getSelfishKeyDown(function omitHandling(
+    e: KeyboardEvent,
+  ) {
+    // if the active / focused element is within the shadow dom, document.activeElement will only return the host
+    const activeEl = getDeepActiveElement(document)
+
+    if (!activeEl) {
+      return false
     }
-  )
-  chrome.runtime.onMessage.addListener((message: { type?: string, content: null | Record<string, any> }) => {
-    log.info('content script received message', message)
-    if (typeof message?.type !== 'string') {
-      log.error('Could not parse runtime message', message)
+    const shadowMount = document.getElementById(shadowId)
+    if (!shadowMount?.shadowRoot) {
+      console.error('could not get a reference to our own shadow root smh')
+      return false
+    }
+    if (!isInShadowRoot(activeEl, shadowMount.shadowRoot)) {
+      return false
+    }
+    console.log(
+      'so this element is guaranteed to be in our shadow root huh',
+      activeEl,
+    )
+    // we don't want our keydown handlers invoked if the focus is on a form element
+    return (
+      activeEl.tagName === 'INPUT' ||
+      activeEl.tagName === 'TEXTAREA' ||
+      (activeEl as HTMLElement).isContentEditable
+    )
+  })
+
+  // prior to any popup button being clicked, create this humble keydown listener that takes a screenshot
+  // when you hit the s key
+  // this goes away until refresh once any popup button is clicked
+  async function takeScreenshot(event: KeyboardEvent) {
+    if (event.key !== 's') {
       return
     }
 
-    switch (message.type) {
-      // wet code.  this can be dryed out alongside its gather text twin
-      case ExtensionMessage.gatherInteractiveRegions:
-        console.log('GATHER INTERACTIVE REGIONS')
-         ;(async () => {
-          let interactiveBoxes: DOMRect[] = []
-          for await (const chunk of gatherInteractiveRegions({ batchSize: 50 })) {
-            if (Array.isArray(chunk)) {
-              console.log("Batch size:", chunk.length);
-              interactiveBoxes = interactiveBoxes.concat(chunk)
-            } else {
-              console.warn("Unknown chunk type:", chunk);
-            }
-          }
-
-          for (const r of interactiveBoxes) {
-            const div = document.createElement("div");
-            div.className = "interactive_annotation"
-            Object.assign(div.style, {
-              position: "fixed",
-              left: `${r.left}px`,
-              top: `${r.top}px`,
-              width: `${r.width}px`,
-              height: `${r.height}px`,
-              outline: "1px solid red",
-              pointerEvents: "none",
-              zIndex: "2147483647",
-            });
-            document.documentElement.appendChild(div);
-          }
-
-          chrome.storage.local.set({
-            [StorageKeys.meta]: {
-              url: window.location.href,
-              date: new Date().toLocaleString('en-US', {
-                timeZone: 'America/New_York',
-              }),
-              window: {
-                scrollY: window.scrollY,
-                width: window.innerWidth,
-                height: window.innerHeight,
-              },
-              tag: 'interactive'
-            },
-          })
-
-          chrome.storage.local.set({
-            [StorageKeys.annotations]: JSON.stringify(
-              interactiveBoxes.map(r => ({
-                id: uuidv4(),
-                ref: null, // not a proper annotation but we discard this anyway
-                rect: r,
-                label: AnnotationLabel.interactive
-              }))
-            ),
-          })
-
-        })()
-        break
-      // you shouldn't click Gather Text (or interactive) in conjunction with anything else.
-      // the spaghetti is now my master
-      // so basically you navigate to page, click gather text, export, and then end.  trying this
-      // in conjunction with start or vice versa is unpredictable but almost certainly will lead to errors
-      case ExtensionMessage.gatherTextRegions:
-        console.log('GATHERING TEXT')
-        ;(async () => {
-          let textRegionBoxes: DOMRect[] = []
-          for await (const proposals of gatherTextRegions({ batchSize: 50 })) {
-            if (Array.isArray(proposals)) {
-              console.log("Batch size:", proposals.length);
-              textRegionBoxes = textRegionBoxes.concat(proposals.map(p => p.rect))
-            } else {
-              console.warn("Unknown chunk type:", proposals);
-            }
-          }
-
-          for (const r of textRegionBoxes) {
-            const bb = r; // DOMRectReadOnly
-            const div = document.createElement("div");
-            div.className = "text_region_annotation"
-            Object.assign(div.style, {
-              position: "fixed",
-              left: `${bb.left}px`,
-              top: `${bb.top}px`,
-              width: `${bb.width}px`,
-              height: `${bb.height}px`,
-              outline: "1px solid red",
-              pointerEvents: "none",
-              zIndex: "2147483647",
-            });
-            document.documentElement.appendChild(div);
-          }
-
-          chrome.storage.local.set({
-            [StorageKeys.meta]: {
-              url: window.location.href,
-              date: new Date().toLocaleString('en-US', {
-                timeZone: 'America/New_York',
-              }),
-              window: {
-                scrollY: window.scrollY,
-                width: window.innerWidth,
-                height: window.innerHeight,
-              },
-              tag: 'textregion'
-            },
-          })
-
-          chrome.storage.local.set({
-            [StorageKeys.annotations]: JSON.stringify(
-              textRegionBoxes.map(r => ({
-                id: uuidv4(),
-                ref: null, // not a proper annotation but we discard this anyway
-                rect: r,
-                label: AnnotationLabel.textRegion
-              }))
-            ),
-          })
-
-        })()
-        break
-      case ExtensionMessage.predict:
-        console.log('predict event!')
-        if (message.content === null) {
-          log.warn('impossible state; predict event with no data')
-          break
-        }
-        log.info('PREDICT JUST ARRIVED:', message.content)
-        showYoloPredictions(message.content as any)
-        window.addEventListener('keypress', removePredictions)
-        break
-      case ExtensionMessage.exportFailed:
-        if (globalsRef === null) {
-          log.warn('how could we have no globals ref after export')
-          return
-        }
-        showToast({
-          type: 'error',
-          message: 'EXPORT FAILED',
-          overlay: getOverlay(globalsRef)!
-        })
-        break
-      case ExtensionMessage.exportSuccess:
-        if (globalsRef === null) {
-          log.warn('how could we have no globals ref after export')
-          return
-        }
-        globalsRef.annotations = []
-        showToast({
-          type: 'success',
-          message: 'EXPORTED SUCCEEDED',
-          overlay: getOverlay(globalsRef)!
-        })
-        break
-      case ExtensionMessage.clean:
-        // clean up after textregion / interactive display before exporting
-        document.querySelectorAll('.text_region_annotation, .interactive_annotation')
-          .forEach(el => el.remove())
-        if (globalsRef === null) {
-          log.warn('request for clean up but we have no global state')
-          return
-        }
-        globalsRef.state = 'initial' // this will trigger a removal of all the decorations from the overlay
-        globalsRef.showAnnotations = false
-        break
-      case ExtensionMessage.turnOffExtension:
-        document.getElementById(shadowId)?.remove()
-        globalsRef = null
-        unlockScroll()
-        // stop event-blocking all the page listeners
-        keyDownController.removeThyself()
-        break
-      case ExtensionMessage.startMain:
-        removePredictions()
-        window.removeEventListener('keypress', removePredictions)
-        keyDownController.init()
-        keyDownController.removeAllListeners()
-        addKeyDownListener = keyDownController.addKeyDownListener
-        removeKeyDownListener = keyDownController.removeKeyDownListener
-        const mount = document.querySelector(shadowId)
-        if (mount) {
-          // TODO.  clean up here instead of running away
-          log.warn(
-            'request to run main but overlay already present on this page.',
-          )
-          return
-        }
-        globalsRef = main()
-
-        lockScroll()
-        break
+    const meta = {
+      url: window.location.href,
+      date: new Date().toLocaleString('en-US', {
+        timeZone: 'America/New_York',
+      }),
+      window: {
+        scrollY: window.scrollY,
+        width: window.innerWidth,
+        height: window.innerHeight,
+      },
+      tag: 'adhoc_screen',
     }
-  })
+
+    const screenshotUrl = await chrome.tabs.captureVisibleTab()
+    const base64Image = screenshotUrl.split(';base64,')[1]
+
+    const payload = {
+      annotations: [],
+      screenshot: base64Image,
+      ...meta,
+    }
+
+    try {
+      fetch('http://localhost:4000/api/annotation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      }).then((response) => {
+        if (response.ok) {
+          window.alert('screenshot exported')
+          return
+        }
+        throw `Bad status: ${response.status}`
+      })
+    } catch (e) {
+      window.alert('screenshot failed')
+      console.error('could not export', e)
+    }
+  }
+
+  window.addEventListener('keydown', takeScreenshot)
+
+  chrome.runtime.onMessage.addListener(
+    (message: { type?: string; content: null | Record<string, any> }) => {
+      window.removeEventListener('keydown', takeScreenshot)
+
+      log.info('content script received message', message)
+      if (typeof message?.type !== 'string') {
+        log.error('Could not parse runtime message', message)
+        return
+      }
+
+      switch (message.type) {
+        // wet code.  this can be dryed out alongside its gather text twin
+        case ExtensionMessage.gatherInteractiveRegions:
+          console.log('GATHER INTERACTIVE REGIONS')
+          ;(async () => {
+            let interactiveBoxes: DOMRect[] = []
+            for await (const chunk of gatherInteractiveRegions({
+              batchSize: 50,
+            })) {
+              if (Array.isArray(chunk)) {
+                console.log('Batch size:', chunk.length)
+                interactiveBoxes = interactiveBoxes.concat(chunk)
+              } else {
+                console.warn('Unknown chunk type:', chunk)
+              }
+            }
+
+            for (const r of interactiveBoxes) {
+              const div = document.createElement('div')
+              div.className = 'interactive_annotation'
+              Object.assign(div.style, {
+                position: 'fixed',
+                left: `${r.left}px`,
+                top: `${r.top}px`,
+                width: `${r.width}px`,
+                height: `${r.height}px`,
+                outline: '1px solid red',
+                pointerEvents: 'none',
+                zIndex: '2147483647',
+              })
+              document.documentElement.appendChild(div)
+            }
+
+            chrome.storage.local.set({
+              [StorageKeys.meta]: {
+                url: window.location.href,
+                date: new Date().toLocaleString('en-US', {
+                  timeZone: 'America/New_York',
+                }),
+                window: {
+                  scrollY: window.scrollY,
+                  width: window.innerWidth,
+                  height: window.innerHeight,
+                },
+                tag: 'interactive',
+              },
+            })
+
+            chrome.storage.local.set({
+              [StorageKeys.annotations]: JSON.stringify(
+                interactiveBoxes.map((r) => ({
+                  id: uuidv4(),
+                  ref: null, // not a proper annotation but we discard this anyway
+                  rect: r,
+                  label: AnnotationLabel.interactive,
+                })),
+              ),
+            })
+          })()
+          break
+        // you shouldn't click Gather Text (or interactive) in conjunction with anything else.
+        // the spaghetti is now my master
+        // so basically you navigate to page, click gather text, export, and then end.  trying this
+        // in conjunction with start or vice versa is unpredictable but almost certainly will lead to errors
+        case ExtensionMessage.gatherTextRegions:
+          console.log('GATHERING TEXT')
+          ;(async () => {
+            let textRegionBoxes: DOMRect[] = []
+            for await (const proposals of gatherTextRegions({
+              batchSize: 50,
+            })) {
+              if (Array.isArray(proposals)) {
+                console.log('Batch size:', proposals.length)
+                textRegionBoxes = textRegionBoxes.concat(
+                  proposals.map((p) => p.rect),
+                )
+              } else {
+                console.warn('Unknown chunk type:', proposals)
+              }
+            }
+
+            for (const r of textRegionBoxes) {
+              const bb = r // DOMRectReadOnly
+              const div = document.createElement('div')
+              div.className = 'text_region_annotation'
+              Object.assign(div.style, {
+                position: 'fixed',
+                left: `${bb.left}px`,
+                top: `${bb.top}px`,
+                width: `${bb.width}px`,
+                height: `${bb.height}px`,
+                outline: '1px solid red',
+                pointerEvents: 'none',
+                zIndex: '2147483647',
+              })
+              document.documentElement.appendChild(div)
+            }
+
+            chrome.storage.local.set({
+              [StorageKeys.meta]: {
+                url: window.location.href,
+                date: new Date().toLocaleString('en-US', {
+                  timeZone: 'America/New_York',
+                }),
+                window: {
+                  scrollY: window.scrollY,
+                  width: window.innerWidth,
+                  height: window.innerHeight,
+                },
+                tag: 'textregion',
+              },
+            })
+
+            chrome.storage.local.set({
+              [StorageKeys.annotations]: JSON.stringify(
+                textRegionBoxes.map((r) => ({
+                  id: uuidv4(),
+                  ref: null, // not a proper annotation but we discard this anyway
+                  rect: r,
+                  label: AnnotationLabel.textRegion,
+                })),
+              ),
+            })
+          })()
+          break
+        case ExtensionMessage.predict:
+          console.log('predict event!')
+          if (message.content === null) {
+            log.warn('impossible state; predict event with no data')
+            break
+          }
+          log.info('PREDICT JUST ARRIVED:', message.content)
+          showYoloPredictions(message.content as any)
+          window.addEventListener('keypress', removePredictions)
+          break
+        case ExtensionMessage.exportFailed:
+          if (globalsRef === null) {
+            log.warn('how could we have no globals ref after export')
+            return
+          }
+          showToast({
+            type: 'error',
+            message: 'EXPORT FAILED',
+            overlay: getOverlay(globalsRef)!,
+          })
+          break
+        case ExtensionMessage.exportSuccess:
+          if (globalsRef === null) {
+            log.warn('how could we have no globals ref after export')
+            return
+          }
+          globalsRef.annotations = []
+          showToast({
+            type: 'success',
+            message: 'EXPORTED SUCCEEDED',
+            overlay: getOverlay(globalsRef)!,
+          })
+          break
+        case ExtensionMessage.clean:
+          // clean up after textregion / interactive display before exporting
+          document
+            .querySelectorAll(
+              '.text_region_annotation, .interactive_annotation',
+            )
+            .forEach((el) => el.remove())
+          if (globalsRef === null) {
+            log.warn('request for clean up but we have no global state')
+            return
+          }
+          globalsRef.state = 'initial' // this will trigger a removal of all the decorations from the overlay
+          globalsRef.showAnnotations = false
+          break
+        case ExtensionMessage.turnOffExtension:
+          document.getElementById(shadowId)?.remove()
+          globalsRef = null
+          unlockScroll()
+          // stop event-blocking all the page listeners
+          keyDownController.removeThyself()
+          break
+        case ExtensionMessage.startMain:
+          removePredictions()
+          window.removeEventListener('keypress', removePredictions)
+          keyDownController.init()
+          keyDownController.removeAllListeners()
+          addKeyDownListener = keyDownController.addKeyDownListener
+          removeKeyDownListener = keyDownController.removeKeyDownListener
+          const mount = document.querySelector(shadowId)
+          if (mount) {
+            // TODO.  clean up here instead of running away
+            log.warn(
+              'request to run main but overlay already present on this page.',
+            )
+            return
+          }
+          globalsRef = main()
+
+          lockScroll()
+          break
+      }
+    },
+  )
 })()
