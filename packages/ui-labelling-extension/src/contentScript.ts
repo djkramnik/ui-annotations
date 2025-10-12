@@ -1092,11 +1092,42 @@ import {
     )
   })
 
+  let keysPressed: {
+    q: boolean
+    w: boolean
+  } = { q: false, w: false }
+
+  async function handleKeyup(event: KeyboardEvent) {
+    switch(event.key) {
+      case 'q':
+        keysPressed.q = false
+        break
+      case 'w':
+        keysPressed.w = false
+        break
+      default:
+        break
+    }
+  }
+
   // prior to any popup button being clicked, create this humble keydown listener that takes a screenshot
-  // when you hit the s key
-  // this goes away until refresh once any popup button is clicked
+  // when you have q and w keys pressed simultaneously
+  // this listener is removed once any popup button is clicked
   async function takeScreenshot(event: KeyboardEvent) {
-    if (event.key !== 's') {
+    if (event.key !== 'q' && event.key !== 'w') {
+      return
+    }
+    switch(event.key) {
+      case 'q':
+        keysPressed.q = true
+        break
+      case 'w':
+        keysPressed.w = true
+        break
+    }
+
+    // only proceed if all the keys be pressed
+    if (!Object.values(keysPressed).every(v => v)) {
       return
     }
 
@@ -1143,10 +1174,12 @@ import {
   }
 
   window.addEventListener('keydown', takeScreenshot)
+  window.addEventListener('keyup', handleKeyup)
 
   chrome.runtime.onMessage.addListener(
     (message: { type?: string; content: null | Record<string, any> }) => {
       window.removeEventListener('keydown', takeScreenshot)
+      window.removeEventListener('keyup', handleKeyup)
 
       log.info('content script received message', message)
       if (typeof message?.type !== 'string') {
