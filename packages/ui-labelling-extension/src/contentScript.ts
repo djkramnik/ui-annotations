@@ -1134,7 +1134,6 @@ import {
     if (!Object.values(keysPressed).every(v => v)) {
       return
     }
-    window.alert('it aint me')
     const payload = {
       annotations: [],
       url: window.location.href,
@@ -1308,7 +1307,9 @@ import {
           break
         case ExtensionMessage.exportFailed:
           if (globalsRef === null) {
-            log.warn('how could we have no globals ref after export')
+            // log.warn('how could we have no globals ref after export')
+            // we can have no global refs after export now
+            window.alert('export failed')
             return
           }
           showToast({
@@ -1319,7 +1320,9 @@ import {
           break
         case ExtensionMessage.exportSuccess:
           if (globalsRef === null) {
-            log.warn('how could we have no globals ref after export')
+            // log.warn('how could we have no globals ref after export')
+            // we can have no global refs after export now
+            window.alert('export succeeded')
             return
           }
           globalsRef.annotations = []

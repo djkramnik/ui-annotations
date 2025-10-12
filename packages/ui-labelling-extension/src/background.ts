@@ -18,7 +18,6 @@ chrome.runtime.onMessage.addListener(
             }),
           }).then((response) => {
             if (response.ok) {
-              console.log('successful export', response)
               sendMessage(ExtensionMessage.exportSuccess)
               return
             }

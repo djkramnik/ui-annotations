@@ -6,12 +6,18 @@
   "action": {
     "default_popup": "popup/index.html"
   },
-  "background": { "service_worker": "background.js" },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
       "js": ["contentScript.js"]
     }
+  ],
+  "host_permissions": [
+    "<all_urls>"
   ],
   "web_accessible_resources": [
     {
@@ -19,5 +25,10 @@
       "matches": ["<all_urls>"]
     }
   ],
-  "permissions": ["activeTab", "storage", "downloads", "tabs"]
+  "permissions": [
+    "activeTab",
+    "storage",
+    "downloads",
+    "tabs"
+  ]
 }
