@@ -12,7 +12,7 @@ moar building
 
 1) * run interactive auto scraper
 
-* view per label (frontend)
+* add any time screenshot capability to extension as annotation with empty payload
 * list labels that have zero count
   * datepicker
   * filepicker
@@ -24,10 +24,7 @@ moar building
     * menuitem
   * missing? video
 
-* add any time screenshot capability to extension as annotation with empty payload
-
-
-* create synthetic element generator for label balancing..
+* create synthetic element generator for label balancing.. (must inflate everything to 3k... )
 
 * why so many bad extracts in write_interactive?
 * rewrite write_interactive to find missed annotations + get the failed extracts
