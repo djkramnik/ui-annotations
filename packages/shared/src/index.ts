@@ -27,6 +27,7 @@ export enum InteractiveLabel {
   textarea = 'textarea',
   datepicker = 'datepicker',
   filepicker = 'filepicker',
+  video = 'video',
   // nav
   tab = 'tab',
   pagination = 'pagination',

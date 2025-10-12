@@ -12,28 +12,36 @@ moar building
 
 1) * run interactive auto scraper
 
-* a url to view a single annotation on a screen
-* link from the labelling section to this view
-* complete labelling efforts
-* view per label
+* view per label (frontend)
+* list labels that have zero count
+  * datepicker
+  * filepicker
+  * problematic labels?
+    * tab
+    * thumbnail (image conflation)
+    * selectablecard
+    * accordion
+    * menuitem
+  * missing? video
+
+* add any time screenshot capability to extension as annotation with empty payload
+
+
+* create synthetic element generator for label balancing..
 
 * why so many bad extracts in write_interactive?
 * rewrite write_interactive to find missed annotations + get the failed extracts
-
 * why persistent bad scrape examples
 
-2) * create synthetic element generator for label balancing...
+2) * train ViT based classification model
 
-3) * train ViT based classification model
-
-4) * create synthetic composite data generator. have to use it on existing interactive label annotations that have granular labels on them, and prob filter out unknowns
+3) * create synthetic composite data generator. have to use it on existing interactive label annotations that have granular labels on them, and prob filter out unknowns
   * pull an annotation with interactive label. optionally with a condition that it has never been copied yet
   * select bounding boxes to swap components for
   * save the task to create the synthetic (task table)
   * a bridge table, parent, clone
   * a script to manually kick off uncompleted synthetic creation tasks pulled from the db
-
-5) special state screenshots
+4) special state screenshots
   * need a way to perhaps run some logic on the screen to focus certain elements
   * or to do things like close popups
   * can be generic and hopeful or targeted to the domain
@@ -41,7 +49,7 @@ moar building
 
 training
 ====
-6) * retrain interactive proposals model.. using additional data
+5) * retrain interactive proposals model.. using additional data
 
 * retrain text model.. using the additional data
 * given a screenshot, run all predictors.

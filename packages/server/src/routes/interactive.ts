@@ -140,6 +140,9 @@ interactiveRouter.get('/:id', async (req: Request, res: Response) => {
 // paginated findMany
 interactiveRouter.get('/', async (req: Request, res: Response) => {
   try {
+    const label = typeof req.query.label === 'string'
+      ? req.query.label
+      : undefined
     const pageQ = typeof req.query.page === 'string'
       ? req.query.page
       : '0'
@@ -163,20 +166,50 @@ interactiveRouter.get('/', async (req: Request, res: Response) => {
       return
     }
 
+    // just the where clause needs to be conditional
+    // but prisma types too complicated for me
+    const findTask = unlabelledOnly && !label
+      ? (
+        prisma.interactive.findMany({
+          where: {
+            label: { equals: null }
+          },
+          orderBy: { id: 'desc' },
+          skip:  page * pageSize, // page is 0 based index,
+          take: pageSize
+        })
+      )
+      : (
+        prisma.interactive.findMany({
+          ...(label ? {
+            where: { label }
+          }: {}),
+          orderBy: { id: 'desc' },
+          skip:  page * pageSize, // page is 0 based index,
+          take: pageSize
+        })
+      )
+
+    const countTask =
+      unlabelledOnly && !label
+        ? (
+          prisma.interactive.count({
+            ...(unlabelledOnly ? {
+              where: { label: { equals: null } }
+            } : undefined)
+          })
+        )
+        : (
+          prisma.interactive.count({
+            ...(label ? {
+              where: { label }
+            } : undefined)
+          })
+        )
+
     const [total, items] = await Promise.all([
-      prisma.interactive.count({
-        ...(unlabelledOnly ? {
-          where: { label: { equals: null } }
-        } : undefined)
-      }),
-      prisma.interactive.findMany({
-        ...(unlabelledOnly ? {
-          where: { label: { equals: null } }
-        } : undefined),
-        orderBy: { id: 'desc' },
-        skip:  page * pageSize, // page is 0 based index,
-        take: pageSize
-      }),
+      countTask,
+      findTask,
     ])
 
     res.status(200).send({
