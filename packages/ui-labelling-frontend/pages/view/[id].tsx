@@ -1,6 +1,9 @@
 import { useRouter } from 'next/router'
 import {
+  Dispatch,
   FormEvent,
+  SelectHTMLAttributes,
+  SetStateAction,
   useCallback,
   useEffect,
   useMemo,
@@ -11,6 +14,7 @@ import { Container } from '../../components/container'
 import { Flex } from '../../components/flex'
 import {
   annotationLabels,
+  serviceManualLabel,
   AnnotationPayload,
   Annotations,
   postProcessAdjacent,
@@ -34,6 +38,98 @@ import { useAdjustRect } from '../../hooks/adjust'
 import { adjustAnnotation } from '../../utils/adjust'
 import { useMode } from '../../hooks/mode'
 
+const NewAnnotationForm = ({
+  labels,
+  resetPageState,
+  setAnnotations,
+  pageState,
+}: {
+  labels: string[]
+  resetPageState: (
+    options?: Partial<{
+      restoreNoChange: boolean
+      updateOriginalAnnotations: boolean
+    }>,
+  ) => void
+  setAnnotations: Dispatch<SetStateAction<Annotations>>
+  pageState: {
+    mode: PageMode
+    toggleState: ToggleState | null
+    dangerState: DangerState | null
+    drawCandidate?: Rect
+    occludeCandidate?: Rect
+    currToggleIndex: number | null
+  }
+}) => {
+  const ref = useRef<HTMLSelectElement | null>(null)
+  useEffect(() => {
+    if (!ref.current) {
+      return
+    }
+    if (pageState.drawCandidate) {
+      ref.current.focus()
+    }
+  }, [pageState.drawCandidate])
+
+  const [currText, setCurrText] = useState<string>('')
+
+  return !pageState.drawCandidate ? null : (
+    <Popup handleClose={resetPageState}>
+      <form
+        onSubmit={(e: FormEvent<HTMLFormElement>) => {
+          e.preventDefault()
+          const select = e.currentTarget.elements.namedItem(
+            'label',
+          ) as HTMLSelectElement
+          setAnnotations((annotations) => ({
+            ...annotations,
+            payload: {
+              annotations: annotations.payload.annotations.concat({
+                id: String(new Date().getTime()), // I am baffled why I ever included this
+                label: select.value,
+                rect: pageState.drawCandidate,
+                ...(currText ? { textContent: currText } : {}),
+              }),
+            },
+          }))
+          resetPageState()
+        }}
+      >
+        <Flex dir="column" gap="12px">
+          <Flex>
+            <Flex dir="column">
+              <label htmlFor="label-select">Annotation Label</label>
+              <select ref={ref} id="label-select" name="label" required>
+                <option value="" disabled defaultValue="true">
+                  Select label
+                </option>
+                {labels.map((label) => {
+                  return (
+                    <option key={label} value={label}>
+                      {label}
+                    </option>
+                  )
+                })}
+              </select>
+              <textarea
+                name="textarea"
+                value={currText}
+                onChange={(e) => setCurrText(e.target.value)}
+              ></textarea>
+            </Flex>
+          </Flex>
+          <Flex gap="6px">
+            <button type="submit">submit</button>
+            <button type="button" onClick={() => resetPageState()}>
+              cancel
+            </button>
+          </Flex>
+        </Flex>
+      </form>
+    </Popup>
+  )
+}
+
 export default function AnnotationPage() {
   const originalAnnotations = useRef<AnnotationPayload['annotations'] | null>(
     null,
@@ -54,13 +150,13 @@ export default function AnnotationPage() {
         </button>
         <button
           id="prev-btn"
-          onClick={() => push('/view/' + (Number(String(query.id)) - 1))}
+          onClick={() => push('/view/' + (Number(String(query.id)) - 1) + (tag ? `?tag=${tag}` : ''))}
         >
           Prev
         </button>
         <button
           id="next-btn"
-          onClick={() => push('/view/' + (Number(query.id) + 1))}
+          onClick={() => push('/view/' + (Number(query.id) + 1) + (tag ? `?tag=${tag}` : ''))}
         >
           Next
         </button>
@@ -86,7 +182,7 @@ export default function AnnotationPage() {
     dangerState: null,
     currToggleIndex: null,
   })
-  const labels = useLabels()
+  const labels = useLabels(String(query.tag))
   const adjustment = useAdjustRect(
     typeof pageState.currToggleIndex === 'number'
       ? (annotations?.[pageState.currToggleIndex] ?? null)
@@ -121,99 +217,40 @@ export default function AnnotationPage() {
 
   const OcclusionForm = useMemo(() => {
     return () => {
-      return !pageState.occludeCandidate
-        ? null
-        : (
-          <Popup handleClose={resetPageState}>
-            <form onSubmit={async (e) => {
+      return !pageState.occludeCandidate ? null : (
+        <Popup handleClose={resetPageState}>
+          <form
+            onSubmit={async (e) => {
               e.preventDefault()
               // we are going to call the backend, it will save the update to db, and then we will update state with a new base64
               const { updatedScreen } = await occludeScreenshot(
                 Number(String(query.id)),
                 pageState.occludeCandidate,
               )
-              setUpdatedScreen(`data:image/png;base64,${Buffer.from(updatedScreen).toString('base64')}`)
-              resetPageState()
-            }}>
-              <h3>You sure you want to occlude these provocative pixels?</h3>
-              <Flex gap="6px">
-                <button type="submit">Yes</button>
-                <button type="button" onClick={() => resetPageState()}>
-                  Actually, NO
-                </button>
-              </Flex>
-            </form>
-          </Popup>
-        )
-    }
-  }, [pageState, resetPageState, setUpdatedScreen, query])
-
-  const NewAnnotationForm = useMemo(() => {
-    return () => {
-      const [currText, setCurrText] = useState<string>('')
-      return !pageState.drawCandidate ? null : (
-        <Popup handleClose={resetPageState}>
-          <form
-            onSubmit={(e: FormEvent<HTMLFormElement>) => {
-              e.preventDefault()
-              const select = e.currentTarget.elements.namedItem(
-                'label',
-              ) as HTMLSelectElement
-              setAnnotations((annotations) => ({
-                ...annotations,
-                payload: {
-                  annotations: annotations.payload.annotations.concat({
-                    id: String(new Date().getTime()), // I am baffled why I ever included this
-                    label: select.value,
-                    rect: pageState.drawCandidate,
-                    ...(currText ? { textContent: currText } : {}),
-                  }),
-                },
-              }))
+              setUpdatedScreen(
+                `data:image/png;base64,${Buffer.from(updatedScreen).toString('base64')}`,
+              )
               resetPageState()
             }}
           >
-            <Flex dir="column" gap="12px">
-              <Flex>
-                <Flex dir="column">
-                  <label htmlFor="label-select">Annotation Label</label>
-                  <select id="label-select" name="label" required>
-                    <option value="" disabled defaultValue="true">
-                      Select label
-                    </option>
-                    {labels.map((label) => {
-                      return (
-                        <option key={label} value={label}>
-                          {label}
-                        </option>
-                      )
-                    })}
-                  </select>
-                  <textarea
-                    name="textarea"
-                    value={currText}
-                    onChange={(e) => setCurrText(e.target.value)}
-                  ></textarea>
-                </Flex>
-              </Flex>
-              <Flex gap="6px">
-                <button type="submit">submit</button>
-                <button type="button" onClick={() => resetPageState()}>
-                  cancel
-                </button>
-              </Flex>
+            <h3>You sure you want to occlude these provocative pixels?</h3>
+            <Flex gap="6px">
+              <button type="submit">Yes</button>
+              <button type="button" onClick={() => resetPageState()}>
+                Actually, NO
+              </button>
             </Flex>
           </form>
         </Popup>
       )
     }
-  }, [pageState, resetPageState, labels, setAnnotations])
+  }, [pageState, resetPageState, setUpdatedScreen, query])
 
   const handleNewOccludeCandidate = useCallback(
     (rect: Rect) => {
-      setPageState((state) => ({...state, occludeCandidate: rect }))
+      setPageState((state) => ({ ...state, occludeCandidate: rect }))
     },
-    [setPageState]
+    [setPageState],
   )
 
   const handleNewDrawCandidate = useCallback(
@@ -319,7 +356,7 @@ export default function AnnotationPage() {
         const tag = query.tag
         const homeUrl =
           '/' + (typeof tag === 'string' && !!tag ? `?tag=${tag}` : '')
-        push(homeUrl)
+        // push(homeUrl)
       })
     } catch {
       // show toast
@@ -646,14 +683,21 @@ export default function AnnotationPage() {
     published,
   } = annotations
 
-  const screenshotDataUrl = updatedScreen ?? `data:image/png;base64,${Buffer.from(screenshot).toString('base64')}`
+  const screenshotDataUrl =
+    updatedScreen ??
+    `data:image/png;base64,${Buffer.from(screenshot).toString('base64')}`
 
   return (
     <main id="annotation-view">
       {pageState.mode === 'initial' && typeof processingWork === 'number' ? (
         <ProcessingPopup />
       ) : null}
-      {pageState.drawCandidate ? <NewAnnotationForm /> : null}
+      <NewAnnotationForm
+        labels={labels}
+        pageState={pageState}
+        resetPageState={resetPageState}
+        setAnnotations={setAnnotations}
+      />
       {pageState.occludeCandidate ? <OcclusionForm /> : null}
       <Container>
         <NavButtons />
@@ -752,7 +796,11 @@ export default function AnnotationPage() {
                 flexDirection: 'column',
               }}
             >
-              {Object.entries(annotationLabels).map(([label, colour]) => (
+              {Object.entries(
+                query.tag === 'service_manual'
+                  ? serviceManualLabel
+                  : annotationLabels,
+              ).map(([label, colour]) => (
                 <div
                   key={label}
                   style={{

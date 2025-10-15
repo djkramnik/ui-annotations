@@ -3,6 +3,7 @@ import { prisma } from './db'
 import fs from 'fs'
 import path from 'path'
 import sharp from 'sharp'
+import { waitForEnter } from './util'
 
 // grab local fs images and upload them as empty annotations
 // for manual labelling on the frontend viewer
@@ -19,6 +20,13 @@ dotenv.config()
   if (!targetPath || !extensionType || !localTag) {
     throw Error('missing env vars')
   }
+
+  console.log('running local scraper with the following variables:')
+  console.log('target dir: ', targetPath)
+  console.log('extension type ', extensionType)
+  console.log('annotation tag', localTag)
+  console.log('\ncontinue?')
+  await waitForEnter()
 
   // for now recursion not needed.  Just gets all the files with the
   // intended extension from the root of the directory
@@ -42,6 +50,7 @@ dotenv.config()
   }> = []
 
   for(const imgPath of imagePaths) {
+    console.log('processing', imgPath)
     try {
       const img = sharp(imgPath)
       const { width: imgW, height: imgH } = await img.metadata()
@@ -68,4 +77,5 @@ dotenv.config()
   })
 
   console.log(`uploaded ${batchedAnnotations.length} annotations, with ${errors} errors`)
+  process.exit(0)
 })()

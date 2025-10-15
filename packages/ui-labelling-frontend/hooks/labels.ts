@@ -1,9 +1,9 @@
 import { useMemo } from "react"
-import { annotationLabels } from "ui-labelling-shared"
+import { annotationLabels, serviceManualLabel } from "ui-labelling-shared"
 
-export const useLabels = () => {
+export const useLabels = (tag?: string) => {
   const labels = useMemo(() => {
-    return Object.keys(annotationLabels)
-  }, [])
+    return Object.keys(tag === 'service_manual' ? serviceManualLabel : annotationLabels)
+  }, [tag])
   return labels
 }

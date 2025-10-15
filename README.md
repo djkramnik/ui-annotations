@@ -10,6 +10,10 @@ This repo also includes a web server for storing annotations in local postgres i
 moar building
 ====
 
+* frontend viewer[id] -- predict and populate functionality
+* frontend viewer[id] -- filter by label
+
+
 1) * run interactive auto scraper
 
 * add predict interactive to frontend for annotations

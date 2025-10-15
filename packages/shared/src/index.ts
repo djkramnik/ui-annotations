@@ -1,3 +1,81 @@
+export enum ServiceManualLabel {
+  logo = 'logo',
+  text_block = 'text_block',
+  heading = 'heading',
+  bulletpoint = 'bulletpoint',
+
+  image = 'image',
+  caption = 'caption', // for an image / diagram
+  image_id = 'image_id', // small non semantic ids attached to images in 2005 manual
+
+  diagram = 'diagram', // like an image but with number or labels attached.  more technical
+  diagram_number = 'diagram_number', // a number appearing on the diagram w/wo a line
+  diagram_label = 'diagram_label', // a string label appearing on the diagram w/wo a line
+
+  icon_warn = 'icon_warn',
+  icon = 'icon',
+
+  section_number = 'section_number', // a big number prob
+  page_num = 'page_num', // the actual page number if it appears
+
+  toc = 'toc',
+  toc_section = 'toc_section',
+  toc_entry = 'toc_entry',
+
+  qr_code = 'qr_code',
+  barcode = 'barcode',
+
+  url = 'url',
+  phone = 'phone',
+  page_context = 'page_context', // header or footer. smallish text may include page number.  only ones that appear small,
+
+  box = 'box',
+  // a tad optimistic?
+  row = 'row',
+  column = 'column',
+  form = 'form',
+  table = 'table',
+}
+
+export const serviceManualLabel: Record<ServiceManualLabel, string> = {
+	logo: '#1E88E5', // blue
+	text_block: '#424242', // dark gray
+	heading: '#D81B60', // magenta/pink
+	bulletpoint: '#8E24AA', // purple
+
+	image: '#43A047', // green
+	caption: '#66BB6A', // lighter green
+	image_id: '#A5D6A7', // pale green
+
+	diagram: '#F4511E', // orange
+	diagram_number: '#FB8C00', // amber
+	diagram_label: '#FFB74D', // light amber
+
+	icon_warn: '#E53935', // red
+	icon: '#EF5350', // light red
+
+	section_number: '#3949AB', // indigo
+  page_num: 'cornsilk',
+
+	toc: '#00897B', // teal
+	toc_section: '#26A69A', // lighter teal
+	toc_entry: '#80CBC4', // pale teal
+
+	qr_code: '#6D4C41', // brown
+	barcode: '#8D6E63', // light brown
+
+	url: '#1976D2', // link blue
+	phone: '#0288D1', // light link blue
+	page_context: '#757575', // medium gray
+
+	row: '#9E9E9E', // gray
+	column: '#BDBDBD', // light gray
+  form: '#FFD54F',
+  table: '#00ACC1',
+  box: '#C0CA33',
+}
+
+
 export enum AnnotationLabel {
   textRegion = 'textRegion',
   button = 'button',
