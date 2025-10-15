@@ -12,7 +12,7 @@ moar building
 
 1) * run interactive auto scraper
 
-* add any time screenshot capability to extension as annotation with empty payload
+* add predict interactive to frontend for annotations
 * list labels that have zero count
   * datepicker
   * filepicker
