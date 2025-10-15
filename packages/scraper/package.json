@@ -7,6 +7,7 @@
     "start": "npm run build && node dist/index.js",
     "start:interactive": "npm run build && node dist/index.js interactive hn 5",
     "start:test": "npm run build && node dist/index.js interactive local 1 1",
+    "start:local": "npm run build && node dist/local.js",
     "prisma:db:pull": "npx prisma db pull"
   },
   "keywords": [],
@@ -21,6 +22,7 @@
   "dependencies": {
     "@prisma/client": "^6.14.0",
     "puppeteer-core": "^24.19.0",
+    "sharp": "^0.34.4",
     "ui-labelling-shared": "^1.1.0"
   }
 }
