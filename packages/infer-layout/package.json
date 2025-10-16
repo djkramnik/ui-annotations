@@ -1,0 +1,17 @@
+{
+  "name": "infer-layout",
+  "version": "1.0.0",
+  "description": "Given a series of bounding boxes of granular elements on the page, infer layout structure (rows, columns etc)",
+  "main": "index.js",
+  "scripts": {
+    "test": "http-server visualizer"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^24.8.0",
+    "http-server": "^14.1.1",
+    "typescript": "^5.9.3"
+  }
+}
