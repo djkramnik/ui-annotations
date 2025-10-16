@@ -2,7 +2,6 @@ import { useRouter } from 'next/router'
 import {
   Dispatch,
   FormEvent,
-  SelectHTMLAttributes,
   SetStateAction,
   useCallback,
   useEffect,

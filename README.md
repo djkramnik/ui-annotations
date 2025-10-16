@@ -12,6 +12,9 @@ moar building
 
 * frontend viewer[id] -- predict and populate functionality
 * frontend viewer[id] -- filter by label
+* frontend viewer[id] -- intelligently remove / add key listeners by context. fix the bug with key press collision
+* frontend viewer[id] -- swap sections by bounding box with differing ui (i.e font).
+that or completely _rebuild_ the screen with an updated one, that can be auto annotated
 
 
 1) * run interactive auto scraper
