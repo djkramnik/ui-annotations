@@ -28,8 +28,6 @@ export interface ElementInput {
   id: string;
   type: ElementType;
   bbox: BBox; // in page coordinates
-  // Optional extras (e.g., estimated font size); improves heuristics if present:
-  fontSize?: number;
 }
 
 export interface PageInfo {
