@@ -1,12 +1,11 @@
 import { ThemeProvider, CssBaseline } from "@mui/material"
 import theme from "../../components/mui/theme"
-import { useRouter } from 'next/router'
 import { InteractiveLabel } from 'ui-labelling-shared'
 import { MuiRadioGroup } from '../../components/mui/radio'
+import { useComponent } from "../../hooks/useComponent"
 
 const MuiComponent = () => {
-  const { query } = useRouter()
-  const component = String(query.component) as InteractiveLabel
+  const component = useComponent()
 
   switch(component) {
     case InteractiveLabel.radio:
