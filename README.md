@@ -23,6 +23,7 @@ that or completely _rebuild_ the screen with an updated one, that can be auto an
 * list labels that have zero count
   * datepicker
   * filepicker
+  * video
   * problematic labels?
     * tab
     * thumbnail (image conflation)
