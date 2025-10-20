@@ -9,16 +9,20 @@ datasource db {
 }
 
 model Annotation {
-  id         Int      @id @default(autoincrement())
-  scrollY    Int      @map("scroll_y")
-  viewWidth  Int      @map("view_width")
-  viewHeight Int      @map("view_height")
-  date       DateTime @db.Timestamptz(6)
-  url        String
-  payload    Json
-  screenshot Bytes?
-  published  Int      @default(0)
-  tag        String?
+  id                 Int          @id @default(autoincrement())
+  scrollY            Int          @map("scroll_y")
+  viewWidth          Int          @map("view_width")
+  viewHeight         Int          @map("view_height")
+  date               DateTime     @db.Timestamptz(6)
+  url                String
+  payload            Json
+  screenshot         Bytes?
+  published          Int          @default(0)
+  tag                String?
+
+  synthetic_parent_id Int?
+  synthetic_parent    Annotation? @relation("SyntheticParent", fields: [synthetic_parent_id], references: [id])
+  synthetic_children  Annotation[] @relation("SyntheticParent")
 
   ocr         Ocr[]
   Interactive Interactive[]
