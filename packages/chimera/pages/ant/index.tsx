@@ -4,6 +4,9 @@ import { ConfigProvider } from "antd";
 import { useRouter } from "next/router";
 import { InteractiveLabel } from "ui-labelling-shared";
 import { AntRadioGroup } from "../../components/ant/radio";
+import AntDatePicker from "../../components/ant/datepicker";
+import { randomAntTheme } from "../../components/ant/theme";
+import { useMemo } from "react";
 
 const AntdComponent = () => {
   const { query } = useRouter();
@@ -18,14 +21,19 @@ const AntdComponent = () => {
           selected={3}
         />
       );
+    case InteractiveLabel.datepicker:
+      return (
+        <AntDatePicker />
+      )
     default:
-      return "hi";
+      return null
   }
 };
 
 export default function Page() {
+  const theme = useMemo(() => randomAntTheme(), [])
   return (
-    <ConfigProvider>
+    <ConfigProvider theme={theme}>
       <div
         style={{
           backgroundColor: "#fafafa", // or use token.colorBgLayout if you configure a theme

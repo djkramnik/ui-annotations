@@ -10,7 +10,7 @@ const VanillaComponent = ({ theme }: { theme: VanillaTheme }) => {
     case InteractiveLabel.filepicker:
       return <FilePicker theme={theme} />
     default:
-      return 'unsupported component mate'
+      return null
   }
 }
 

@@ -12,9 +12,13 @@ export const VanillaButton = ({
   const br = randInt(4, 12)
   const noBr = randInt(0, 2) < 1
   const allCaps = randInt(0, 2) < 1
-
+  const withMinButtonWidth = Math.random() > 0.5
+  const minButtonWidth = randInt(50, 80)
   return (
     <button style={{
+      minWidth: withMinButtonWidth
+        ? `${minButtonWidth}%`
+        : 'initial',
       fontFamily: theme.font.fontFamily.secondary ?? theme.font.fontFamily.primary,
       textTransform: allCaps
         ? 'uppercase'

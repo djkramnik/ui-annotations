@@ -22,6 +22,10 @@ import { randInt } from '../../util/random'
 import { RandomMuiIcon } from '../mui/icon'
 import { VanillaButton } from './button'
 
+// need a variant where its just a button and the icon
+// need a variant where its just an input with a couple of file related decorations
+// (like a text input with a choose file button inside)
+
 export const FilePicker = ({ theme }: { theme: VanillaTheme }) => {
 
   const header = headers[randInt(0, headers.length - 1)]
@@ -125,6 +129,7 @@ export const FilePicker = ({ theme }: { theme: VanillaTheme }) => {
       {withTertiary ? (
         <p
           style={{
+            textAlign: 'center',
             fontSize: `${Math.min(18, Math.floor(fontSize * 0.8))}px`,
             margin: 0,
             padding: tertiaryAbsolute ? `${tertiaryPadding}px` : 'initial',

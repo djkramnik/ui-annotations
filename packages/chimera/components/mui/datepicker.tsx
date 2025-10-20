@@ -48,6 +48,27 @@ const MuiDatePicker = () => {
   const [variant] = React.useState<0 | 1 | 2>(() => pickVariant())
   const open = Math.random() > 0.5
   const label = randomPick(DATE_PICKER_LABELS)
+  const sx = {
+    // Outlined input root
+    '& .MuiOutlinedInput-root': {
+      backgroundColor: 'background.paper',
+      color: 'text.primary',
+      // input text
+      '& input': { color: 'text.primary' },
+      // calendar icon
+      '& .MuiSvgIcon-root': { color: 'text.secondary' },
+      // outline (default state)
+      '& fieldset': { borderColor: 'divider' },
+      // hover/focus states
+      '&:hover fieldset': { borderColor: 'primary.main' },
+      '&.Mui-focused fieldset': { borderColor: 'primary.main', borderWidth: 2 },
+      // disabled state
+      '&.Mui-disabled': {
+        backgroundColor: 'action.disabledBackground',
+        '& input': { WebkitTextFillColor: (theme) => theme.palette.text.disabled },
+      },
+    },
+  }
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -61,7 +82,7 @@ const MuiDatePicker = () => {
             open={open ?? undefined}
             // Keep the input editable and visible even when open
             slotProps={{
-              textField: { fullWidth: true } as any,
+              textField: { fullWidth: true, sx } as any,
             }}
           />
         )}
@@ -73,7 +94,7 @@ const MuiDatePicker = () => {
             onChange={(newValue) => setValue(newValue)}
             open={open ?? undefined}
             slotProps={{
-              textField: { fullWidth: true } as any,
+              textField: { fullWidth: true, sx } as any,
             }}
           />
         )}

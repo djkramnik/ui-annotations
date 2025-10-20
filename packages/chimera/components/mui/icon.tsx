@@ -1,4 +1,3 @@
-import { SvgIconProps } from '@mui/material/SvgIcon'
 import { OverridableComponent } from '@mui/material/OverridableComponent'
 import { SvgIconTypeMap } from '@mui/material/SvgIcon'
 import { randInt } from '../../util/random'

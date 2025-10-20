@@ -23,17 +23,16 @@ const MuiComponent = () => {
         <MuiDatePicker />
       )
     default:
-      return 'hi'
+      return null
   }
 }
+const theme = randomMuiTheme()
 
 export default () => {
-  const theme = useMemo(() => randomMuiTheme(), [])
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <div style={{
-        backgroundColor: theme.palette.background.default,
         width: '100vw',
         height: '100vh',
         padding: '12px'
