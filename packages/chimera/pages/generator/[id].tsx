@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnnotationPayload, Annotations, ServiceManualLabel, serviceManualLabel } from 'ui-labelling-shared'
 import ScreenshotAnnotator from '../../components/generator/screenshot-annotated'
 import { buildLayoutTree, normalize } from '../../util/generator/infer-layout'
-import { toLayoutInput, unpackLayoutTree } from '../../util/generator'
+import { flattenTree, toLayoutInput, unpackLayoutTree } from '../../util/generator'
 
 const ignoreLabels: ServiceManualLabel[] = [
   ServiceManualLabel.row,
@@ -21,6 +21,12 @@ const GenerateByExample = () => {
   const [layout, setLayout] = useState<string>('')
 
   const labelToColor = useCallback((label: string) => {
+    if (label.startsWith(`layout_tree_`)) {
+      return {
+        'layout_tree_row': 'purple',
+        'layout_tree_column': 'blue'
+      }[label]
+    }
     return serviceManualLabel[label]
   }, [])
 
@@ -34,19 +40,22 @@ const GenerateByExample = () => {
     }
 
     const elemInputs = toLayoutInput(annotations.payload)
-    // console.log('elem inputs??', elemInputs)
     const normElems = normalize(elemInputs, pageInfo)
-
-    // console.log('norm? elems??', normElems)
-
     const layout = buildLayoutTree(
       normElems,
       pageInfo
     )
-    console.log('LAYOUT', layout)
     setLayout(JSON.stringify(layout))
-    console.log('UNPACKED', unpackLayoutTree(layout))
-  }, [annotations, setLayout])
+
+    setAnnotations(
+      annotations => ({
+        ...annotations,
+        payload: {
+          annotations: flattenTree(unpackLayoutTree(layout))
+        }
+      })
+    )
+  }, [annotations, setAnnotations, setLayout])
 
   useEffect(() => {
     if (!isReady) return
@@ -114,6 +123,7 @@ const GenerateByExample = () => {
               }
               frame={{ width: viewWidth, height: viewHeight }}
             >
+
             </ScreenshotAnnotator>
 
           </div>

@@ -13,6 +13,7 @@ export default function ScreenshotAnnotator({
   children,
   onScaleMeasured,
   handleClick,
+  labels,
 }: {
   screenshot: string
   annotations: Annotation[]
@@ -21,6 +22,7 @@ export default function ScreenshotAnnotator({
   children?: React.ReactNode
   handleClick?: (id: string) => void
   onScaleMeasured?: (scale: { x: number, y: number }) => void
+  labels: Record<string, string>
 }) {
   // tribe of one person knowledge
   const router = useRouter()
@@ -68,7 +70,7 @@ export default function ScreenshotAnnotator({
   return (
     <div ref={ref} style={containerStyle}>
       {annotations.map(({ id, label, rect, textContent }) => {
-        const fill   = annotationLabels[label] ?? 'rgba(255,66,64,0.35)'
+        const fill   = labels[label] ?? 'rgba(255,66,64,0.35)'
         // make an opaque border if the fill is rgba with alpha
         const border = fill.startsWith('rgba')
           ? fill.replace(/[\d.]+\)$/, '0.5)')

@@ -742,6 +742,11 @@ export default function AnnotationPage() {
             }}
           >
             <ScreenshotAnnotator
+              labels={
+                query.tag === 'service_manual'
+                  ? serviceManualLabel
+                  : annotationLabels
+              }
               handleClick={handleAnnotationClick}
               screenshot={screenshotDataUrl}
               labelOverride={{
@@ -828,6 +833,7 @@ export default function AnnotationPage() {
             {pageState.mode === 'toggle' &&
             typeof pageState.currToggleIndex === 'number' ? (
               <AnnotationToggler
+                tag={query.tag ? String(query.tag) : undefined}
                 currIndex={pageState.currToggleIndex}
                 annotations={payload.annotations}
                 handleUpdate={handleAnnotationUpdate}

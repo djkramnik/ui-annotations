@@ -9,7 +9,8 @@ export const AnnotationToggler = ({
   handleUpdate,
   handleRemove,
   handlePrev,
-  handleNext
+  handleNext,
+  tag
 }: {
   currIndex: number
   annotations: AnnotationPayload['annotations']
@@ -17,6 +18,7 @@ export const AnnotationToggler = ({
   handleRemove: (index: number) => void
   handlePrev: () => void
   handleNext: () => void
+  tag?: string
 }) => {
 
   useEffect(() => {
@@ -42,6 +44,7 @@ export const AnnotationToggler = ({
   return (
     <Flex dir="column" gap="8px">
       <SelectedAnnotation
+        tag={tag}
         index={currIndex}
         annotation={annotations[currIndex]}
         handleUpdate={handleUpdate}
@@ -69,16 +72,18 @@ export const SelectedAnnotation = (
     handleUpdate,
     handleRemove,
     children,
+    tag,
   }: {
     index: number
     annotation: AnnotationPayload['annotations'][0]
     handleUpdate: (label: string, textContent: string | null, index: number) => void
     handleRemove: (index: number) => void
     children?: React.ReactNode
+    tag?: string
   }) => {
     const [currText, setCurrText] = useState<string | null>(annotation?.textContent ?? null)
     const [currLabel, setCurrLabel] = useState<string>(annotation?.label ?? '')
-    const labels = useLabels()
+    const labels = useLabels(tag)
 
     useEffect(() => {
       if (!annotation) {
