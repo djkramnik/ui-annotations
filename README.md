@@ -17,20 +17,41 @@ moar building
 that or completely _rebuild_ the screen with an updated one, that can be auto annotated
 
 
-1) * run interactive auto scraper
+1) chimera
 
-* add predict interactive to frontend for annotations
-* list labels that have zero count
+* add synthetic component generator
+
+* labels to synthetic augment first
+  * filepicker (variants)
+  * selectablecard
+  * accordion
+  * video
+  * textarea
+  * toggle
+  * slider
+  * avatar
+  * checkbox
+  * selectablecard
+  * pagination
+  * dropdown (including opened)
+  * textinput
+  * button
+
+* done-ish
+  * radio
   * datepicker
   * filepicker
-  * video
-  * problematic labels?
-    * tab
-    * thumbnail (image conflation)
-    * selectablecard
-    * accordion
-    * menuitem
-  * missing? video
+
+* need more examples but real ones only.  scrape for these directly
+  * ads
+  * images
+  * textinput focused state
+  * dropdowns open state
+  * logo
+
+
+
+* collapse tab into menuitem
 
 * create synthetic element generator for label balancing.. (must inflate everything to 3k... )
 

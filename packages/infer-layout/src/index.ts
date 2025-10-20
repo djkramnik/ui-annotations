@@ -436,8 +436,8 @@ export function buildLayoutTree(
   columns.sort((a, b) => a.xRange[0] - b.xRange[0]);
 
   // Detect relations
-  const captionRels = detectFigureCaptions(columns, idToElem, u);
-  const asideRels = detectAsides(columns, idToElem);
+  // const captionRels = detectFigureCaptions(columns, idToElem, u);
+  // const asideRels = detectAsides(columns, idToElem);
 
   // Snap edges to reduce jitter
   snapEdges(columns, idToElem, 0.3 * u);
@@ -446,7 +446,8 @@ export function buildLayoutTree(
   return {
     page: { width: page.width, height: page.height, aspect },
     columns,
-    relations: [...captionRels, ...asideRels],
+    relations: [],
+    // relations: [...captionRels, ...asideRels],
     unit: u,
   };
 }

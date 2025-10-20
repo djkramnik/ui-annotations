@@ -86,6 +86,7 @@ export const FilePicker = ({ theme }: { theme: VanillaTheme }) => {
         fontFamily: theme.font.fontFamily.primary,
         width: `${width}px`,
         height: `${Math.floor(width * aspectRatioCorrected)}px`,
+        maxHeight: '560px',
         padding: `${padding}px`,
         border: `${borderWidth}px ${borderStyle} currentColor`,
       }}
