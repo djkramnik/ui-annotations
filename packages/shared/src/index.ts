@@ -35,6 +35,8 @@ export enum ServiceManualLabel {
   column = 'column',
   form = 'form',
   table = 'table',
+  // helper
+  text_unit = 'unit'
 }
 
 export const serviceManualLabel: Record<ServiceManualLabel, string> = {
@@ -55,7 +57,7 @@ export const serviceManualLabel: Record<ServiceManualLabel, string> = {
 	icon: '#EF5350', // light red
 
 	section_number: '#3949AB', // indigo
-  page_num: 'cornsilk',
+  page_num: '#FFF8DC',
 
 	toc: '#00897B', // teal
 	toc_section: '#26A69A', // lighter teal
@@ -73,6 +75,8 @@ export const serviceManualLabel: Record<ServiceManualLabel, string> = {
   form: '#FFD54F',
   table: '#00ACC1',
   box: '#C0CA33',
+
+  unit: '#ed9121'
 }
 
 
