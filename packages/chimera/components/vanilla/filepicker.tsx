@@ -4,6 +4,9 @@ import {
   CloudCircleOutlined,
   CloudCircleRounded,
   CloudCircleSharp,
+  CloudDownloadOutlined,
+  CloudOutlined,
+  CloudUploadOutlined,
   Download,
   DownloadForOffline,
   FileDownload,
@@ -21,6 +24,8 @@ import { VanillaTheme } from './type'
 import { randInt } from '../../util/random'
 import { RandomMuiIcon } from '../mui/icon'
 import { VanillaButton } from './button'
+import { RandomAntIcon } from '../ant/icon'
+import { AntCloudOutlined, DownloadOutlined, FileAddFilled, FileAddOutlined, FileExcelFilled, FileExcelOutlined, FileExcelTwoTone, FileImageFilled, FileImageOutlined, FileJpgOutlined, FileProtectOutlined, FileSearchOutlined, FileZipFilled, FileZipOutlined, ProfileOutlined, ProfileTwoTone, UploadOutlined } from '@ant-design/icons'
 
 // need a variant where its just a button and the icon
 // need a variant where its just an input with a couple of file related decorations
@@ -60,6 +65,7 @@ export const FilePicker = ({ theme }: { theme: VanillaTheme }) => {
     { top: '0', left: '0' },
   ][randInt(0, 3)]
   const tertiaryPadding = randInt(0, 4)
+  const withMuiIcon = Math.random() > 0.5
 
   return (
     <div
@@ -84,27 +90,58 @@ export const FilePicker = ({ theme }: { theme: VanillaTheme }) => {
         border: `${borderWidth}px ${borderStyle} currentColor`,
       }}
     >
-      <RandomMuiIcon
-        icons={[
-          Download,
-          DownloadForOffline,
-          FileDownload,
-          FileDownloadOutlined,
-          Cloud,
-          CloudCircle,
-          CloudCircleOutlined,
-          CloudCircleRounded,
-          CloudCircleSharp,
-          Image,
-          Folder,
-          Upload,
-          UploadFile,
-          UploadFileOutlined,
-          UploadFileRounded,
-          UploadFileSharp,
-          UploadFileTwoTone,
-        ]}
-      />
+      {
+        withMuiIcon
+          ? (
+            <RandomMuiIcon
+              icons={[
+                Download,
+                DownloadForOffline,
+                FileDownload,
+                FileDownloadOutlined,
+                Cloud,
+                CloudCircle,
+                CloudCircleOutlined,
+                CloudCircleRounded,
+                CloudCircleSharp,
+                Image,
+                Folder,
+                Upload,
+                UploadFile,
+                UploadFileOutlined,
+                UploadFileRounded,
+                UploadFileSharp,
+                UploadFileTwoTone,
+              ]}
+            />
+          )
+          : (
+            <RandomAntIcon
+              icons={[
+                UploadOutlined,
+                DownloadOutlined,
+                FileAddOutlined,
+                FileAddFilled,
+                FileExcelOutlined,
+                FileExcelTwoTone,
+                FileExcelFilled,
+                FileJpgOutlined,
+                FileProtectOutlined,
+                FileSearchOutlined,
+                ProfileOutlined,
+                FileZipOutlined,
+                FileZipFilled,
+                ProfileTwoTone,
+                AntCloudOutlined,
+                CloudDownloadOutlined,
+                CloudOutlined,
+                CloudUploadOutlined,
+                FileImageOutlined,
+                FileImageFilled
+              ]}
+            />
+          )
+      }
       {extraHeaderMargin ? (
         <div style={{ height: `${buttonMargin}px` }} />
       ) : null}
