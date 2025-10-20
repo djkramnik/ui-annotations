@@ -98,6 +98,7 @@ export default function ScreenshotAnnotator({
               fontSize: 12,
               fontWeight: 600,
               textShadow: '0 0 2px rgba(0,0,0,.6)',
+              opacity: 0.3,
               ...labelOverride
             }}
           >

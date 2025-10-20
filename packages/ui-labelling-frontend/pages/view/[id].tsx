@@ -756,7 +756,6 @@ export default function AnnotationPage() {
                       backgroundColor: 'transparent',
                       border: `1px solid #16F529`,
                     }),
-                opacity: '0.9',
               }}
               annotations={
                 pageState.mode !== 'toggle'
