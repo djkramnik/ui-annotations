@@ -1,6 +1,6 @@
 import { Box, Container } from '@mui/material'
 import { useRouter } from 'next/router'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
 import { AnnotationPayload, Annotations, ServiceManualLabel, serviceManualLabel } from 'ui-labelling-shared'
 import ScreenshotAnnotator from '../../components/generator/screenshot-annotated'
 import { buildLayoutTree, normalize } from '../../util/generator/infer-layout'
@@ -29,6 +29,22 @@ const GenerateByExample = () => {
     }
     return serviceManualLabel[label]
   }, [])
+
+  const labelToOverride = useCallback((label: string): CSSProperties => {
+    if (!label.startsWith(`layout_tree`)) {
+      return {}
+    }
+    const fill = labelToColor(label)
+    if (!fill) {
+      return {}
+    }
+    return {
+      opacity: 1,
+      backgroundColor: 'transparent',
+      border: `2px solid ${fill}`,
+      color: 'transparent'
+    }
+  }, [labelToColor])
 
   const handleInferLayout = useCallback(() => {
     if (!annotations) {
@@ -116,6 +132,8 @@ const GenerateByExample = () => {
             }}
           >
             <ScreenshotAnnotator
+              noLabel={label => label.startsWith(`layout_tree`)}
+              labelToOverride={labelToOverride}
               labelToColor={labelToColor}
               screenshot={screenshotDataUrl}
               annotations={

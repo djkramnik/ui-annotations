@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 
 type Annotation  = AnnotationPayload['annotations'][0]
 
+// soaking wet code.  copy pasted from frontend viewer and then played with.
 export default function ScreenshotAnnotator({
   screenshot,
   annotations,
@@ -13,6 +14,8 @@ export default function ScreenshotAnnotator({
   onScaleMeasured,
   handleClick,
   labelToColor,
+  labelToOverride,
+  noLabel,
 }: {
   screenshot: string
   annotations: Annotation[]
@@ -22,6 +25,8 @@ export default function ScreenshotAnnotator({
   handleClick?: (id: string) => void
   onScaleMeasured?: (scale: { x: number, y: number }) => void
   labelToColor: (label: string) => string | null // labelToColor fn
+  labelToOverride?: (label: string) => CSSProperties
+  noLabel?: (label: string) => boolean
 }) {
   // tribe of one person knowledge
   const router = useRouter()
@@ -75,6 +80,7 @@ export default function ScreenshotAnnotator({
           ? fill.replace(/[\d.]+\)$/, '0.5)')
           : fill
         const handlerExists = typeof handleClick === 'function'
+        const hideLabel = noLabel?.(label) === true
         return (
           <div
             onClick={handlerExists ? () => handleClick(id) : undefined}
@@ -98,11 +104,16 @@ export default function ScreenshotAnnotator({
               fontSize: 12,
               fontWeight: 600,
               textShadow: '0 0 2px rgba(0,0,0,.6)',
-              ...labelOverride
+              ...labelOverride,
+              ...(labelToOverride?.(label) ?? {})
             }}
           >
             {/** I promise I will always remember ye */}
-            {isOcr ? textContent : label}
+            {
+              hideLabel
+                ? null
+                : (isOcr ? textContent : label)
+            }
           </div>
         )
       })}
