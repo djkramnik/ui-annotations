@@ -515,6 +515,7 @@ export interface Annotations {
   date: string
   id: number
   published: | 0 | 1
+  tag?: string
 }
 
 type Rect = AnnotationPayload['annotations'][0]['rect']

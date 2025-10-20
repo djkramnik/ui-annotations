@@ -56,6 +56,7 @@ export interface LayoutTree {
   columns: ColumnLayout[]
   relations: Relation[]
   unit: number // the inferred base unit (median text height, normalized)
+  snappedElements: NormElement[]
 }
 
 ///////////////////////
@@ -144,6 +145,7 @@ function isTextLike(t: ServiceManualLabel) {
     ServiceManualLabel.heading,
     ServiceManualLabel.bulletpoint,
     ServiceManualLabel.page_num,
+    ServiceManualLabel.image_id
   ].includes(t)
 }
 
@@ -156,7 +158,7 @@ function isImageLike(t: ServiceManualLabel) {
 }
 
 /** 2) Estimate the base unit `u` = median text height (normalized) */
-export function estimateUnit(elems: NormElement[]): number {
+function estimateUnit(elems: NormElement[]): number {
   // filter by specifically the helper text_unit label.  falls back to every element
   const heights = elems.filter((e) => e.type === ServiceManualLabel.text_unit).map((e) => e.h)
   const pool = heights.length ? heights : elems.map((e) => e.h) // fallback to all
@@ -167,7 +169,7 @@ export function estimateUnit(elems: NormElement[]): number {
 }
 
 /** 3) Merge micro fragments (e.g., split lines of the same paragraph) */
-export function mergeMicroFragments(
+function mergeMicroFragments(
   elems: NormElement[],
   u: number,
 ): NormElement[] {
@@ -195,10 +197,9 @@ export function mergeMicroFragments(
       const yOverlap = overlap1D(merged.ny0, merged.ny1, b.ny0, b.ny1)
       const yOverlapRatio = yOverlap / Math.max(1e-6, Math.min(merged.h, b.h))
 
-      const closeHoriz = xOverlapRatio > 0.3
+      const closeHoriz = xOverlapRatio > 0.8
       const smallVGap = vGap >= 0 && vGap < 0.25 * u
       const slightOverlap = yOverlapRatio > 0.05
-
       if (closeHoriz && (smallVGap || slightOverlap)) {
         // merge b into merged
         const nx0 = Math.min(merged.nx0, b.nx0)
@@ -241,7 +242,7 @@ function columnXRange(blocks: NormElement[]): [number, number] {
 }
 
 /** 4) Column detection by clustering element x-centers with a distance threshold. */
-export function clusterColumns(
+function clusterColumns(
   elems: NormElement[],
   cxGapThreshold = 0.08,
 ): number[][] {
@@ -306,7 +307,7 @@ export function clusterColumns(
 }
 
 /** 5) Row grouping within a column by vertical gap + y-overlap heuristics */
-export function groupRowsInColumn(blocks: NormElement[], u: number): Row[] {
+function groupRowsInColumn(blocks: NormElement[], u: number): Row[] {
   if (blocks.length === 0) return []
   const sorted = [...blocks].sort((a, b) => a.ny0 - b.ny0 || a.nx0 - b.nx0)
 
@@ -338,70 +339,6 @@ export function groupRowsInColumn(blocks: NormElement[], u: number): Row[] {
   }
   if (current.length) rows.push({ blockIds: current })
   return rows
-}
-
-/** 6) Special structure detection: figure + caption */
-export function detectFigureCaptions(
-  columns: ColumnLayout[],
-  idToElem: Map<string, NormElement>,
-  u: number,
-): Relation[] {
-  const rels: Relation[] = []
-  for (const col of columns) {
-    // Flatten blocks by y-order
-    const blocks = [...col.blockIdsInColumn]
-      .map((id) => idToElem.get(id)!)
-      .filter(Boolean)
-    for (let i = 0; i < blocks.length - 1; i++) {
-      const a = blocks[i]
-      const b = blocks[i + 1]
-      const aIsFig = isImageLike(a.type)
-      const bIsText = isTextLike(b.type)
-      if (!aIsFig || !bIsText) continue
-
-      const vgap = Math.max(0, b.ny0 - a.ny1)
-      const widthSimilarity = 1 - Math.abs(a.w - b.w) / Math.max(a.w, b.w, 1e-6)
-      if (vgap < 1.0 * u && widthSimilarity > 0.6) {
-        rels.push({ type: 'captionOf', fromId: b.id, toId: a.id })
-      }
-    }
-  }
-  return rels
-}
-
-/** 7) Aside detection: narrow block overlapping a much bigger neighbor in another column */
-export function detectAsides(
-  columns: ColumnLayout[],
-  idToElem: Map<string, NormElement>,
-): Relation[] {
-  const rels: Relation[] = []
-  if (columns.length < 2) return rels
-
-  // For each block in each column, see if it vertically overlaps a large block in another column
-  const allByCol = columns.map((c) =>
-    c.blockIdsInColumn.map((id) => idToElem.get(id)!).filter(Boolean),
-  )
-
-  for (let i = 0; i < allByCol.length; i++) {
-    for (const a of allByCol[i]) {
-      const narrow = a.w < 0.22 // heuristic
-      if (!narrow) continue
-      for (let j = 0; j < allByCol.length; j++) {
-        if (j === i) continue
-        for (const b of allByCol[j]) {
-          const yOv = overlap1D(a.ny0, a.ny1, b.ny0, b.ny1)
-          const yOvRatio = yOv / Math.max(1e-6, Math.min(a.h, b.h))
-          const muchBigger = b.h > a.h * 1.6 && b.w > a.w * 1.6
-          if (yOvRatio > 0.4 && muchBigger) {
-            rels.push({ type: 'asideOf', fromId: a.id, toId: b.id })
-            break
-          }
-        }
-      }
-    }
-  }
-
-  return rels
 }
 
 /** 8) Edge snapping within a column to reduce jitter (softly align left/right edges) */
@@ -470,8 +407,12 @@ export function buildLayoutTree(
 ): LayoutTree {
   const u = estimateUnit(elems)
 
-  // Optionally merge micro-fragments first
-  const merged = mergeMicroFragments(elems, u)
+  // Optionally merge micro-fragments first.  remove the unit helper element(s)
+  // const merged = mergeMicroFragments(
+  //   elems.filter(e => e.type !== ServiceManualLabel.text_unit), u)
+
+  // not merging.. the current logic is not really desirable but we might investigate later
+  const merged = elems.filter(e => e.type !== ServiceManualLabel.text_unit)
 
   // Cluster columns (returns arrays of indices into `merged`)
   const clusters = clusterColumns(merged, cxGapThreshold)
@@ -495,9 +436,7 @@ export function buildLayoutTree(
   // Sort columns left → right
   columns.sort((a, b) => a.xRange[0] - b.xRange[0])
 
-  // Detect relations
-  // const captionRels = detectFigureCaptions(columns, idToElem, u);
-  // const asideRels = detectAsides(columns, idToElem);
+  // Detect relations? nyet
 
   // Snap edges to reduce jitter
   snapEdges(columns, idToElem, 0.3 * u)
@@ -509,36 +448,6 @@ export function buildLayoutTree(
     relations: [],
     // relations: [...captionRels, ...asideRels],
     unit: u,
+    snappedElements: idToElem.values().toArray()
   }
 }
-
-///////////////////////
-// Example usage (remove or adapt in your app)
-///////////////////////
-
-// If you want to test quickly, uncomment:
-/*
-const page: PageInfo = { width: 612, height: 792 }; // Letter (pts)
-const inputs: ElementInput[] = [
-  { id: "h1", type: "heading", bbox: [54, 54, 558, 96] },
-  { id: "p1", type: "text", bbox: [54, 110, 350, 170] },
-  { id: "p2", type: "text", bbox: [54, 176, 350, 230] },
-  { id: "warn", type: "warning", bbox: [360, 110, 558, 190] },
-  { id: "fig", type: "figure", bbox: [54, 360, 558, 620] },
-  { id: "cap", type: "text", bbox: [54, 622, 558, 650] },
-];
-
-const norm = normalize(inputs, page);
-const tree = buildLayoutTree(norm, page);
-console.log(JSON.stringify(tree, null, 2));
-*/
-
-///////////////////////
-// Notes for Extension
-///////////////////////
-// - Tune `cxGapThreshold` to split or fuse columns more/less aggressively.
-// - Use `fontSize` if available to refine `estimateUnit`.
-// - Add a `detectTables()` pass by scanning for repeated aligned x-edges.
-// - Add type-aware thresholds (e.g., bigger acceptable gaps around figures).
-// - Feed the resulting LayoutTree into your renderer (HTML/Canvas/SVG) to
-//   produce a screenshot at a PDF-like aspect ratio (e.g., 816×1056 px).
