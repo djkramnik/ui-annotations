@@ -3,7 +3,7 @@ import { useRouter } from 'next/router'
 import { CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
 import { AnnotationPayload, Annotations, ServiceManualLabel, serviceManualLabel } from 'ui-labelling-shared'
 import ScreenshotAnnotator from '../../components/generator/screenshot-annotated'
-import { buildLayoutTree, normalize } from '../../util/generator/infer-layout'
+import { buildLayoutTreeDeux, normalize } from '../../util/generator/infer-layout'
 import { flattenTree, toLayoutInput, unpackLayoutTree } from '../../util/generator'
 
 const ignoreLabels: ServiceManualLabel[] = [
@@ -57,7 +57,7 @@ const GenerateByExample = () => {
 
     const elemInputs = toLayoutInput(annotations.payload)
     const normElems = normalize(elemInputs, pageInfo)
-    const layout = buildLayoutTree(
+    const layout = buildLayoutTreeDeux(
       normElems,
       pageInfo
     )

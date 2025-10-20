@@ -268,6 +268,7 @@ function clusterColumns(
 
   // post-merge clusters with heavy x-range overlap
   const resolved: number[][] = []
+
   for (const idxs of clusters) {
     const blocks = idxs.map((i) => sorted[i])
     const [x0a, x1a] = columnXRange(blocks)
@@ -451,3 +452,261 @@ export function buildLayoutTree(
     snappedElements: idToElem.values().toArray()
   }
 }
+
+// Integrated buildLayoutTree that uses xyCutColumns for column detection
+export function buildLayoutTreeDeux(
+  elems: NormElement[],
+  page: PageInfo,
+  xyOpts?: {
+    bins?: number
+    valleyTau?: number
+    minGutterFrac?: number
+    minRegionWidth?: number
+    spanFrac?: number
+    separatorLabels?: ServiceManualLabel[]
+  }
+): LayoutTree {
+  const u = estimateUnit(elems)
+
+  // drop unit helpers from layout consideration
+  const working = elems.filter(e => e.type !== ServiceManualLabel.text_unit)
+
+  // XY-cut over the working set; clusters are indices into `working`
+  const clusters = xycut2d(working, { bins: 96, tau: 0.035, minValleyFrac: 0.01, minRegionHeight: 0.01 }, page)
+  console.log('le special clusters', clusters)
+  // map id → element for snapping & emission
+  const idToElem = new Map<string, NormElement>()
+  working.forEach((e) => idToElem.set(e.id, e))
+
+  // helper: x-range of blocks
+  const columnXRange = (blocks: NormElement[]): [number, number] => {
+    let x0 = Infinity, x1 = -Infinity
+    for (const b of blocks) { x0 = Math.min(x0, b.nx0); x1 = Math.max(x1, b.nx1) }
+    return (!isFinite(x0) || !isFinite(x1)) ? [0, 1] : [x0, x1]
+  }
+
+  // build columns from clusters
+  const columns: ColumnLayout[] = clusters.map((idxArr) => {
+    const blocks = idxArr.map(i => working[i])
+    const xR = columnXRange(blocks)
+    const ordered = [...blocks].sort((a, b) => a.ny0 - b.ny0 || a.nx0 - b.nx0)
+    const rows = groupRowsInColumn(ordered, u)
+    return {
+      xRange: xR,
+      rowGroups: rows,
+      blockIdsInColumn: ordered.map(b => b.id),
+    }
+  })
+
+  // left→right column order
+  columns.sort((a, b) => a.xRange[0] - b.xRange[0])
+
+  // snap edges
+  snapEdges(columns, idToElem, 0.3 * u)
+
+  const aspect = page.width / Math.max(1e-6, page.height)
+  return {
+    page: { width: page.width, height: page.height, aspect },
+    columns,
+    relations: [],
+    unit: u,
+    snappedElements: Array.from(idToElem.values()),
+  }
+}
+
+// ===== XY-Cut 2D (full alternating recursion) =====
+// Assumes NormElement has nx0, nx1, ny0, ny1, cx, cy, w, h in [0,1].
+
+type XYCutOpts = {
+  bins?: number               // histogram resolution per axis
+  tau?: number                // a bin is "whitespace" if occupancy <= tau
+  minValleyFrac?: number      // minimum valley width/height as fraction of region span
+  minRegionWidth?: number     // stop if region too narrow for X cuts
+  minRegionHeight?: number    // stop if region too short for Y cuts
+  minElements?: number        // stop if too few elements to split usefully
+  balanceBias?: number        // [0..1], split preference toward balanced partitions (0=none, 1=strong)
+  capBinAccum?: number        // cap per-element contribution into a bin to reduce "bridging"
+};
+
+const XY_DEFAULTS: Required<XYCutOpts> = {
+  bins: 64,
+  tau: 0.04,
+  minValleyFrac: 0.05,
+  minRegionWidth: 0.12,
+  minRegionHeight: 0.02,
+  minElements: 3,
+  balanceBias: 0.25,
+  capBinAccum: 0.8,
+};
+
+function projX(elems: NormElement[], bins: number, cap: number) {
+  if (elems.length === 0) return { x0: 0, x1: 1, occ: new Array(bins).fill(0), span: 1 };
+  const x0 = Math.min(...elems.map(e => e.nx0));
+  const x1 = Math.max(...elems.map(e => e.nx1));
+  const span = Math.max(1e-6, x1 - x0);
+  const wBin = span / bins;
+  const occ = new Array(bins).fill(0);
+  for (const e of elems) {
+    const a0 = Math.max(x0, e.nx0), a1 = Math.min(x1, e.nx1);
+    if (a1 <= a0) continue;
+    const b0 = Math.max(0, Math.floor((a0 - x0) / wBin));
+    const b1 = Math.min(bins - 1, Math.floor((a1 - x0) / wBin));
+    // accumulate covered vertical fraction; cap per-element to reduce "bridging"
+    const add = Math.min(cap, e.h);
+    for (let b = b0; b <= b1; b++) occ[b] += add;
+  }
+  // normalize to [0,1]
+  for (let b = 0; b < bins; b++) occ[b] = clamp01(occ[b]);
+  return { x0, x1, occ, span };
+}
+
+function projY(elems: NormElement[], bins: number, cap: number) {
+  if (elems.length === 0) return { y0: 0, y1: 1, occ: new Array(bins).fill(0), span: 1 };
+  const y0 = Math.min(...elems.map(e => e.ny0));
+  const y1 = Math.max(...elems.map(e => e.ny1));
+  const span = Math.max(1e-6, y1 - y0);
+  const hBin = span / bins;
+  const occ = new Array(bins).fill(0);
+  for (const e of elems) {
+    const a0 = Math.max(y0, e.ny0), a1 = Math.min(y1, e.ny1);
+    if (a1 <= a0) continue;
+    const b0 = Math.max(0, Math.floor((a0 - y0) / hBin));
+    const b1 = Math.min(bins - 1, Math.floor((a1 - y0) / hBin));
+    // accumulate covered horizontal fraction; cap per-element to reduce "bridging"
+    const add = Math.min(cap, e.w);
+    for (let b = b0; b <= b1; b++) occ[b] += add;
+  }
+  for (let b = 0; b < bins; b++) occ[b] = clamp01(occ[b]);
+  return { y0, y1, occ, span };
+}
+
+type Valley = { start: number; len: number; meanOcc: number; score: number };
+
+function bestValley(
+  occ: number[],
+  tau: number,
+  minBins: number,
+  balanceTarget: number | null,
+  balanceBias: number
+): Valley | null {
+  let best: Valley | null = null;
+  let curStart = -1, curSum = 0, curLen = 0;
+
+  const flush = () => {
+    if (curLen <= 0) return;
+    if (curLen >= minBins) {
+      const meanOcc = curSum / curLen;
+      // score valley by (width) * (emptiness); optionally prefer near-balanced splits
+      let score = curLen * (1 - meanOcc);
+      if (balanceTarget != null) {
+        const cut = curStart + Math.floor(curLen / 2);
+        const balancePenalty = Math.abs(cut - balanceTarget); // distance from center
+        // higher penalty → lower score
+        score *= (1 - balanceBias * (balancePenalty / Math.max(1, balanceTarget)));
+      }
+      const v = { start: curStart, len: curLen, meanOcc, score };
+      if (!best || v.score > best.score) best = v;
+    }
+    curStart = -1; curSum = 0; curLen = 0;
+  };
+
+  for (let i = 0; i < occ.length; i++) {
+    if (occ[i] <= tau) {
+      if (curLen === 0) curStart = i;
+      curLen++; curSum += occ[i];
+    } else {
+      flush();
+    }
+  }
+  flush();
+  return best;
+}
+
+function xycut2d(
+  elems: NormElement[],
+  opts: XYCutOpts = {},
+  page: PageInfo
+): number[][] {
+  const O = { ...XY_DEFAULTS, ...opts };
+
+  // recursive inner with mapping
+  const rec = (subsetIdx: number[]): number[][] => {
+    if (subsetIdx.length === 0) return [];
+    if (subsetIdx.length <= O.minElements) return [subsetIdx];
+
+    const subset = subsetIdx.map(i => elems[i]);
+
+    // region extents & early exits
+    const x0 = Math.min(...subset.map(e => e.nx0));
+    const x1 = Math.max(...subset.map(e => e.nx1));
+    const y0 = Math.min(...subset.map(e => e.ny0));
+    const y1 = Math.max(...subset.map(e => e.ny1));
+    const W = Math.max(1e-6, x1 - x0);
+    const H = Math.max(1e-6, y1 - y0);
+
+    // projections
+    const px = projX(subset, O.bins, O.capBinAccum);
+    const py = projY(subset, O.bins, O.capBinAccum);
+
+    const minXBins = Math.max(1, Math.floor(O.minValleyFrac * px.occ.length));
+    const minYBins = Math.max(1, Math.floor(O.minValleyFrac * py.occ.length));
+
+    // balance target for nicer splits (center bin)
+    const balX = Math.floor(px.occ.length / 2);
+    const balY = Math.floor(py.occ.length / 2);
+
+    // find best valleys on both axes (respecting region size)
+    const vx = (W >= O.minRegionWidth)
+      ? bestValley(px.occ, O.tau, minXBins, balX, O.balanceBias)
+      : null;
+    const vy = (H >= O.minRegionHeight)
+      ? bestValley(py.occ, O.tau, minYBins, balY, O.balanceBias)
+      : null;
+
+    // no valid valleys → leaf
+    if (!vx && !vy) return [subsetIdx];
+
+    // choose axis by higher score
+    const chooseX = vx && (!vy || vx.score >= vy.score);
+    if (chooseX) {
+      // cut at valley center along X
+      const cutBin = vx!.start + Math.floor(vx!.len / 2);
+      const cutX = x0 + (cutBin / px.occ.length) * W;
+
+      const L: number[] = [], R: number[] = [];
+      for (const i of subsetIdx) {
+        const e = elems[i];
+        (e.cx <= cutX ? L : R).push(i);
+      }
+      const out: number[][] = [];
+      out.push(...rec(L));
+      out.push(...rec(R));
+      return out;
+    } else {
+      // cut at valley center along Y
+      const cutBin = vy!.start + Math.floor(vy!.len / 2);
+      const cutY = y0 + (cutBin / py.occ.length) * H;
+      console.log('ycut whoa oh', (cutY * page.height).toFixed(0))
+      const T: number[] = [], B: number[] = [];
+      for (const i of subsetIdx) {
+        const e = elems[i];
+        (e.cy <= cutY ? T : B).push(i);
+      }
+      const out: number[][] = [];
+      out.push(...rec(T));
+      out.push(...rec(B));
+      return out;
+    }
+  };
+
+  const allIdx = elems.map((_, i) => i);
+  return rec(allIdx).map(cluster => {
+    // order within cluster by reading order
+    const sorted = [...cluster].sort((i, j) => {
+      const A = elems[i], B = elems[j];
+      return A.ny0 - B.ny0 || A.nx0 - B.nx0;
+    });
+    return sorted;
+  });
+}
+

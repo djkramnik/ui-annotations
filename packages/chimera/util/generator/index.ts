@@ -1,5 +1,5 @@
 import { AnnotationPayload, ServiceManualLabel } from "ui-labelling-shared";
-import { ElementInput, LayoutTree, NormElement, PageInfo } from "./infer-layout";
+import { BBox, ElementInput, LayoutTree, NormElement, PageInfo } from "./infer-layout";
 
 type Rect = AnnotationPayload['annotations'][0]['rect']
 
@@ -12,6 +12,7 @@ type DenormalizedElement = {
 // the basis for creating a synthetic copy of the original annotations
 // all of the pertinent annotations are organized into columns and rows, and snapped to grid (apparently)
 export type UnpackedLayout = {
+  page: PageInfo
   columns: {
     xRange: [number, number],
     rows: {
@@ -35,6 +36,7 @@ export function unpackLayoutTree(layoutTree: LayoutTree): UnpackedLayout {
   const { page, columns } = layoutTree
 
   return {
+    page,
     snappedElements: layoutTree.snappedElements.map(e => toDenormalized(e, layoutTree.page)),
     columns: columns.map((c) => {
       return {
@@ -63,7 +65,11 @@ export function unpackLayoutTree(layoutTree: LayoutTree): UnpackedLayout {
 export function flattenTree(unpacked: UnpackedLayout): AnnotationPayload['annotations'] {
   const layoutElems: AnnotationPayload['annotations'] = unpacked.columns.reduce((acc, c) => {
     return acc.concat([
-      columnToAnnotation(c, unpacked.snappedElements),
+      columnToAnnotation({
+        column: c,
+        elems: unpacked.snappedElements,
+        page: unpacked.page
+      }),
       ...(c.rows.map(r => {
         return {
           id: crypto.randomUUID(),
@@ -77,7 +83,7 @@ export function flattenTree(unpacked: UnpackedLayout): AnnotationPayload['annota
 }
 
 // from a collection of normalized elements get the dimensions of a box that encompasses all of them
-function getExtremesFromElems(bboxes: Array<[number, number, number, number]>): [number, number, number, number] {
+function getExtremesFromElems(bboxes: Array<BBox>): BBox {
   return bboxes.reduce((acc, e) => {
     const [cx0, cy0, cx1, cy1] = acc
     return [
@@ -106,7 +112,15 @@ function toDenormalized(elem: NormElement, page: PageInfo): DenormalizedElement 
   }
 }
 
-function columnToAnnotation(column: UnpackedLayout['columns'][0], elems: DenormalizedElement[]): AnnotationPayload['annotations'][0] {
+function columnToAnnotation({
+  column,
+  elems,
+  page
+}: {
+  column: UnpackedLayout['columns'][0]
+  elems: DenormalizedElement[]
+  page: PageInfo
+}): AnnotationPayload['annotations'][0] {
   const elemsInColumn: DenormalizedElement[]
     = column.rows.reduce((acc, r) => {
       return acc.concat(r.elems.map(id => elems.find(e => e.id === id)!))
@@ -117,19 +131,39 @@ function columnToAnnotation(column: UnpackedLayout['columns'][0], elems: Denorma
     elemsInColumn.map(e => toBbox(e.rect))
   )
 
+  const padded = pad({bbox: colBoundingBox, page})
+
   return {
     id: crypto.randomUUID(),
     label: 'layout_tree_column',
-    rect: toRect(colBoundingBox)
+    rect: toRect(padded)
   }
 }
 
+function pad({
+  bbox,
+  page,
+  gap = 6,
+}: {
+  bbox: BBox
+  page: PageInfo
+  gap?: number
+}): BBox {
+  const [x0, y0, x1, y1] = bbox
+  return [
+    Math.max(0, x0 - gap),
+    Math.max(0, y0 - gap),
+    Math.min(page.width, x1 + gap),
+    Math.min(page.height, y1 + gap),
+  ]
+}
+
 // [x0, y0, x1, y1]
-function toBbox(r: Rect): [number, number, number, number] {
+function toBbox(r: Rect): BBox {
   return [r.x, r.y, r.x + r.width, r.y + r.height]
 }
 
-function toRect(bbox: [number, number, number, number]): Rect {
+function toRect(bbox: BBox): Rect {
   return {
     x: bbox[0],
     y: bbox[1],
