@@ -8,19 +8,25 @@ type PageDim = { width: number, height: number }
 type ComponentMap = Record<string, Component>
 
 export function xyCut({
-  components,
+  components: _components,
   page,
+  withNormalization,
   unitHeight // height of a single line of text to use as a baseline
 }: {
   components: Component[]
   page: PageDim
+  withNormalization?: boolean
   unitHeight: number
 }): XyNode {
-  const unitH = unitHeight / page.height // normalize unit height
-  const normalizedComponents = normalize(components, page)
+  const unitH = withNormalization
+    ? unitHeight / page.height // normalize unit height
+    : unitHeight
+  const components = withNormalization
+    ? normalize(_components, page)
+    : _components.slice(0)
 
   const componentMap: ComponentMap
-    = normalizedComponents.reduce((acc, c) => {
+    = components.reduce((acc, c) => {
       return {
         ...acc,
         [c.id]: c
@@ -28,7 +34,9 @@ export function xyCut({
     }, {} as ComponentMap)
 
   const rootNode: XyNode = {
-    region: [0, 0, 1, 1], // normalized page region
+    region: withNormalization
+      ? [0, 0, 1, 1] // normalized page region
+      : [0, 0, page.width, page.height],
     components: Object.keys(componentMap)
   }
   // recursive mutation shenanigans

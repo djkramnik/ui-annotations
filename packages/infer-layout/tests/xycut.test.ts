@@ -4,8 +4,9 @@ describe('xycut smoke test', () => {
   it('performs xy cut as expected on our toy example', () => {
     const props = makeTestData()
     const root = xyCut(props)
-    console.log(JSON.stringify(root))
-    expect(2 + 2).toBe(4)
+    expect(JSON.stringify(root)).toMatchInlineSnapshot(
+      `"{"region":[0,0,25,25],"components":["component1","component2","component3","component4"],"children":[{"region":[0,0,25,12],"components":["component1"]},{"region":[0,12,25,25],"components":["component2","component3","component4"],"children":[{"region":[0,12,8,25],"components":["component2"]},{"region":[8,12,25,25],"components":["component3","component4"],"children":[{"region":[8,12,17,25],"components":["component3"]},{"region":[17,12,25,25],"components":["component4"]}]}]}]}"`,
+    )
   })
 
   function makeTestData(): {
