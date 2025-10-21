@@ -11,16 +11,16 @@ export function xyCut({
   components: _components,
   page,
   withNormalization,
-  unitHeight // height of a single line of text to use as a baseline
+  minGap // baseline height, somewhat related to the height of a line of text, to determine minimum gap size on splits
 }: {
   components: Component[]
   page: PageDim
   withNormalization?: boolean
-  unitHeight: number
+  minGap: number
 }): XyNode {
-  const unitH = withNormalization
-    ? unitHeight / page.height // normalize unit height
-    : unitHeight
+  const minG = withNormalization
+    ? minGap / page.height // normalize min gap
+    : minGap
   const components = withNormalization
     ? normalize(_components, page)
     : _components.slice(0)
@@ -43,7 +43,7 @@ export function xyCut({
   splitNode({
     node: rootNode,
     dict: componentMap,
-    unitH
+    minG
   })
   return rootNode
 }
@@ -51,11 +51,11 @@ export function xyCut({
 function splitNode({
   node,
   dict,
-  unitH,
+  minG,
 }: {
   node: XyNode
   dict: Record<string, Component>
-  unitH: number
+  minG: number
 }) {
   const [rx0, ry0, rx1, ry1] = node.region
 
@@ -65,8 +65,8 @@ function splitNode({
   }
 
   const boxes = node.components.map(id => dict[id]!.bbox)
-  const vMin = Math.max(0.05 * (rx1 - rx0), 1.2 * unitH) // min width for a vertial gutter
-  const hMin = Math.max(0.05 * (ry1 - ry0), 1.2 * unitH) // min height for a horizontal gutter
+  const vMin = Math.max(0.05 * (rx1 - rx0), minG) // min width for a vertial gutter
+  const hMin = Math.max(0.05 * (ry1 - ry0), minG) // min height for a horizontal gutter
 
   // get the gutters and filter out too small gutters + gutters adjacent to the region bounds (i.e margins)
   const vGutters = getVerticalGutters(node.region, boxes)
@@ -99,7 +99,7 @@ function splitNode({
   node.children = [n1, n2]
 
   for(const childNode of node.children) {
-    splitNode({ node: childNode, dict, unitH })
+    splitNode({ node: childNode, dict, minG })
   }
 }
 

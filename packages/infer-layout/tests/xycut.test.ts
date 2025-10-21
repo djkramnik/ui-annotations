@@ -4,20 +4,158 @@ describe('xycut smoke test', () => {
   it('performs xy cut as expected on our toy example', () => {
     const props = makeTestData()
     const root = xyCut(props)
-    expect(JSON.stringify(root)).toMatchInlineSnapshot(
-      `"{"region":[0,0,25,25],"components":["component1","component2","component3","component4"],"children":[{"region":[0,0,25,12],"components":["component1"]},{"region":[0,12,25,25],"components":["component2","component3","component4"],"children":[{"region":[0,12,8,25],"components":["component2"]},{"region":[8,12,25,25],"components":["component3","component4"],"children":[{"region":[8,12,17,25],"components":["component3"]},{"region":[17,12,25,25],"components":["component4"]}]}]}]}"`,
-    )
+    expect(root).toMatchInlineSnapshot(`
+     {
+       "children": [
+         {
+           "children": [
+             {
+               "components": [
+                 "component1",
+               ],
+               "region": [
+                 0,
+                 0,
+                 17.5,
+                 12,
+               ],
+             },
+             {
+               "children": [
+                 {
+                   "components": [
+                     "component2",
+                   ],
+                   "region": [
+                     0,
+                     12,
+                     8,
+                     25,
+                   ],
+                 },
+                 {
+                   "components": [
+                     "component3",
+                   ],
+                   "region": [
+                     8,
+                     12,
+                     17.5,
+                     25,
+                   ],
+                 },
+               ],
+               "components": [
+                 "component2",
+                 "component3",
+               ],
+               "region": [
+                 0,
+                 12,
+                 17.5,
+                 25,
+               ],
+             },
+           ],
+           "components": [
+             "component1",
+             "component2",
+             "component3",
+           ],
+           "region": [
+             0,
+             0,
+             17.5,
+             25,
+           ],
+         },
+         {
+           "components": [
+             "component4",
+           ],
+           "region": [
+             17.5,
+             0,
+             25,
+             25,
+           ],
+         },
+       ],
+       "components": [
+         "component1",
+         "component2",
+         "component3",
+         "component4",
+       ],
+       "region": [
+         0,
+         0,
+         25,
+         25,
+       ],
+     }
+    `)
+  })
+
+  it('makes less aggressive splits when you bump up the unitH value', () => {
+    const props = makeTestData()
+    const root = xyCut({
+      ...props,
+      minGap: 2.4, // our toy example has only one gap > 2.4  So we should see just root and two children... right? right??
+    })
+    expect(root).toMatchInlineSnapshot(`
+     {
+       "children": [
+         {
+           "components": [
+             "component1",
+             "component2",
+             "component3",
+           ],
+           "region": [
+             0,
+             0,
+             17.5,
+             25,
+           ],
+         },
+         {
+           "components": [
+             "component4",
+           ],
+           "region": [
+             17.5,
+             0,
+             25,
+             25,
+           ],
+         },
+       ],
+       "components": [
+         "component1",
+         "component2",
+         "component3",
+         "component4",
+       ],
+       "region": [
+         0,
+         0,
+         25,
+         25,
+       ],
+     }
+    `)
   })
 
   function makeTestData(): {
     components: Component[]
     page: { width: number; height: number }
-    unitHeight: number
+    minGap: number
   } {
     const type = 'any'
     return {
       page: { width: 25, height: 25 },
-      unitHeight: 1,
+      minGap: 1,
       components: [
         {
           id: 'component1',
@@ -37,7 +175,7 @@ describe('xycut smoke test', () => {
         {
           id: 'component4',
           type,
-          bbox: [18, 13, 20, 23],
+          bbox: [19, 13, 20, 23],
         },
       ],
     }
