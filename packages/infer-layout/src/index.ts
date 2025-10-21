@@ -1,7 +1,7 @@
 // simplified xy cut typescript implementation
 // currently no binning or projections.  relies on pure empty bands for splits
 
-import { Bbox, bestSplit, clamp01, Component, getHorizontalGutters, getRegion, getVerticalGutters, nearlyEqual, XyNode } from "./util"
+import { Bbox, bestSplit, clamp01, Component, getHorizontalGutters, getRegion, getVerticalGutters, nearlyEqual, splitOnGutter, XyNode } from "./util"
 
 type PageDim = { width: number, height: number }
 
@@ -50,13 +50,13 @@ function splitNode({
   unitH: number
 }) {
   const [rx0, ry0, rx1, ry1] = node.region
-  const boxes = node.components.map(id => dict[id]!.bbox)
 
   // if we only have one or less box in the region just return
-  if (boxes.length < 2) {
+  if (node.components.length < 2) {
     return
   }
 
+  const boxes = node.components.map(id => dict[id]!.bbox)
   const vMin = Math.max(0.05 * (rx1 - rx0), 1.2 * unitH) // min width for a vertial gutter
   const hMin = Math.max(0.05 * (ry1 - ry0), 1.2 * unitH) // min height for a horizontal gutter
 
@@ -73,14 +73,26 @@ function splitNode({
   }
 
   // from the qualifying gutters, find the best to split on
-  const { winner, idx } = bestSplit({
+  const { winner, idx: gIdx } = bestSplit({
     cleanVGutters: vGutters,
     cleanHGutters: hGutters,
     region: node.region
   })
 
+  const [n1, n2] = splitOnGutter({
+    axis: winner === 'vGutter' ? 'X' : 'Y',
+    gutter: winner === 'vGutter'
+      ? vGutters[gIdx]
+      : hGutters[gIdx],
+    region: node.region,
+    components: node.components.map(id => dict[id])
+  })
 
+  node.children = [n1, n2]
 
+  for(const childNode of node.children) {
+    splitNode({ node: childNode, dict, unitH })
+  }
 }
 
 function normalize(components: Component[], page: PageDim): Component[] {
