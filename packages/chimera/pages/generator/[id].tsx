@@ -3,8 +3,7 @@ import { useRouter } from 'next/router'
 import { CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
 import { AnnotationPayload, Annotations, ServiceManualLabel, serviceManualLabel } from 'ui-labelling-shared'
 import ScreenshotAnnotator from '../../components/generator/screenshot-annotated'
-import { buildLayoutTreeDeux, normalize } from '../../util/generator/infer-layout'
-import { flattenTree, toLayoutInput, unpackLayoutTree } from '../../util/generator'
+import { buildLayoutTree } from 'infer-layout'
 
 const ignoreLabels: ServiceManualLabel[] = [
   ServiceManualLabel.row,
@@ -55,22 +54,19 @@ const GenerateByExample = () => {
       height: annotations.viewHeight
     }
 
-    const elemInputs = toLayoutInput(annotations.payload)
-    const normElems = normalize(elemInputs, pageInfo)
-    const layout = buildLayoutTreeDeux(
-      normElems,
-      pageInfo
-    )
-    setLayout(JSON.stringify(layout))
 
-    setAnnotations(
-      annotations => ({
-        ...annotations,
-        payload: {
-          annotations: flattenTree(unpackLayoutTree(layout))
-        }
-      })
-    )
+
+
+
+    return
+    // setAnnotations(
+    //   annotations => ({
+    //     ...annotations,
+    //     payload: {
+    //       annotations: flattenTree(unpackLayoutTree(layout))
+    //     }
+    //   })
+    // )
   }, [annotations, setAnnotations, setLayout])
 
   useEffect(() => {

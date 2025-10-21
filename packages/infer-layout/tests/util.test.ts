@@ -1,4 +1,4 @@
-import { Bbox, clamp01, getVerticalGutters, getRegion, Interval, unionIntervals, getHorizontalGutters } from '../src/util'
+import { Bbox, clamp01, getVerticalGutters, getRegion, Interval, unionIntervals, getHorizontalGutters, iqrClip } from '../src/util'
 
 describe('getBounds', () => {
   it('creates a region from a series of bounding boxes', () => {
@@ -83,5 +83,18 @@ describe('getHorizontalGutters', () => {
     const region: Bbox = [0, 0, 10, 25]
     const boxes: Bbox[] = []
     expect(getHorizontalGutters(region, boxes)).toEqual([])
+  })
+})
+
+describe('iqrClip', () => {
+  it('filters array of numbers to those within percentile range', () => {
+    expect(iqrClip([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])).toEqual([
+      2, 3, 4, 5, 6, 7, 8, 9
+    ])
+  })
+  it('can handle custom percentile range', () => {
+    expect(iqrClip([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 0.2, 0.8)).toEqual([
+      3, 4, 5, 6, 7, 8
+    ])
   })
 })

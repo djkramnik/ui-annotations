@@ -2,7 +2,7 @@
   "name": "infer-layout",
   "version": "1.0.0",
   "description": "Given a series of bounding boxes of granular elements on the page, infer layout structure (rows, columns etc)",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "test": "jest",
     "build": "tsc"

@@ -119,6 +119,26 @@ export function nearlyEqual(a: number, b: number) {
   return Math.abs(a - b) < EPS
 }
 
+export function median(v: number[]): number {
+  if (!v.length) return 0
+  const a = [...v].sort((x, y) => x - y)
+  const m = Math.floor(a.length / 2)
+  return a.length % 2 ? a[m] : 0.5 * (a[m - 1] + a[m])
+}
+
+// filter by low and high percentile
+export function iqrClip(values: number[], lowQ = 0.1, highQ = 0.9): number[] {
+  if (!values.length) return values
+  const a = [...values].sort((x, y) => x - y)
+  const q = (p: number) => {
+    const i = (a.length - 1) * p
+    const i0 = Math.floor(i), i1 = Math.ceil(i)
+    return i0 === i1 ? a[i0] : a[i0] + (a[i1] - a[i0]) * (i - i0)
+  }
+  const lo = q(lowQ), hi = q(highQ)
+  return a.filter(x => x >= lo && x <= hi)
+}
+
 export function bestSplit({
   cleanVGutters,
   cleanHGutters,

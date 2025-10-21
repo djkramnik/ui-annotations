@@ -97,7 +97,7 @@ describe('xycut smoke test', () => {
     `)
   })
 
-  it('makes less aggressive splits when you bump up the unitH value', () => {
+  it('makes less aggressive splits when you bump up the minGap value', () => {
     const props = makeTestData()
     const root = xyCut({
       ...props,
