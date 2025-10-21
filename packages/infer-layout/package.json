@@ -4,14 +4,17 @@
   "description": "Given a series of bounding boxes of granular elements on the page, infer layout structure (rows, columns etc)",
   "main": "index.js",
   "scripts": {
-    "test": "http-server visualizer"
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^24.8.0",
     "http-server": "^14.1.1",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.5",
     "typescript": "^5.9.3"
   }
 }
