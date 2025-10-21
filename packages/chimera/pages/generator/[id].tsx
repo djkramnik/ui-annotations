@@ -3,7 +3,7 @@ import { useRouter } from 'next/router'
 import { CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
 import { AnnotationPayload, Annotations, ServiceManualLabel, serviceManualLabel } from 'ui-labelling-shared'
 import ScreenshotAnnotator from '../../components/generator/screenshot-annotated'
-import { buildLayoutTree } from 'infer-layout'
+import { buildLayoutTree, xyCut } from 'infer-layout'
 
 const ignoreLabels: ServiceManualLabel[] = [
   ServiceManualLabel.row,
@@ -49,14 +49,25 @@ const GenerateByExample = () => {
     if (!annotations) {
       return
     }
-    const pageInfo = {
+    const page = {
       width: annotations.viewWidth,
       height: annotations.viewHeight
     }
+    // we assume that the layout has a helper label, "text_unit", the height of a single line of body text, to serve as the basis for a min gap threshold
+    const textUnitElem = annotations.payload.annotations.find(
+      a => a.label === ServiceManualLabel.text_unit)
 
+    if (!textUnitElem) {
+      console.log('cannot find text unit label.  Aborting')
+    }
+    const minGap = textUnitElem.rect.height * 2 // times two is not so special sauce
 
-
-
+    const root = xyCut({
+      components: [],
+      page,
+      minGap,
+    })
+    console.log('root', root)
 
     return
     // setAnnotations(
