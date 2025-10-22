@@ -4,15 +4,15 @@ export interface Row {
   blockIds: string[]
 }
 
-export interface ColumnLayout {
-  xRange: [number, number] // normalized to page width
+export interface RegionLayout {
+  bounds: Bbox
   rowGroups: Row[]
   blockIdsInColumn: string[]
 }
 
 export interface LayoutTree {
   page: { width: number; height: number }
-  columns: ColumnLayout[]
+  regions: RegionLayout[]
   snappedComponents: Component[]
 }
 
@@ -44,22 +44,21 @@ export function buildLayoutTree({
   }
 
   // build columns
-  const columns: ColumnLayout[] = leaves.map((leaf) => {
+  const regions: RegionLayout[] = leaves.map((leaf) => {
     const ordered = orderTopToBottom(leaf.components, dict)
-    const xRange = xRangeFor(leaf.components, dict, W)
     return {
-      xRange,
+      bounds: leaf.region,
       rowGroups: [{ blockIds: ordered }],
       blockIdsInColumn: ordered,
     }
   })
 
   // left→right by x start
-  columns.sort((a, b) => a.xRange[0] - b.xRange[0])
+  regions.sort((a, b) => a.bounds[0] - b.bounds[0])
 
   return {
     page: { width: W, height: H },
-    columns,
+    regions,
     snappedComponents: Object.values(dict),
   }
 }

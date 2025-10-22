@@ -9,6 +9,7 @@ import { unpackLayoutTree, xyNodeToAnnotations } from '../../util/generator'
 const ignoreLabels: ServiceManualLabel[] = [
   ServiceManualLabel.row,
   ServiceManualLabel.column,
+  ServiceManualLabel.diagram_number
 ]
 
 // a partial clone of the frontend annotator...
@@ -83,7 +84,7 @@ const GenerateByExample = () => {
     const root = xyCut({
       components,
       page,
-      minGap: unitHeight * 0.2 // dubious sauce,
+      minGap: unitHeight
     })
 
     const layoutTree = buildLayoutTree({

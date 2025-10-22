@@ -20,20 +20,31 @@ type ComponentMap = Record<string, Component>
 export { buildLayoutTree, LayoutTree } from './layout'
 export { getRegion } from './util'
 
+// determining which gaps may be split on
+export type CutOptions = {
+  unitMultiplier: number
+  minRegionPct: number
+}
+
 export function xyCut({
   components: _components,
   page,
   withNormalization,
-  minGap, // baseline height, somewhat related to the height of a line of text, to determine minimum gap size on splits
+  unitHeight, // ostensibly the height of the body text
+  opts,
 }: {
   components: Component[]
   page: PageDim
   withNormalization?: boolean
-  minGap: number
+  unitHeight: number
+  opts?: {
+    vMin: CutOptions
+    hMin: CutOptions
+  }
 }): XyNode {
-  const minG = withNormalization
-    ? minGap / page.height // normalize min gap
-    : minGap
+  const unitH = withNormalization
+    ? unitHeight / page.height // normalize min gap
+    : unitHeight
   const components = withNormalization
     ? normalize(_components, page)
     : _components.slice(0)
@@ -55,7 +66,8 @@ export function xyCut({
   splitNode({
     node: rootNode,
     dict: componentMap,
-    minG,
+    unitH,
+    opts,
   })
   return rootNode
 }
@@ -63,11 +75,25 @@ export function xyCut({
 function splitNode({
   node,
   dict,
-  minG,
+  unitH,
+  opts = {
+    vMin: {
+      unitMultiplier: 0.3,
+      minRegionPct: 0.05,
+    },
+    hMin: {
+      unitMultiplier: 0.3,
+      minRegionPct: 0.05
+    }
+  },
 }: {
   node: XyNode
   dict: Record<string, Component>
-  minG: number
+  unitH: number
+  opts?: {
+    vMin: CutOptions
+    hMin: CutOptions
+  }
 }) {
   const [rx0, ry0, rx1, ry1] = node.region
 
@@ -77,8 +103,10 @@ function splitNode({
   }
 
   const boxes = node.components.map((id) => dict[id]!.bbox)
-  const vMin = Math.max(0.005 * (rx1 - rx0), minG) // min width for a vertial gutter.  clamped to half a percent of total space
-  const hMin = Math.max(0.005 * (ry1 - ry0), minG) // min height for a horizontal gutter.
+  const { vMin: vOpts, hMin: hOpts} = opts
+
+  const vMin = Math.max(vOpts.minRegionPct * (rx1 - rx0), unitH * vOpts.unitMultiplier) // min width for a vertial gutter.  clamped to half a percent of total space
+  const hMin = Math.max(hOpts.minRegionPct * (ry1 - ry0), unitH * hOpts.unitMultiplier) // min height for a horizontal gutter.
 
   // get the gutters and filter out too small gutters + gutters adjacent to the region bounds (i.e margins)
 
@@ -115,7 +143,7 @@ function splitNode({
   node.children = [n1, n2]
 
   for (const childNode of node.children) {
-    splitNode({ node: childNode, dict, minG })
+    splitNode({ node: childNode, dict, unitH, opts })
   }
 }
 

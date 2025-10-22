@@ -1,5 +1,5 @@
 import { bestSplit, Component, Interval, splitOnGutter } from '../src/util'
-import { xyCut } from '../src/index'
+import { CutOptions, xyCut } from '../src/index'
 describe('xycut smoke test', () => {
   it('performs xy cut as expected on our toy example', () => {
     const props = makeTestData()
@@ -101,7 +101,7 @@ describe('xycut smoke test', () => {
     const props = makeTestData()
     const root = xyCut({
       ...props,
-      minGap: 2.4, // our toy example has only one gap > 2.4  So we should see just root and two children... right? right??
+      unitHeight: 2.4, // our toy example has only one gap > 2.4  So we should see just root and two children... right? right??
     })
     expect(root).toMatchInlineSnapshot(`
      {
@@ -150,12 +150,26 @@ describe('xycut smoke test', () => {
   function makeTestData(): {
     components: Component[]
     page: { width: number; height: number }
-    minGap: number
+    unitHeight: number
+    opts: {
+      vMin: CutOptions
+      hMin: CutOptions
+    }
   } {
     const type = 'any'
     return {
+      opts: {
+        vMin: {
+          unitMultiplier: 1,
+          minRegionPct: 0.05,
+        },
+        hMin: {
+          unitMultiplier: 1,
+          minRegionPct: 0.05,
+        },
+      },
       page: { width: 25, height: 25 },
-      minGap: 1,
+      unitHeight: 1,
       components: [
         {
           id: 'component1',
