@@ -4,7 +4,7 @@ import { CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
 import { AnnotationPayload, Annotations, ServiceManualLabel, serviceManualLabel } from 'ui-labelling-shared'
 import ScreenshotAnnotator from '../../components/generator/screenshot-annotated'
 import { buildLayoutTree, xyCut } from 'infer-layout'
-import { unpackLayoutTree, xyNodeToAnnotations } from '../../util/generator'
+import { unpackLayoutTree, xyNodeToAnnotations, Rect } from '../../util/generator'
 
 const ignoreLabels: ServiceManualLabel[] = [
   ServiceManualLabel.row,
@@ -14,7 +14,7 @@ const ignoreLabels: ServiceManualLabel[] = [
 
 // a partial clone of the frontend annotator...
 const GenerateByExample = () => {
-  const { query, push, isReady } = useRouter()
+  const { query, isReady } = useRouter()
   const originalAnnotations = useRef<AnnotationPayload['annotations'] | null>(
     null,
   )
@@ -46,6 +46,32 @@ const GenerateByExample = () => {
       color: 'transparent'
     }
   }, [labelToColor])
+
+
+  const handleTighten = useCallback(async () => {
+    if (!originalAnnotations.current) {
+      return
+    }
+    fetch(`/api/screenshot/tighten/${query.id}`)
+      .then((r) => r.json())
+      .then(({ updatedBoxes }: { updatedBoxes: Rect[]}) => {
+        setAnnotations(annotations => {
+          return {
+            ...annotations,
+            payload: {
+              annotations: originalAnnotations.current.map((a, i) => {
+                return {
+                  ...a,
+                  rect: updatedBoxes[i]
+                }
+              })
+            }
+          }
+        })
+      })
+      .catch(console.error)
+
+  }, [query, setAnnotations])
 
   const handleInferLayout = useCallback(() => {
     if (!annotations) {
@@ -204,6 +230,7 @@ const GenerateByExample = () => {
             <h4>Control Panel</h4>
             <textarea rows={20} value={layout} />
             <button onClick={handleInferLayout}>infer layout</button>
+            <button onClick={handleTighten}>tighten up</button>
           </Box>
         </Box>
       </Container>

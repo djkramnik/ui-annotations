@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express'
 import { prisma } from '../db'
 import sharp from 'sharp'
+import { boxesSimilar, getExtract, scaleRect, tightenBoundingBoxes } from '../util/screenshot'
+import { AnnotationPayload } from 'ui-labelling-shared'
 
 type Rect = {
   x: number
@@ -10,39 +12,6 @@ type Rect = {
 }
 
 export const screenshotRouter = Router()
-
-function scaleRect({
-  rect,
-  sx,
-  sy,
-  imgW,
-  imgH
-}: {
-  rect: Rect
-  sx: number
-  sy: number
-  imgW: number
-  imgH: number
-}): Rect {
-
-  const { x, y, width, height } = rect
-  let ix = Math.round(x * sx);
-  let iy = Math.round(y * sy);
-  let iw = Math.round(width * sx);
-  let ih = Math.round(height * sy);
-
-  // Clamp to image bounds (avoids errors if rect spills out)
-  ix = Math.max(0, Math.min(ix, imgW - 1));
-  iy = Math.max(0, Math.min(iy, imgH - 1));
-  iw = Math.max(0, Math.min(iw, imgW - ix));
-  ih = Math.max(0, Math.min(ih, imgH - iy));
-  return {
-    x: ix,
-    y: iy,
-    width: iw,
-    height: ih
-  }
-}
 
 screenshotRouter.put('/:id', async (req: Request, res: Response) => {
   const { rect } = req.body as {
@@ -120,21 +89,45 @@ screenshotRouter.put('/:id', async (req: Request, res: Response) => {
   }
 })
 
-async function getExtract({
-  rect,
-  buf
-}: {
-  rect: Rect,
-  buf: Buffer
-}): Promise<string> {
-  return (
-    await sharp(buf).extract({
-      left: rect.x,
-      top: rect.y,
-      ...rect
-    }).png().toBuffer()
-  ).toString('base64')
-}
+screenshotRouter.get('/tighten/:id', async (req: Request, res: Response) => {
+  try {
+    const annotationId = Number(req.params.id)
+    const annotation = await prisma.annotation.findFirstOrThrow({
+      where: {
+        id: annotationId
+      }
+    })
+    const vw = annotation.viewWidth
+    const vh = annotation.viewHeight
+
+    const screenshot = annotation.screenshot
+
+    if (screenshot === null) {
+      res.status(404).send({ message: 'annotation with [id] has no screenshot '})
+      return
+    }
+
+    const { annotations } = annotation.payload as unknown as AnnotationPayload
+
+    const ogBoxes = annotations.map(a => a.rect)
+    const updatedBoxes = await tightenBoundingBoxes({
+      b64: Buffer.from(screenshot).toString('base64'),
+      annotations: ogBoxes,
+      vw,
+      vh,
+    })
+
+    res.status(200).send({
+      updatedBoxes: updatedBoxes.map((b, i) => {
+        return boxesSimilar(ogBoxes[i], b)
+          ? b
+          : ogBoxes[i]
+      })}
+    )
+  } catch(e) {
+    res.status(500).send({ error: String(e) })
+  }
+})
 
 screenshotRouter.post('/clips', async (req: Request, res: Response) => {
   const body = req.body as {
@@ -193,4 +186,5 @@ screenshotRouter.post('/clips', async (req: Request, res: Response) => {
     res.status(500).send({ error: String(e) })
   }
 })
+
 

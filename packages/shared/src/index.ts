@@ -1,3 +1,4 @@
+
 export enum ServiceManualLabel {
   logo = 'logo',
   text_block = 'text_block',

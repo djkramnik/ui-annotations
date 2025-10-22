@@ -3,39 +3,22 @@ import { XyNode } from "infer-layout/dist/util";
 import { AnnotationPayload } from "ui-labelling-shared";
 
 type SingleAnnotation = AnnotationPayload['annotations'][0]
-type Rect = SingleAnnotation['rect']
+export type Rect = SingleAnnotation['rect']
 // just return a flattened array of annotations
 export const unpackLayoutTree = (layoutTree: LayoutTree): AnnotationPayload['annotations'] => {
   const {page, regions, snappedComponents} = layoutTree
 
-  const denormalizedCols = regions.map(r => {
+  const denormalizedRegions = regions.map(r => {
     return {
       id: crypto.randomUUID(),
       rect: bboxToRect(r.bounds),
       label: `layout_tree_column`
     }
   })
-  // const denomalizedRows = regions.reduce((acc, c) => {
-  //   return acc.concat(c.rowGroups
-  //     .filter(({ blockIds }) => blockIds.length > 1)
-  //     .reduce((acc, rg) => {
-
-  //     const boxes: [number, number, number, number][]
-  //       = rg.blockIds.map(id => snappedComponents.find(sc => sc.id === id).bbox)
-  //     return acc.concat(
-  //       boxes.map(b => ({
-  //         id: crypto.randomUUID(),
-  //         rect: bboxToRect(b),
-  //         label: `layout_tree_row`
-  //       }))
-  //     )
-  //   }, [] as SingleAnnotation[]))
-  // }, [] as SingleAnnotation[])
 
   const denormalizedSnapped = snappedComponents.map(c => componentToAnnotation(c, page.width, page.height))
   return denormalizedSnapped
-    .concat(denormalizedCols)
-    // .concat(denomalizedRows)
+    .concat(denormalizedRegions)
 }
 
 function componentToAnnotation(component: LayoutTree['snappedComponents'][0], w: number, h: number): SingleAnnotation {
