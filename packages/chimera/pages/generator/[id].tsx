@@ -4,10 +4,11 @@ import { CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
 import { AnnotationPayload, Annotations, ServiceManualLabel, serviceManualLabel } from 'ui-labelling-shared'
 import ScreenshotAnnotator from '../../components/generator/screenshot-annotated'
 import { buildLayoutTree, xyCut } from 'infer-layout'
+import { unpackLayoutTree, xyNodeToAnnotations } from '../../util/generator'
 
 const ignoreLabels: ServiceManualLabel[] = [
   ServiceManualLabel.row,
-  ServiceManualLabel.column
+  ServiceManualLabel.column,
 ]
 
 // a partial clone of the frontend annotator...
@@ -59,25 +60,53 @@ const GenerateByExample = () => {
 
     if (!textUnitElem) {
       console.log('cannot find text unit label.  Aborting')
+      return
     }
-    const minGap = textUnitElem.rect.height * 2 // times two is not so special sauce
+    const unitHeight = textUnitElem.rect.height // volatile brew
+
+    const excludeElems = (a: AnnotationPayload['annotations'][0]) => {
+      return a !== textUnitElem && !ignoreLabels.includes(a.label as ServiceManualLabel)
+    }
+    const components = annotations.payload.annotations
+      .filter(excludeElems)
+      .map(a => ({
+        type: a.label,
+        id: a.id,
+        bbox: ([
+          a.rect.x,
+          a.rect.y,
+          a.rect.x + a.rect.width,
+          a.rect.y + a.rect.height
+        ] as [number, number, number, number])
+      }))
 
     const root = xyCut({
-      components: [],
+      components,
       page,
-      minGap,
+      minGap: unitHeight * 0.2 // dubious sauce,
     })
-    console.log('root', root)
 
-    return
-    // setAnnotations(
-    //   annotations => ({
-    //     ...annotations,
-    //     payload: {
-    //       annotations: flattenTree(unpackLayoutTree(layout))
-    //     }
-    //   })
-    // )
+    const layoutTree = buildLayoutTree({
+      root,
+      unitHeight,
+      components: components.reduce((acc, c) => {
+        return {
+          ...acc,
+          [c.id]: c
+        }
+      }, {}) // great naming job!
+    })
+    const newAnnotations = unpackLayoutTree(layoutTree)
+      .filter(a => a.label.startsWith('layout_tree_'))
+
+    setAnnotations(
+      annotations => ({
+        ...annotations,
+        payload: {
+          annotations: newAnnotations
+        }
+      })
+    )
   }, [annotations, setAnnotations, setLayout])
 
   useEffect(() => {

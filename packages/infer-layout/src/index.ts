@@ -17,7 +17,8 @@ type PageDim = { width: number; height: number }
 
 type ComponentMap = Record<string, Component>
 
-export { buildLayoutTree } from './layout'
+export { buildLayoutTree, LayoutTree } from './layout'
+export { getRegion } from './util'
 
 export function xyCut({
   components: _components,
@@ -76,16 +77,18 @@ function splitNode({
   }
 
   const boxes = node.components.map((id) => dict[id]!.bbox)
-  const vMin = Math.max(0.05 * (rx1 - rx0), minG) // min width for a vertial gutter
-  const hMin = Math.max(0.05 * (ry1 - ry0), minG) // min height for a horizontal gutter
+  const vMin = Math.max(0.005 * (rx1 - rx0), minG) // min width for a vertial gutter.  clamped to half a percent of total space
+  const hMin = Math.max(0.005 * (ry1 - ry0), minG) // min height for a horizontal gutter.
 
   // get the gutters and filter out too small gutters + gutters adjacent to the region bounds (i.e margins)
-  const vGutters = getVerticalGutters(node.region, boxes).filter(
+
+  const _vGutters = getVerticalGutters(node.region, boxes)
+  const vGutters = _vGutters.filter(
     ([x0, x1]) =>
       x1 - x0 >= vMin && !nearlyEqual(x0, rx0) && !nearlyEqual(x1, rx1),
   )
-
-  const hGutters = getHorizontalGutters(node.region, boxes).filter(
+  const _hGutters = getHorizontalGutters(node.region, boxes)
+  const hGutters = _hGutters.filter(
     ([y0, y1]) =>
       y1 - y0 >= hMin && !nearlyEqual(y0, ry0) && !nearlyEqual(y1, ry1),
   )

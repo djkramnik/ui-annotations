@@ -36,8 +36,7 @@ export function buildLayoutTree({
 
   // gather leaves → candidate columns
   const leaves = collectLeaves(root)
-  const unitH = unitHeight / H
-  const eps = Math.max(0.3 * unitH, 0.5) // ~30% of text height, but at least 0.5 px
+  const eps = Math.max(0.3 * unitHeight, 0.5) // ~30% of text height, but at least 0.5 px
 
   // snap per-leaf (column) so edges align cleanly
   for (const leaf of leaves) {
