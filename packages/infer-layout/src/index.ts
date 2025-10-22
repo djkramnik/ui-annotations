@@ -23,7 +23,7 @@ export { getRegion } from './util'
 // determining which gaps may be split on
 export type CutOptions = {
   unitMultiplier: number
-  minRegionPct: number
+  minRegionPct?: number
 }
 
 export function xyCut({
@@ -79,11 +79,11 @@ function splitNode({
   opts = {
     vMin: {
       unitMultiplier: 0.3,
-      minRegionPct: 0.05,
+      minRegionPct: 0.005,
     },
     hMin: {
       unitMultiplier: 0.3,
-      minRegionPct: 0.05
+      minRegionPct: 0.005
     }
   },
 }: {
@@ -105,8 +105,11 @@ function splitNode({
   const boxes = node.components.map((id) => dict[id]!.bbox)
   const { vMin: vOpts, hMin: hOpts} = opts
 
-  const vMin = Math.max(vOpts.minRegionPct * (rx1 - rx0), unitH * vOpts.unitMultiplier) // min width for a vertial gutter.  clamped to half a percent of total space
-  const hMin = Math.max(hOpts.minRegionPct * (ry1 - ry0), unitH * hOpts.unitMultiplier) // min height for a horizontal gutter.
+
+  const vMin = Math.max(vOpts.minRegionPct ?? 0.005 * (rx1 - rx0), unitH * vOpts.unitMultiplier) // min width for a vertial gutter.  clamped to half a percent of total space
+  const hMin = Math.max(hOpts.minRegionPct ?? 0.005 * (ry1 - ry0), unitH * hOpts.unitMultiplier) // min height for a horizontal gutter.
+  console.log('vmin', vMin)
+  console.log('hmin', hMin)
 
   // get the gutters and filter out too small gutters + gutters adjacent to the region bounds (i.e margins)
 

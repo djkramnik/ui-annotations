@@ -42,7 +42,7 @@ const GenerateByExample = () => {
     return {
       opacity: 1,
       backgroundColor: 'transparent',
-      border: `2px solid ${fill}`,
+      border: `1px solid ${fill}`,
       color: 'transparent'
     }
   }, [labelToColor])
@@ -84,7 +84,15 @@ const GenerateByExample = () => {
     const root = xyCut({
       components,
       page,
-      minGap: unitHeight
+      unitHeight,
+      opts: {
+        vMin: {
+          unitMultiplier: 0.2
+        },
+        hMin: {
+          unitMultiplier: 0.4
+        }
+      }
     })
 
     const layoutTree = buildLayoutTree({
