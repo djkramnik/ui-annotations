@@ -7,6 +7,7 @@ import {
   clamp01,
   Component,
   getHorizontalGutters,
+  getRegion,
   getVerticalGutters,
   nearlyEqual,
   splitOnGutter,
@@ -29,27 +30,21 @@ export type CutOptions = {
 export function xyCut({
   components: _components,
   page,
-  withNormalization,
   unitHeight, // ostensibly the height of the body text
   opts,
+  useContentBounds
 }: {
   components: Component[]
   page: PageDim
-  withNormalization?: boolean
   unitHeight: number
   opts?: {
     vMin: CutOptions
     hMin: CutOptions
-  }
+  },
+  useContentBounds?: boolean
 }): XyNode {
-  const unitH = withNormalization
-    ? unitHeight / page.height // normalize min gap
-    : unitHeight
-  const components = withNormalization
-    ? normalize(_components, page)
-    : _components.slice(0)
 
-  const componentMap: ComponentMap = components.reduce((acc, c) => {
+  const componentMap: ComponentMap = _components.reduce((acc, c) => {
     return {
       ...acc,
       [c.id]: c,
@@ -57,8 +52,8 @@ export function xyCut({
   }, {} as ComponentMap)
 
   const rootNode: XyNode = {
-    region: withNormalization
-      ? [0, 0, 1, 1] // normalized page region
+    region: useContentBounds
+      ? getRegion(_components.map(c => c.bbox))
       : [0, 0, page.width, page.height],
     components: Object.keys(componentMap),
   }
@@ -66,7 +61,7 @@ export function xyCut({
   splitNode({
     node: rootNode,
     dict: componentMap,
-    unitH,
+    unitH: unitHeight,
     opts,
   })
   return rootNode
@@ -105,11 +100,8 @@ function splitNode({
   const boxes = node.components.map((id) => dict[id]!.bbox)
   const { vMin: vOpts, hMin: hOpts} = opts
 
-
   const vMin = Math.max(vOpts.minRegionPct ?? 0.005 * (rx1 - rx0), unitH * vOpts.unitMultiplier) // min width for a vertial gutter.  clamped to half a percent of total space
   const hMin = Math.max(hOpts.minRegionPct ?? 0.005 * (ry1 - ry0), unitH * hOpts.unitMultiplier) // min height for a horizontal gutter.
-  console.log('vmin', vMin)
-  console.log('hmin', hMin)
 
   // get the gutters and filter out too small gutters + gutters adjacent to the region bounds (i.e margins)
 

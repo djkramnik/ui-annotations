@@ -92,7 +92,8 @@ const GenerateByExample = () => {
         hMin: {
           unitMultiplier: 0.4
         }
-      }
+      },
+      useContentBounds: true
     })
 
     const layoutTree = buildLayoutTree({
