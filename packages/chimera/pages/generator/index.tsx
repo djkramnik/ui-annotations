@@ -3,14 +3,14 @@
 // generate data for the preview (which then gets saved in local storage)
 
 import { Box, Container } from '@mui/material'
-import { FormEvent, useCallback, useState } from 'react'
+import { FormEvent, useCallback, useEffect, useState } from 'react'
 import { Annotations, ServiceManualLabel } from 'ui-labelling-shared'
-import { fetchAnnotationById, fetchTighterAnnotations, TightenResponse } from '../../util/api'
-import { Base64Img } from '../../components/generator/base64-img'
+import { fetchAnnotationById, fetchTighterAnnotations } from '../../util/api'
+import { PreviewAnnotation } from '../../components/generator/preview-annotation'
 import { Flex } from '../../components/generator/flex'
 import { xyCut } from 'infer-layout'
 import { bboxToRect, mergeColsFlat } from '../../util/generator'
-import { PreviewSchema, writePreviewSchema } from '../../util/localstorage'
+import { PreviewSchema, readPreviewSchema, writePreviewSchema } from '../../util/localstorage'
 
 const GenerateFromExample = () => {
   const [annoId, setAnnoId] = useState<string>('2460')
@@ -76,28 +76,7 @@ const GenerateFromExample = () => {
 
 export default GenerateFromExample
 
-function PreviewAnnotation({ annotations }: { annotations: Annotations }) {
-  const { screenshot } = annotations
 
-  return (
-    <Flex gap="12px">
-      <Flex aic>
-        <Base64Img
-          source={screenshot}
-          style={{ width: '200px', border: '1px solid black' }}
-        />
-      </Flex>
-      <Flex>
-        <ul>
-          <li>id: {annotations.id}</li>
-          <li>width: {annotations.viewWidth}</li>
-          <li>height: {annotations.viewHeight}</li>
-          <li>tag: {annotations.tag ?? 'no tag'}</li>
-        </ul>
-      </Flex>
-    </Flex>
-  )
-}
 
 // when calculating layout ignore these
 const ignoreForLayout: ServiceManualLabel[] = [
@@ -107,7 +86,7 @@ const ignoreForLayout: ServiceManualLabel[] = [
   ServiceManualLabel.text_unit,
   ServiceManualLabel.page_frame
 ]
-const ignoreAlways: ServiceManualLabel[] = [
+const ignoreForGen: ServiceManualLabel[] = [
   ServiceManualLabel.row,
   ServiceManualLabel.column,
   ServiceManualLabel.text_unit
@@ -122,6 +101,17 @@ function GenSyntheticForm({
 }) {
   const [tighten, setTighten] = useState<boolean>(true)
   const [designPref, setDesignPref] = useState<'mui' | 'ant'>('mui')
+  const [schemaConfirmed, setSchemaConfirmed] = useState<boolean>(false)
+
+  useEffect(() => {
+    const maybeSchema = readPreviewSchema()
+    if (maybeSchema === null) {
+      return
+    }
+    setSchemaConfirmed(
+      maybeSchema.annotations.id === id
+    )
+  }, [setSchemaConfirmed, id])
 
   // optionally perform tighten
   // save preferences (for now just mui or ant)
@@ -184,13 +174,28 @@ function GenSyntheticForm({
       })
 
       writePreviewSchema({
-        annotations: processedAnnotations,
+        annotations: {
+          ...processedAnnotations,
+          payload: {
+            annotations: processedAnnotations.payload.annotations
+              .filter(a => {
+                return !ignoreForGen.includes(a.label as ServiceManualLabel)
+              })
+          }
+        },
         layout,
         designPref,
         contentBounds: bboxToRect(root.region)
       })
+
+      const maybeSchema = readPreviewSchema()
+      if (maybeSchema === null) {
+        console.error('wtf we just wrote this schema!')
+        return
+      }
+      setSchemaConfirmed(maybeSchema.annotations.id === id)
     },
-    [designPref, tighten, annotations],
+    [designPref, tighten, annotations, setSchemaConfirmed, id],
   )
 
   return (
@@ -244,6 +249,13 @@ function GenSyntheticForm({
           </button>
         </Flex>
       </form>
+      {
+        schemaConfirmed
+          ? (
+            'Schema is saved!'
+          )
+          : null
+      }
     </div>
   )
 }
