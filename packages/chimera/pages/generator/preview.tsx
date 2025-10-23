@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { PreviewSchema, readPreviewSchema } from "../../util/localstorage"
 import { PreviewAnnotation } from "../../components/generator/preview-annotation"
 import { GridRenderer } from "../../components/generator/dynamicGrid"
+import { DynamicMuiComponent } from "../../components/mui/service-manual-dynamic"
 
 const PreviewPage = () => {
   const fetched = useRef<boolean>(false)
@@ -27,7 +28,10 @@ const PreviewPage = () => {
     <div>
       <SchemaMeta schema={schema} />
       <hr />
-      <GridRenderer data={schema} showDebugBorders />
+      <GridRenderer data={schema}
+        showDebugBorders
+        ComponentRenderer={DynamicMuiComponent}
+      />
     </div>
   )
 }

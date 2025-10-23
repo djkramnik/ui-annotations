@@ -7,6 +7,7 @@ export const Flex = ({
   jcsb,
   jcc,
   jcsa,
+  wrap,
   col,
   gap
 }: {
@@ -17,6 +18,7 @@ export const Flex = ({
   jcsb?: boolean
   jcc?: boolean
   jcsa?: boolean
+  wrap?: boolean
   gap?: CSSProperties['gap']
 }) => {
 
@@ -29,6 +31,7 @@ export const Flex = ({
       ...(jcsb ? { justifyContent: 'space-between' } : {}),
       ...(jcsa ? { justifyContent: 'space-around' } : {}),
       ...(jcc ? { justifyContent: 'center'} : {}),
+      ...(wrap ? { flexWrap: 'wrap'} : {} ),
       ...style
     }}>
       {children}

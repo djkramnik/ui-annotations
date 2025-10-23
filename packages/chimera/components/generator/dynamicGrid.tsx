@@ -1,8 +1,12 @@
+import { ServiceManualLabel } from "ui-labelling-shared";
 import { Rect } from "../../util/generator";
 import { PreviewSchema } from "../../util/localstorage";
+import { DynamicMuiComponent } from "../mui/service-manual-dynamic";
+import { Flex } from "./flex";
+import { useMemo } from "react";
 
 type GridItem = {
-  id: string;
+  id: number;
   colStart: number;
   colEnd: number;
   rowStart: number;
@@ -64,7 +68,7 @@ function buildGrid(input: PreviewSchema, epsilonPct = 0.01) {
     const ce = findIndex(xEdges, r.right, epsX) + 1;
     const rs = findIndex(yEdges, r.top, epsY) + 1;
     const re = findIndex(yEdges, r.bottom, epsY) + 1;
-    return { id: `region-${i}`, colStart: cs, colEnd: ce, rowStart: rs, rowEnd: re };
+    return { id: i, colStart: cs, colEnd: ce, rowStart: rs, rowEnd: re };
   });
 
   return { gridTemplateColumns, gridTemplateRows, items };
@@ -75,9 +79,24 @@ type GridRendererProps = {
   style?: React.CSSProperties;
   className?: string;
   showDebugBorders?: boolean;
+  ComponentRenderer: ({
+    label,
+    children,
+    rect
+  }: {
+    label: ServiceManualLabel
+    children?: React.ReactNode
+    rect?: Rect
+  }) => React.ReactNode
 };
 
-export function GridRenderer({ data, style, className, showDebugBorders = false }: GridRendererProps) {
+export function GridRenderer({
+  data,
+  style,
+  className,
+  showDebugBorders = false,
+  ComponentRenderer
+}: GridRendererProps) {
   const { contentBounds: cb } = data;
   const { gridTemplateColumns, gridTemplateRows, items } = buildGrid(data);
 
@@ -96,14 +115,55 @@ export function GridRenderer({ data, style, className, showDebugBorders = false 
       {items.map((it) => (
         <div
           key={it.id}
-          id={it.id}
+          id={String(it.id)}
           style={{
             gridColumn: `${it.colStart} / ${it.colEnd}`,
             gridRow: `${it.rowStart} / ${it.rowEnd}`,
             ...(showDebugBorders ? { outline: "1px dashed rgba(0,0,0,0.3)" } : null),
           }}
-        />
+        >
+          <DynamicRegion data={data} id={it.id} ComponentRenderer={ComponentRenderer} />
+        </div>
       ))}
     </div>
   );
+}
+
+function DynamicRegion({
+  id,
+  data,
+  ComponentRenderer
+}: {
+  id: number
+} & Pick<GridRendererProps, 'ComponentRenderer' | 'data'>) {
+  const region = data.layout[id]
+  if (!region) {
+    console.error('cannot find region definition from id', id)
+    return null
+  }
+
+  const content = useMemo(() => {
+    const components = data.annotations.payload.annotations.filter(a => {
+      return region.components.includes(a.id)
+    })
+    return (
+      <>
+        {
+          components.map(c => {
+            return (
+              <ComponentRenderer label={c.label as ServiceManualLabel} rect={c.rect}>
+                {c.textContent ?? null}
+              </ComponentRenderer>
+            )
+          })
+        }
+      </>
+    )
+  }, [data, id, ComponentRenderer])
+
+  return (
+    <Flex wrap>
+      {content}
+    </Flex>
+  )
 }
