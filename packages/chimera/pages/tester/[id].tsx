@@ -27,7 +27,7 @@ const ignoreLabels: ServiceManualLabel[] = [
 ]
 
 // a partial clone of the frontend annotator...
-const GenerateByExample = () => {
+const TextHeuristics = () => {
   const { query, isReady } = useRouter()
   const originalAnnotations = useRef<AnnotationPayload['annotations'] | null>(
     null,
@@ -251,4 +251,4 @@ const GenerateByExample = () => {
   )
 }
 
-export default GenerateByExample
+export default TextHeuristics
