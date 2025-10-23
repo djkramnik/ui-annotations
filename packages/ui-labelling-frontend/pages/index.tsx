@@ -63,7 +63,8 @@ const Annotation = ({
       <Flex gap="12px" aic>
         <Link href={`/view/${id}` + (tag ? `?tag=${tag}` : '')}>{url.slice(0, 40)}</Link>
         <strong>Date: <SimpleDate date={date} /></strong>
-        <p style={{ margin: 0 }}>Scroll: {scrollY}</p>
+        {/* <p style={{ margin: 0 }}>Scroll: {scrollY}</p> */}
+        <p style={{ margin: 0}}>{id}</p>
       </Flex>
     </li>
   )

@@ -36,6 +36,7 @@ export enum ServiceManualLabel {
   column = 'column',
   form = 'form',
   table = 'table',
+  page_frame = 'page_frame',
   // helper
   text_unit = 'unit'
 }
@@ -77,6 +78,7 @@ export const serviceManualLabel: Record<ServiceManualLabel, string> = {
   table: '#00ACC1',
   box: '#C0CA33',
 
+  page_frame: '#f28500',
   unit: '#ed9121'
 }
 

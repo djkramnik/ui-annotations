@@ -22,7 +22,8 @@ const ignoreLabels: ServiceManualLabel[] = [
   ServiceManualLabel.row,
   ServiceManualLabel.column,
   ServiceManualLabel.diagram_number,
-  ServiceManualLabel.text_unit
+  ServiceManualLabel.text_unit,
+  ServiceManualLabel.page_frame
 ]
 
 // a partial clone of the frontend annotator...

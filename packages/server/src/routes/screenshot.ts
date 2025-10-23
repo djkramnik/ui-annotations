@@ -130,7 +130,10 @@ screenshotRouter.post('/tighten/:id', async (req: Request, res: Response) => {
     res.status(200).send(
       updatedBoxes.map(({ rect, id }) => {
         const originalAnno = annotations.find((a) => a.id === id)!
-        const similar = boxesSimilar(originalAnno!.rect, rect, { maxAspectDrift: 2 })
+        const similar = boxesSimilar(originalAnno!.rect, rect, {
+          maxAspectDrift: 2,
+          minAreaFrac: 0.6
+        })
         if (similar.ok) {
           return { rect, id, similar }
         }
