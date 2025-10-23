@@ -21,7 +21,8 @@ type TightenResponse = {
 const ignoreLabels: ServiceManualLabel[] = [
   ServiceManualLabel.row,
   ServiceManualLabel.column,
-  ServiceManualLabel.diagram_number
+  ServiceManualLabel.diagram_number,
+  ServiceManualLabel.text_unit
 ]
 
 // a partial clone of the frontend annotator...
@@ -82,13 +83,6 @@ const GenerateByExample = () => {
                   console.error('could not find update for this annotation', a.id)
                   return a
                 }
-                if (a.label === 'diagram') {
-                  // @ts-ignore
-                  window.testink = {
-                    ...entry,
-                    label: a.label
-                  }
-                }
                 return {
                   ...a,
                   rect: entry.rect,
@@ -121,7 +115,7 @@ const GenerateByExample = () => {
     const unitHeight = textUnitElem.rect.height // volatile brew
 
     const excludeElems = (a: AnnotationPayload['annotations'][0]) => {
-      return a !== textUnitElem && !ignoreLabels.includes(a.label as ServiceManualLabel)
+      return !ignoreLabels.includes(a.label as ServiceManualLabel)
     }
     const components = annotations.payload.annotations
       .filter(excludeElems)
@@ -205,14 +199,10 @@ const GenerateByExample = () => {
   }
 
   const {
-    url,
-    date,
-    scrollY,
     payload,
     screenshot,
     viewWidth,
     viewHeight,
-    published,
   } = annotations
 
   const screenshotDataUrl = `data:image/png;base64,${Buffer.from(screenshot).toString('base64')}`
