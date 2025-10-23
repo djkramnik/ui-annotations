@@ -4,7 +4,7 @@ import { CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
 import { AnnotationPayload, Annotations, ServiceManualLabel, serviceManualLabel } from 'ui-labelling-shared'
 import ScreenshotAnnotator from '../../components/generator/screenshot-annotated'
 import { buildLayoutTree, xyCut } from 'infer-layout'
-import { unpackLayoutTree, xyNodeToAnnotations, Rect } from '../../util/generator'
+import { unpackLayoutTree, Rect, mergeColsFlat, regionsToAnnotations } from '../../util/generator'
 
 type TightenResponse = {
   id: string
@@ -145,18 +145,24 @@ const GenerateByExample = () => {
       useContentBounds: true
     })
 
-    const layoutTree = buildLayoutTree({
-      root,
-      unitHeight,
-      components: components.reduce((acc, c) => {
-        return {
-          ...acc,
-          [c.id]: c
-        }
-      }, {}) // great naming job!
+    // danger. mutation. danger
+    const processedRegions = mergeColsFlat({
+      node: root,
+      pageW: root.region[2] - root.region[0]
     })
-    const newAnnotations = unpackLayoutTree(layoutTree)
-      .filter(a => a.label.startsWith('layout_tree_'))
+
+    // const layoutTree = buildLayoutTree({
+    //   root,
+    //   unitHeight,
+    //   components: components.reduce((acc, c) => {
+    //     return {
+    //       ...acc,
+    //       [c.id]: c
+    //     }
+    //   }, {}) // great naming job!
+    // })
+
+    const newAnnotations = regionsToAnnotations(processedRegions)
 
     setAnnotations(
       annotations => ({
@@ -181,7 +187,6 @@ const GenerateByExample = () => {
           ...data,
           payload: {
             annotations: data.payload.annotations
-            .filter(a => !ignoreLabels.includes(a.label as ServiceManualLabel))
           }
         })
         originalAnnotations.current = data.payload.annotations

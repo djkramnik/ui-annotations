@@ -19,7 +19,7 @@ type PageDim = { width: number; height: number }
 type ComponentMap = Record<string, Component>
 
 export { buildLayoutTree, LayoutTree } from './layout'
-export { getRegion } from './util'
+export { getRegion, XyNode } from './util'
 
 // determining which gaps may be split on
 export type CutOptions = {
