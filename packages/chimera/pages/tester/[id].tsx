@@ -3,8 +3,8 @@ import { useRouter } from 'next/router'
 import { CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
 import { AnnotationPayload, Annotations, ServiceManualLabel, serviceManualLabel } from 'ui-labelling-shared'
 import ScreenshotAnnotator from '../../components/generator/screenshot-annotated'
-import { buildLayoutTree, xyCut } from 'infer-layout'
-import { unpackLayoutTree, Rect, mergeColsFlat, regionsToAnnotations } from '../../util/generator'
+import { xyCut } from 'infer-layout'
+import { Rect, mergeColsFlat, regionsToAnnotations } from '../../util/generator'
 
 type TightenResponse = {
   id: string
@@ -146,22 +146,10 @@ const GenerateByExample = () => {
       useContentBounds: true
     })
 
-    // danger. mutation. danger
     const processedRegions = mergeColsFlat({
       node: root,
       pageW: root.region[2] - root.region[0]
     })
-
-    // const layoutTree = buildLayoutTree({
-    //   root,
-    //   unitHeight,
-    //   components: components.reduce((acc, c) => {
-    //     return {
-    //       ...acc,
-    //       [c.id]: c
-    //     }
-    //   }, {}) // great naming job!
-    // })
 
     const newAnnotations = regionsToAnnotations(processedRegions)
 
