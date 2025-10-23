@@ -4,19 +4,8 @@ import { CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
 import { AnnotationPayload, Annotations, ServiceManualLabel, serviceManualLabel } from 'ui-labelling-shared'
 import ScreenshotAnnotator from '../../components/generator/screenshot-annotated'
 import { xyCut } from 'infer-layout'
-import { Rect, mergeColsFlat, regionsToAnnotations } from '../../util/generator'
-
-type TightenResponse = {
-  id: string
-  rect: Rect,
-  similar: {
-    ok: boolean
-    aspectDrift: number
-    areaRatio: number
-    original: Rect
-    candidate: Rect
-  }
-}
+import { mergeColsFlat, regionsToAnnotations } from '../../util/generator'
+import { TightenResponse } from '../../util/api'
 
 const ignoreLabels: ServiceManualLabel[] = [
   ServiceManualLabel.row,
@@ -40,9 +29,9 @@ const TextHeuristics = () => {
       return {
         'layout_tree_row': 'purple',
         'layout_tree_column': 'blue'
-      }[label]
+      }[label] ?? null
     }
-    return serviceManualLabel[label]
+    return serviceManualLabel[label as ServiceManualLabel] ?? null
   }, [])
 
   const labelToOverride = useCallback((label: string): CSSProperties => {
@@ -75,10 +64,13 @@ const TextHeuristics = () => {
       .then((r) => r.json())
       .then((resp: TightenResponse[]) => {
         setAnnotations(annotations => {
+          if (!annotations) {
+            return null
+          }
           return {
             ...annotations,
             payload: {
-              annotations: originalAnnotations.current.map(a => {
+              annotations: originalAnnotations.current!.map(a => {
                 const entry = resp.find(r => r.id === a.id)
                 if (!entry) {
                   console.error('could not find update for this annotation', a.id)
@@ -155,7 +147,7 @@ const TextHeuristics = () => {
 
     setAnnotations(
       annotations => ({
-        ...annotations,
+        ...annotations!,
         payload: {
           annotations: newAnnotations
         }

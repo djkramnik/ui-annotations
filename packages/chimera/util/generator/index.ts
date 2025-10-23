@@ -40,7 +40,7 @@ function componentToAnnotation(component: LayoutTree['snappedComponents'][0], w:
   }
 }
 
-function bboxToRect([x0, y0, x1, y1]: [number, number, number, number]): Rect {
+export function bboxToRect([x0, y0, x1, y1]: [number, number, number, number]): Rect {
   return {
     x: x0,
     y: y0,
@@ -82,7 +82,7 @@ export function mergeColsFlat({
   pageW: number;
   opts?: Partial<{ maxFrac: number; tol: number }>;
 }): Array<{ region: Bbox; components: string[] }> {
-  const { maxFrac, tol: tolFrac } = opts
+  const { maxFrac = 0.7, tol: tolFrac = 0.05 } = opts
 
   const w = (b: Bbox) => b[2] - b[0];
   const h = (b: Bbox) => b[3] - b[1];
