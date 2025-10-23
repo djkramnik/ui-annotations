@@ -1,7 +1,12 @@
 import { Router, Request, Response } from 'express'
 import { prisma } from '../db'
 import sharp from 'sharp'
-import { boxesSimilar, getExtract, scaleRect, tightenBoundingBoxes } from '../util/screenshot'
+import {
+  boxesSimilar,
+  getExtract,
+  scaleRect,
+  tightenBoundingBoxes,
+} from '../util/screenshot'
 import { AnnotationPayload } from 'ui-labelling-shared'
 
 type Rect = {
@@ -21,14 +26,16 @@ screenshotRouter.put('/:id', async (req: Request, res: Response) => {
     const annotationId = Number(req.params.id)
     const annotation = await prisma.annotation.findFirstOrThrow({
       where: {
-        id: annotationId
-      }
+        id: annotationId,
+      },
     })
     const vw = annotation.viewWidth
     const vh = annotation.viewHeight
     const ogScreen = annotation.screenshot
     if (ogScreen === null) {
-      res.status(404).send({ message: 'annotation with [id] has no screenshot '})
+      res
+        .status(404)
+        .send({ message: 'annotation with [id] has no screenshot ' })
       return
     }
 
@@ -46,7 +53,7 @@ screenshotRouter.put('/:id', async (req: Request, res: Response) => {
       sx,
       sy,
       imgW,
-      imgH
+      imgH,
     })
 
     const newImg = await img
@@ -62,40 +69,42 @@ screenshotRouter.put('/:id', async (req: Request, res: Response) => {
           },
           left: x,
           top: y,
-          blend: "over",
+          blend: 'over',
         },
       ])
-      .toBuffer();
+      .toBuffer()
 
     await prisma.annotation.update({
       where: {
-        id: annotationId
+        id: annotationId,
       },
       data: {
-        screenshot: newImg
-      }
+        screenshot: newImg,
+      },
     })
 
     // probably redundant, just being paranoid
     const newSavedScreen = await prisma.annotation.findFirstOrThrow({
       where: {
-        id: annotationId
-      }
+        id: annotationId,
+      },
     })
 
-    res.status(200).send({ updatedScreen: Array.from(newSavedScreen.screenshot!) })
-  } catch(e) {
+    res
+      .status(200)
+      .send({ updatedScreen: Array.from(newSavedScreen.screenshot!) })
+  } catch (e) {
     res.status(500).send({ error: String(e) })
   }
 })
 
-screenshotRouter.get('/tighten/:id', async (req: Request, res: Response) => {
+screenshotRouter.post('/tighten/:id', async (req: Request, res: Response) => {
   try {
     const annotationId = Number(req.params.id)
     const annotation = await prisma.annotation.findFirstOrThrow({
       where: {
-        id: annotationId
-      }
+        id: annotationId,
+      },
     })
     const vw = annotation.viewWidth
     const vh = annotation.viewHeight
@@ -103,28 +112,36 @@ screenshotRouter.get('/tighten/:id', async (req: Request, res: Response) => {
     const screenshot = annotation.screenshot
 
     if (screenshot === null) {
-      res.status(404).send({ message: 'annotation with [id] has no screenshot '})
+      res
+        .status(404)
+        .send({ message: 'annotation with [id] has no screenshot ' })
       return
     }
 
     const { annotations } = annotation.payload as unknown as AnnotationPayload
 
-    const ogBoxes = annotations.map(a => a.rect)
     const updatedBoxes = await tightenBoundingBoxes({
       b64: Buffer.from(screenshot).toString('base64'),
-      annotations: ogBoxes,
+      annotations,
       vw,
       vh,
     })
 
-    res.status(200).send({
-      updatedBoxes: updatedBoxes.map((b, i) => {
-        return boxesSimilar(ogBoxes[i], b)
-          ? b
-          : ogBoxes[i]
-      })}
+    res.status(200).send(
+      updatedBoxes.map(({ rect, id }) => {
+        const originalAnno = annotations.find((a) => a.id === id)!
+        const similar = boxesSimilar(originalAnno!.rect, rect, { maxAspectDrift: 2 })
+        if (similar.ok) {
+          return { rect, id, similar }
+        }
+        return {
+          rect: originalAnno.rect,
+          id,
+          similar,
+        }
+      }),
     )
-  } catch(e) {
+  } catch (e) {
     res.status(500).send({ error: String(e) })
   }
 })
@@ -139,34 +156,34 @@ screenshotRouter.post('/clips', async (req: Request, res: Response) => {
   }
   const { rects, fullScreen, vw, vh, noScale } = body || {}
   if (!Array.isArray(rects)) {
-    res.status(400).send({ reason: "request body requires array of rects "})
+    res.status(400).send({ reason: 'request body requires array of rects ' })
     return
   }
   if (typeof fullScreen !== 'string') {
-    res.status(400).send({ reason: "need fullScreen base64 string in request body "})
+    res
+      .status(400)
+      .send({ reason: 'need fullScreen base64 string in request body ' })
     return
   }
   if (typeof vw !== 'number' || typeof vh !== 'number') {
-    res.status(400).send({ reason: "Missing vw or vh number fields"})
+    res.status(400).send({ reason: 'Missing vw or vh number fields' })
     return
   }
   try {
     const buf = Buffer.from(fullScreen, 'base64')
     // if noscale is true we can omit the "expensive" instantiation of a sharp object
     // all of imgW, imgH, sx, sy are not needed in this scenario
-    const img = noScale === true
-      ? { width: 0, height: 0 }
-      : (await sharp(buf).metadata())
+    const img =
+      noScale === true ? { width: 0, height: 0 } : await sharp(buf).metadata()
     const imgW = img.width
     const imgH = img.height
     const sx = imgW / vw
     const sy = imgH / vh
 
     const base64Clips = await Promise.all(
-      rects.map(r => {
-        const scaled = noScale === true
-          ? r
-          : scaleRect({ rect: r, sx, sy, imgW, imgH })
+      rects.map((r) => {
+        const scaled =
+          noScale === true ? r : scaleRect({ rect: r, sx, sy, imgW, imgH })
         return getExtract({
           rect: {
             x: Math.round(scaled.x),
@@ -176,15 +193,13 @@ screenshotRouter.post('/clips', async (req: Request, res: Response) => {
           },
           buf,
         })
-      })
+      }),
     )
     res.status(200).send({
-      clips: base64Clips
+      clips: base64Clips,
     })
-  } catch(e) {
+  } catch (e) {
     console.error('failed to clip?', String(e))
     res.status(500).send({ error: String(e) })
   }
 })
-
-

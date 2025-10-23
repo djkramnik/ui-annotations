@@ -6,6 +6,18 @@ import ScreenshotAnnotator from '../../components/generator/screenshot-annotated
 import { buildLayoutTree, xyCut } from 'infer-layout'
 import { unpackLayoutTree, xyNodeToAnnotations, Rect } from '../../util/generator'
 
+type TightenResponse = {
+  id: string
+  rect: Rect,
+  similar: {
+    ok: boolean
+    aspectDrift: number
+    areaRatio: number
+    original: Rect
+    candidate: Rect
+  }
+}
+
 const ignoreLabels: ServiceManualLabel[] = [
   ServiceManualLabel.row,
   ServiceManualLabel.column,
@@ -52,17 +64,34 @@ const GenerateByExample = () => {
     if (!originalAnnotations.current) {
       return
     }
-    fetch(`/api/screenshot/tighten/${query.id}`)
+    fetch(`/api/screenshot/tighten/${query.id}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
       .then((r) => r.json())
-      .then(({ updatedBoxes }: { updatedBoxes: Rect[]}) => {
+      .then((resp: TightenResponse[]) => {
         setAnnotations(annotations => {
           return {
             ...annotations,
             payload: {
-              annotations: originalAnnotations.current.map((a, i) => {
+              annotations: originalAnnotations.current.map(a => {
+                const entry = resp.find(r => r.id === a.id)
+                if (!entry) {
+                  console.error('could not find update for this annotation', a.id)
+                  return a
+                }
+                if (a.label === 'diagram') {
+                  // @ts-ignore
+                  window.testink = {
+                    ...entry,
+                    label: a.label
+                  }
+                }
                 return {
                   ...a,
-                  rect: updatedBoxes[i]
+                  rect: entry.rect,
                 }
               })
             }

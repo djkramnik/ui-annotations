@@ -2,12 +2,15 @@ import sharp from 'sharp'
 
 type Rect = { x: number; y: number; width: number; height: number }
 
-type TightenOpts = {
-  sampleBorder?: number
-  bgTolerance?: number
-  bgShare?: number
-  minEdgeRun?: number
-}
+export type TightenOpts = {
+  sampleBorder?: number;   // px sampled on each edge
+  bgTolerance?: number;    // deltaE threshold
+  bgShare?: number;        // fraction to treat line as background
+  minEdgeRun?: number;     // consecutive bg lines to confirm edge
+  fgShareMin?: number;     // ≥ this fraction non-bg => foreground line
+  fgRunMin?: number;       // ≥ this many contiguous non-bg px => foreground line
+  smoothWin?: number;      // median window on line stats (odd)
+};
 
 /**
  * base64Image: raw base64, no data url
@@ -21,11 +24,11 @@ export async function tightenBoundingBoxes({
   vh,
 }: {
   b64: string
-  annotations: Rect[]
+  annotations: {id: string, rect: Rect}[]
   opts?: TightenOpts
   vw: number
   vh: number
-}): Promise<Rect[]> {
+}): Promise<{ id: string, rect: Rect }[]> {
   const buf = Buffer.from(b64, 'base64')
   const base = sharp(buf).rotate().ensureAlpha()
   const { width: imgW = 0, height: imgH = 0 } = await base.metadata()
@@ -40,7 +43,8 @@ export async function tightenBoundingBoxes({
     return { x, y, width: w, height: h }
   }
 
-  const jobs = annotations.map(async (rect) => {
+  const jobs = annotations.map(async (a) => {
+    const { id, rect } = a
     const imgRect = clamp({
       x: Math.round(rect.x * sx),
       y: Math.round(rect.y * sy),
@@ -69,7 +73,10 @@ export async function tightenBoundingBoxes({
       width: w,
       height: h,
     })
-    return mapped
+    return {
+      id,
+      rect: mapped
+    }
   })
 
   return Promise.all(jobs)
@@ -131,7 +138,13 @@ export function boxesSimilar(original: Rect, candidate: Rect, opts?: Partial<{
   maxAspectDrift: number
   minAreaFrac: number
   maxAreaFrac: number
-}>): boolean {
+}>): {
+  ok: boolean
+  aspectDrift: number
+  areaRatio: number
+  original: Rect
+  candidate: Rect
+} {
   const maxAspectDrift = opts?.maxAspectDrift ?? 0.5;
   const minAreaFrac = opts?.minAreaFrac ?? 0.25;
   const maxAreaFrac = opts?.maxAreaFrac ?? 1.25;
@@ -141,7 +154,13 @@ export function boxesSimilar(original: Rect, candidate: Rect, opts?: Partial<{
 
   const aspectDrift = Math.abs(aspect(candidate)/aspect(original) - 1);
   const areaRatio = area(candidate)/Math.max(1, area(original));
-  return aspectDrift <= maxAspectDrift && areaRatio >= minAreaFrac && areaRatio <= maxAreaFrac;
+  return {
+    ok: aspectDrift <= maxAspectDrift && areaRatio >= minAreaFrac && areaRatio <= maxAreaFrac,
+    areaRatio,
+    aspectDrift,
+    original,
+    candidate
+  }
 }
 
 function rgb2lab(r: number, g: number, b: number): [number, number, number] {
@@ -196,76 +215,95 @@ function huberMean(
   return m
 }
 
+function bgFromMode(labs: [number,number,number][], q=12){
+  const key = (L:number,a:number,b:number)=>`${Math.round(L/q)},${Math.round(a/q)},${Math.round(b/q)}`;
+  const map = new Map<string,{s:[number,number,number],n:number}>();
+  for (const v of labs){ const k=key(v[0],v[1],v[2]); const b=map.get(k)||{s:[0,0,0],n:0}; b.s[0]+=v[0]; b.s[1]+=v[1]; b.s[2]+=v[2]; b.n++; map.set(k,b); }
+  let bg:[number,number,number]=[0,0,0], best=0;
+  for (const {s,n} of map.values()) if (n>best){ best=n; bg=[s[0]/n,s[1]/n,s[2]/n]; }
+  return bg;
+}
+
 function tightenOnRaw(
   data: Buffer,
   W: number,
   H: number,
   opts: TightenOpts = {},
 ): Rect {
-  const sampleBorder = opts.sampleBorder ?? 2
-  const tol = opts.bgTolerance ?? 8
-  const bgShare = opts.bgShare ?? 0.9
-  const minEdgeRun = opts.minEdgeRun ?? 2
+  const sampleBorder = opts.sampleBorder ?? 2;
+  const tol = opts.bgTolerance ?? 8;
+  const minEdgeRun = opts.minEdgeRun ?? 2;
+  const fgShareMin = opts.fgShareMin ?? 0.03;
+  const fgRunMin = opts.fgRunMin ?? 3;
+  const smoothWin = Math.max(1, opts.smoothWin ?? 3);
+  const half = Math.floor(smoothWin / 2);
 
-  const pxLab = (i: number) => rgb2lab(data[i], data[i + 1], data[i + 2])
-  const labs: [number, number, number][] = []
-  const push = (i: number) => labs.push(pxLab(i))
+  const pxLab = (i: number) => rgb2lab(data[i], data[i + 1], data[i + 2]);
 
+  // --- estimate background from border pixels (robust mean in Lab) ---
+  const labs: [number, number, number][] = [];
+  const push = (i: number) => labs.push(pxLab(i));
   for (let y = 0; y < H; y++) {
-    for (let x = 0; x < sampleBorder; x++) push((y * W + x) * 4)
-    for (let x = Math.max(W - sampleBorder, 0); x < W; x++)
-      push((y * W + x) * 4)
+    for (let x = 0; x < sampleBorder; x++) push((y * W + x) * 4);
+    for (let x = Math.max(W - sampleBorder, 0); x < W; x++) push((y * W + x) * 4);
   }
   for (let x = sampleBorder; x < Math.max(W - sampleBorder, 0); x++) {
-    for (let y = 0; y < sampleBorder; y++) push((y * W + x) * 4)
-    for (let y = Math.max(H - sampleBorder, 0); y < H; y++)
-      push((y * W + x) * 4)
+    for (let y = 0; y < sampleBorder; y++) push((y * W + x) * 4);
+    for (let y = Math.max(H - sampleBorder, 0); y < H; y++) push((y * W + x) * 4);
   }
-  const bg = huberMean(labs)
+  // const bg = huberMean(labs);
+  const bg = bgFromMode(labs)
 
-  const lineBgShare = (vertical: boolean, idx: number) => {
-    let bgCount = 0,
-      total = vertical ? H : W
-    if (vertical) {
-      for (let y = 0; y < H; y++) {
-        const i = (y * W + idx) * 4
-        if (dE(pxLab(i), bg) <= tol) bgCount++
-      }
-    } else {
-      for (let x = 0; x < W; x++) {
-        const i = (idx * W + x) * 4
-        if (dE(pxLab(i), bg) <= tol) bgCount++
-      }
+  // --- per-line stats: non-background fraction and longest contiguous run ---
+  const scanLineStats = (vertical: boolean, idx: number) => {
+    let nonBg = 0, maxRun = 0, run = 0;
+    const N = vertical ? H : W;
+    for (let t = 0; t < N; t++) {
+      const off = vertical ? (t * W + idx) * 4 : (idx * W + t) * 4;
+      const non = dE(pxLab(off), bg) > tol;
+      if (non) { nonBg++; run++; if (run > maxRun) maxRun = run; }
+      else run = 0;
     }
-    return bgCount / total
-  }
+    return { nonFrac: nonBg / N, maxRun };
+  };
 
+  // --- foreground decision with small median smoothing over neighboring lines ---
+  const isForegroundLine = (vertical: boolean, idx: number) => {
+    const N = vertical ? W : H;
+    const stats: { nonFrac: number; maxRun: number }[] = [];
+    for (let k = -half; k <= half; k++) {
+      const j = Math.min(Math.max(idx + k, 0), N - 1);
+      stats.push(scanLineStats(vertical, j));
+    }
+    const sortedFrac = stats.map(s => s.nonFrac).sort((a, b) => a - b);
+    const nonFrac = sortedFrac[Math.floor(sortedFrac.length / 2)];
+    const maxRun = Math.max(...stats.map(s => s.maxRun));
+    return nonFrac >= fgShareMin || maxRun >= fgRunMin;
+  };
+
+  // --- scan inward from each side; require a run of background lines before edge locks ---
   const scanIn = (vertical: boolean, fromStart: boolean) => {
-    const N = vertical ? W : H
-    let i = fromStart ? 0 : N - 1
-    let run = 0
+    const N = vertical ? W : H;
+    let i = fromStart ? 0 : N - 1;
+    let bgRun = 0;
     while (i >= 0 && i < N) {
-      const s = lineBgShare(vertical, i)
-      if (s >= bgShare) {
-        run++
-        i += fromStart ? 1 : -1
-      } else if (run >= minEdgeRun) return fromStart ? i : i + 1
-      else {
-        run = 0
-        i += fromStart ? 1 : -1
-      }
+      const fg = isForegroundLine(vertical, i);
+      if (!fg) { bgRun++; i += fromStart ? 1 : -1; }
+      else if (bgRun >= minEdgeRun) return fromStart ? i : i + 1;
+      else { bgRun = 0; i += fromStart ? 1 : -1; }
     }
-    return fromStart ? N : 0
-  }
+    return fromStart ? N : 0; // all background
+  };
 
-  const left = Math.min(scanIn(true, true), W - 1)
-  const right = Math.max(scanIn(true, false), 0)
-  const top = Math.min(scanIn(false, true), H - 1)
-  const bottom = Math.max(scanIn(false, false), 0)
+  const left = Math.min(scanIn(true, true), W - 1);
+  const right = Math.max(scanIn(true, false), 0);
+  const top = Math.min(scanIn(false, true), H - 1);
+  const bottom = Math.max(scanIn(false, false), 0);
 
-  const x = Math.max(0, left)
-  const y = Math.max(0, top)
-  const w = Math.max(0, right - x)
-  const h = Math.max(0, bottom - y)
-  return { x, y, width: w, height: h }
+  const x = Math.max(0, left);
+  const y = Math.max(0, top);
+  const w = Math.max(0, right - x);
+  const h = Math.max(0, bottom - y);
+  return { x, y, width: w, height: h };
 }
+
