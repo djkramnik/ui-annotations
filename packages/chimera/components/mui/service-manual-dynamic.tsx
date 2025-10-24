@@ -58,10 +58,18 @@ export const DynamicMuiComponent = ({
       if (!children) {
         return null
       }
+      const headingLevel = isText && inferredFontInfo
+        ? getHeaderLevel({
+            rect,
+            textContent: children,
+            pageWidth: page.width,
+            fontPx: inferredFontInfo.fontPx
+        })
+        : 'h3'
 
       return (
         <Typography
-          variant="h3"
+          variant={headingLevel}
           sx={{
             ...fontStyling ?? {},
             ...sx,
