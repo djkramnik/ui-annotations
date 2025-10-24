@@ -1,8 +1,12 @@
-import { SxProps, Theme } from '@mui/material/styles';
-import { ServiceManualLabel } from "ui-labelling-shared"
-import { estimateFontSize, getHeaderLevel, Rect } from "../../util/generator"
-import { ListItem, Typography } from "@mui/material"
-import { MultiLine } from '../generator/multi-lilne';
+import { SxProps, Theme } from '@mui/material/styles'
+import { ServiceManualLabel } from 'ui-labelling-shared'
+import {
+  estimateFontAndTrackingBox,
+  getHeaderLevel,
+  Rect,
+} from '../../util/generator'
+import { ListItem, Typography } from '@mui/material'
+import { MultiLine } from '../generator/multi-line'
 
 export const DynamicMuiComponent = ({
   label,
@@ -10,52 +14,59 @@ export const DynamicMuiComponent = ({
   rect,
   page,
   sx,
-  container
-} : {
+  container,
+  scale,
+}: {
   label: ServiceManualLabel
   children?: React.ReactNode
   rect: Rect
   page: { width: number; height: number }
   container: Rect
   sx?: SxProps<Theme>
+  scale: number
 }) => {
   const isText = typeof children === 'string'
-  const firstLine = isText
-    ? children.split('\n')[0]
+  const inferredFontInfo = isText
+    ? estimateFontAndTrackingBox(rect, children, {
+        lineCount: children.split('\n').length,
+      })
     : null
-  switch(label) {
+  const fontStyling = inferredFontInfo
+    ? {
+        fontSize: `${inferredFontInfo.fontPx * scale}px`,
+        letterSpacing: `${inferredFontInfo.letterSpacingPx * scale}px`,
+      }
+    : null
+  switch (label) {
     case ServiceManualLabel.diagram:
     case ServiceManualLabel.image:
-      const pctW = Math.round(
-        Math.min(rect.width, container.width) / container.width
-      ) * 100
+      const pctW =
+        Math.round(Math.min(rect.width, container.width) / container.width) *
+        100
       return (
-        <div style={{
-          width: `${pctW}%`,
-          aspectRatio: `${Math.floor(rect.width)} / ${Math.floor(rect.height)}`,
-          border: `1px solid currentColor`,
-          backgroundRepeat: 'no-repeat',
-          backgroundSize: 'contain',
-        }} />
+        <div
+          style={{
+            width: `${pctW}%`,
+            aspectRatio: `${Math.floor(rect.width)} / ${Math.floor(rect.height)}`,
+            border: `1px solid currentColor`,
+            backgroundRepeat: 'no-repeat',
+            backgroundSize: 'contain',
+          }}
+        />
       )
     case ServiceManualLabel.heading:
       if (!children) {
         return null
       }
-      const headerLevel: ReturnType<typeof getHeaderLevel> = firstLine
-        ? getHeaderLevel(rect, firstLine, page.width)
-        : 'h3'
+
       return (
-        <Typography variant={headerLevel}
+        <Typography
+          variant="h3"
           sx={{
+            ...fontStyling ?? {},
             ...sx,
-            ...(firstLine
-              ? {
-                fontSize: `${estimateFontSize(rect, firstLine)}px`
-              }
-              : null
-            )
-          }}>
+          }}
+        >
           <MultiLine>{children}</MultiLine>
         </Typography>
       )
@@ -64,29 +75,26 @@ export const DynamicMuiComponent = ({
         return null
       }
       return (
-        <Typography component="p" sx={{
-          ...sx,
-          ...(firstLine
-            ? {
-              fontSize: `${estimateFontSize(rect, firstLine)}px`
-            }
-            : null
-          )
-        }}><MultiLine>{children}</MultiLine></Typography>
+        <Typography
+          component="p"
+          sx={{
+            ...fontStyling ?? {},
+            ...sx,
+          }}
+        >
+          {children}
+        </Typography>
       )
     case ServiceManualLabel.bulletpoint:
-      console.log('bulletpoint', children, firstLine)
       return (
-        <ListItem sx={{
-          display: 'list-item',
-          ...sx,
-          ...(firstLine
-            ? {
-              fontSize: `${estimateFontSize(rect, firstLine)}px`
-            }
-            : null
-          )
-          }}>
+        <ListItem
+          sx={{
+            display: 'list-item',
+            padding: 0,
+            ...fontStyling ?? {},
+            ...sx,
+          }}
+        >
           <MultiLine>{children}</MultiLine>
         </ListItem>
       )

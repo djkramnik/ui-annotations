@@ -173,11 +173,56 @@ export function getHeaderLevel(
   return 'h5';
 }
 
-export const estimateFontSize = (
+export function estimateFontAndTrackingBox(
   rect: Rect,
-  textContent: string,
-): number => {
-  const w = Math.max(1, rect.width);
-  const chars = Math.max(1, textContent.trim().length);
-  return w / chars; // average pixels per character
+  text: string, // may include \n
+  opts?: {
+    lineHeight?: number;           // default 1.25
+    advPerEm?: number;             // default 0.55
+    lineCount?: number;            // optional known line count
+    letterSpacingClamp?: [number, number]; // default [-0.5, 2] px
+    maxFontGrowPct?: number;       // allow small grow to fix width; default 0.08 (8%)
+  }
+) {
+  const LINE_H = opts?.lineHeight ?? 1.25;
+  const ADV    = opts?.advPerEm   ?? 0.55;
+  const [LS_MIN, LS_MAX] = opts?.letterSpacingClamp ?? [-0.5, 2];
+  const MAX_GROW = opts?.maxFontGrowPct ?? 0.08;
+
+  const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  const longest = lines.reduce((a, b) => (a.length >= b.length ? a : b), "");
+  const W = Math.max(1, rect.width);
+  const H = Math.max(1, rect.height);
+
+  // 1) Infer line count (or use provided)
+  //    Seed font from width to get a reasonable first pass for L.
+  const seedFont = (W / Math.max(1, longest.length)) / ADV;
+  const seedLineH = Math.max(1, seedFont * LINE_H);
+  const L = Math.max(1, opts?.lineCount ?? Math.round(H / seedLineH));
+
+  // 2) Baseline font from height (keeps total height ≈ rect.height)
+  const fontH = H / (L * LINE_H);
+
+  // 3) Raw letter-spacing to fit width with that font
+  const n = Math.max(1, longest.length);
+  let lsRaw = 0;
+  if (n > 1) lsRaw = (W - fontH * (ADV * n)) / (n - 1);
+
+  // 4) Clamp letter-spacing
+  const lsClamped = Math.min(LS_MAX, Math.max(LS_MIN, lsRaw));
+
+  // 5) If clamped changed width, try a small font bump to compensate
+  let fontPx = fontH;
+  if (n > 1 && Math.abs(lsClamped - lsRaw) > 1e-3) {
+    const fontNeeded = (W - lsClamped * (n - 1)) / (ADV * n);
+    const maxAllowed = fontH * (1 + MAX_GROW);
+    fontPx = Math.min(fontNeeded, maxAllowed);
+  } else if (n === 1) {
+    // Single-character line: width depends only on font; try to match W but cap growth
+    const fontNeeded = W / (ADV * n);
+    const maxAllowed = fontH * (1 + MAX_GROW);
+    fontPx = Math.min(fontNeeded, maxAllowed);
+  }
+
+  return { fontPx, letterSpacingPx: n > 1 ? lsClamped : 0, lineCount: L };
 }

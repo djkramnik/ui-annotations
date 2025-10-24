@@ -14,10 +14,15 @@ type GridItem = {
   rowEnd: number;
 };
 
-function buildGrid(
+function buildGrid({
+  input,
+  epsPct = 0.01,
+  scale = 0.7
+}: {
   input: PreviewSchema,
-  epsilonPct = 0.01 // tolerance relative to page dims
-): {
+  epsPct?: number
+  scale?: number
+}): {
   container: { widthPx: number; heightPx: number; scale: number };
   gridTemplateColumns: string;
   gridTemplateRows: string;
@@ -28,12 +33,12 @@ function buildGrid(
   const pageH = Math.max(1, annotations.viewHeight);
 
   // Fixed container: half page width, preserve aspect ratio
-  const containerW = Math.round(pageW / 2);
-  const scale = containerW / pageW;
+  const containerW = Math.round(pageW * scale);
+
   const containerH = Math.round(pageH * scale);
 
-  const epsX = epsilonPct * pageW;
-  const epsY = epsilonPct * pageH;
+  const epsX = epsPct * pageW;
+  const epsY = epsPct * pageH;
 
   const snapPush = (arr: number[], v: number, eps: number) => {
     for (let i = 0; i < arr.length; i++) if (Math.abs(arr[i] - v) <= eps) return;
@@ -108,7 +113,8 @@ type GridRendererProps = {
     rect,
     page,
     sx,
-    container
+    container,
+    scale,
   }: {
     label: ServiceManualLabel
     children?: React.ReactNode
@@ -116,6 +122,7 @@ type GridRendererProps = {
     page: { width: number; height:  number }
     sx?: SxProps<Theme>
     container: Rect
+    scale: number
   }) => React.ReactNode
 };
 
@@ -126,8 +133,10 @@ export function GridRenderer({
   showDebugBorders = false,
   ComponentRenderer
 }: GridRendererProps) {
-  const { gridTemplateColumns, gridTemplateRows, items, container } = buildGrid(data);
-
+  const { gridTemplateColumns, gridTemplateRows, items, container } = buildGrid({
+    input: data,
+  });
+  console.log('scale', container.scale)
   const containerStyle: React.CSSProperties = {
     display: "grid",
     gridTemplateColumns,
@@ -135,6 +144,7 @@ export function GridRenderer({
     width: container.widthPx,
     height: container.heightPx,
     boxSizing: "border-box",
+    border: '1px solid currentColor',
     ...style,
   };
 
@@ -150,7 +160,12 @@ export function GridRenderer({
             ...(showDebugBorders ? { outline: "1px dashed rgba(0,0,0,0.3)" } : null),
           }}
         >
-          <DynamicRegion data={data} id={it.id} ComponentRenderer={ComponentRenderer} />
+          <DynamicRegion
+            data={data}
+            id={it.id}
+            ComponentRenderer={ComponentRenderer}
+            scale={container.scale}
+          />
         </div>
       ))}
     </div>
@@ -161,10 +176,10 @@ function DynamicRegion({
   id,
   data,
   ComponentRenderer,
-  padding = 12,
+  scale
 }: {
   id: number
-  padding?: number
+  scale: number
 } & Pick<GridRendererProps, 'ComponentRenderer' | 'data'>) {
   const region = data.layout[id]
   const page = {
@@ -196,14 +211,18 @@ function DynamicRegion({
               const maybeBold = c.label === ServiceManualLabel.heading
                 && Math.random() > 0.7
               return (
-                <ComponentRenderer page={page}
+                <ComponentRenderer
+                  page={page}
                   container={data.layout[id].rect}
                   sx={{
                     ...(maybeBold ? {
                       fontWeight: 'bold !important'
                     } : undefined),
                   }}
-                  key={c.id} label={c.label as ServiceManualLabel} rect={c.rect}>
+                  key={c.id} label={c.label as ServiceManualLabel}
+                  rect={c.rect}
+                  scale={scale}
+                  >
                   {c.textContent ?? null}
                 </ComponentRenderer>
               )
@@ -217,6 +236,7 @@ function DynamicRegion({
                   bulletpoints.map(bp => {
                     return (
                       <ComponentRenderer
+                        scale={scale}
                         container={data.layout[id].rect}
                         rect={bp.rect} page={page}
                         label={ServiceManualLabel.bulletpoint} key={bp.id}>
@@ -241,7 +261,6 @@ function DynamicRegion({
 
   return (
     <Flex col style={{
-        padding: `${padding}px`,
         gap: '4px',
         ...(maybeCentered
           ? { justifyContent: 'center '}
