@@ -1,5 +1,5 @@
 import { ServiceManualLabel } from "ui-labelling-shared";
-import { Rect } from "../../util/generator";
+import { estimateFontAndTrackingBox, Rect } from "../../util/generator";
 import { PreviewSchema } from "../../util/localstorage";
 import { DynamicMuiComponent } from "../mui/service-manual-dynamic";
 import { Flex } from "./flex";
@@ -203,6 +203,22 @@ function DynamicRegion({
       return region.components.includes(a.id)
     })
     const bulletpoints = components.filter(c => c.label === ServiceManualLabel.bulletpoint)
+
+    // must have the same font size and letter spacing across all these bulletpoints,
+    // at least within a given region ffs
+    const bp = bulletpoints.find(bp => bp.textContent)
+    const bpFontInfo = bp
+      ? estimateFontAndTrackingBox(bp.rect, bp.textContent!, {
+          lineCount: bp.textContent!.split('\n').length,
+        })
+      : null
+    const bpFs = bpFontInfo
+      ? {
+          fontSize: `${bpFontInfo.fontPx * scale}px`,
+          letterSpacing: `${bpFontInfo.letterSpacingPx * scale}px`,
+        }
+      : null
+
     return (
       <>
         {
@@ -239,7 +255,12 @@ function DynamicRegion({
                         scale={scale}
                         container={data.layout[id].rect}
                         rect={bp.rect} page={page}
-                        label={ServiceManualLabel.bulletpoint} key={bp.id}>
+                        label={ServiceManualLabel.bulletpoint} key={bp.id}
+                        sx={{
+                          padding: 0,
+                          ...bpFs ?? {}
+                        }}
+                        >
                         {bp.textContent}
                       </ComponentRenderer>
                     )

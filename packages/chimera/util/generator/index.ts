@@ -150,18 +150,23 @@ export function mergeColsFlat({
 
 function clamp(n: number, a = 0, b = 1) { return Math.max(a, Math.min(b, n)); }
 
-export function getHeaderLevel(
+export function getHeaderLevel({
+  rect,
+  textContent,
+  pageWidth,
+  fontPx,
+}: {
   rect: Rect,
   textContent: string,
-  pageWidth: number
-): 'h1' | 'h2' | 'h3' | 'h4' | 'h5' {
+  pageWidth: number,
+  fontPx: number
+}): 'h1' | 'h2' | 'h3' | 'h4' | 'h5' {
 
   const w = Math.max(1, rect.width);
   const h = Math.max(1, rect.height);
   const chars = Math.max(1, textContent.trim().length);
-  const widthRatio = clamp(w / Math.max(1, pageWidth));           // 0–1
-  const avgPxPerChar = w / chars;                                  // proxy for font size
-  const fontScore = clamp(avgPxPerChar / 20);                      // ~20px/char ≈ large
+  const widthRatio = clamp(w / Math.max(1, pageWidth));           // 0–1                                 // proxy for font size
+  const fontScore = clamp(fontPx / 20);                      // ~20px/char ≈ large
   const heightScore = clamp(h / 120);                              // 120px tall ≈ very large
   const shortBonus = chars <= 12 ? 0.2 : 0;
   const score = clamp(0.5 * fontScore + 0.3 * widthRatio + 0.1 * heightScore + shortBonus);

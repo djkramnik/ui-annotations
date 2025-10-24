@@ -33,7 +33,7 @@ export const DynamicMuiComponent = ({
     : null
   const fontStyling = inferredFontInfo
     ? {
-        fontSize: `${inferredFontInfo.fontPx * scale}px`,
+        fontSize: `${(inferredFontInfo.fontPx * scale) + getFsInflation(label)}px`,
         letterSpacing: `${inferredFontInfo.letterSpacingPx * scale}px`,
       }
     : null
@@ -100,5 +100,14 @@ export const DynamicMuiComponent = ({
       )
     default:
       return null
+  }
+}
+
+function getFsInflation(label: ServiceManualLabel) {
+  switch(label) {
+    case ServiceManualLabel.heading:
+      return 5
+    default:
+      return 0
   }
 }
