@@ -172,3 +172,12 @@ export function getHeaderLevel(
   if (score >= 0.25) return 'h4';
   return 'h5';
 }
+
+export const estimateFontSize = (
+  rect: Rect,
+  textContent: string,
+): number => {
+  const w = Math.max(1, rect.width);
+  const chars = Math.max(1, textContent.trim().length);
+  return w / chars; // average pixels per character
+}
