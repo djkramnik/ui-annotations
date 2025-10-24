@@ -14,49 +14,66 @@ type GridItem = {
   rowEnd: number;
 };
 
-function buildGrid(input: PreviewSchema, epsilonPct = 0.01) {
-  const { layout, contentBounds: cb } = input;
-  const norm = (r: Rect) => ({
-    left: (r.x - cb.x) / cb.width,
-    top: (r.y - cb.y) / cb.height,
-    right: (r.x + r.width - cb.x) / cb.width,
-    bottom: (r.y + r.height - cb.y) / cb.height,
-  });
+function buildGrid(
+  input: PreviewSchema,
+  epsilonPct = 0.01 // tolerance relative to page dims
+): {
+  container: { widthPx: number; heightPx: number; scale: number };
+  gridTemplateColumns: string;
+  gridTemplateRows: string;
+  items: GridItem[];
+} {
+  const { layout, contentBounds: cb, annotations } = input;
+  const pageW = Math.max(1, annotations.viewWidth);
+  const pageH = Math.max(1, annotations.viewHeight);
+
+  // Fixed container: half page width, preserve aspect ratio
+  const containerW = Math.round(pageW / 2);
+  const scale = containerW / pageW;
+  const containerH = Math.round(pageH * scale);
+
+  const epsX = epsilonPct * pageW;
+  const epsY = epsilonPct * pageH;
 
   const snapPush = (arr: number[], v: number, eps: number) => {
     for (let i = 0; i < arr.length; i++) if (Math.abs(arr[i] - v) <= eps) return;
     arr.push(v);
   };
 
-  const epsX = epsilonPct; // ~1% of content width
-  const epsY = epsilonPct; // ~1% of content height
-  const xEdges: number[] = [0, 1];
-  const yEdges: number[] = [0, 1];
+  // Start with full-page edges (so margins are explicit grid tracks)
+  const xEdges: number[] = [0, pageW];
+  const yEdges: number[] = [0, pageH];
 
-  const norms = layout.map((l) => norm(l.rect));
-  norms.forEach(({ left, right, top, bottom }) => {
-    snapPush(xEdges, Math.max(0, Math.min(1, left)), epsX);
-    snapPush(xEdges, Math.max(0, Math.min(1, right)), epsX);
-    snapPush(yEdges, Math.max(0, Math.min(1, top)), epsY);
-    snapPush(yEdges, Math.max(0, Math.min(1, bottom)), epsY);
+  // Also add contentBounds edges to delineate margins vs. content
+  snapPush(xEdges, cb.x, epsX);
+  snapPush(xEdges, cb.x + cb.width, epsX);
+  snapPush(yEdges, cb.y, epsY);
+  snapPush(yEdges, cb.y + cb.height, epsY);
+
+  // Add all region edges (rects are assumed in absolute page coords)
+  layout.forEach(({ rect: r }) => {
+    snapPush(xEdges, r.x, epsX);
+    snapPush(xEdges, r.x + r.width, epsX);
+    snapPush(yEdges, r.y, epsY);
+    snapPush(yEdges, r.y + r.height, epsY);
   });
 
   xEdges.sort((a, b) => a - b);
   yEdges.sort((a, b) => a - b);
 
-  const toTemplate = (edges: number[]) =>
+  // Produce pixel track sizes, scaled to the fixed container
+  const toPxTracks = (edges: number[]) =>
     edges
       .slice(0, -1)
-      .map((e, i) => `${Math.max(0, (edges[i + 1] - e) * 100).toFixed(3)}%`)
-      .join(" ");
+      .map((e, i) => Math.max(0, Math.round((edges[i + 1] - e) * scale)) + 'px')
+      .join(' ');
 
-  const gridTemplateColumns = toTemplate(xEdges);
-  const gridTemplateRows = toTemplate(yEdges);
+  const gridTemplateColumns = toPxTracks(xEdges);
+  const gridTemplateRows = toPxTracks(yEdges);
 
   const findIndex = (edges: number[], v: number, eps: number) => {
     let idx = edges.findIndex((e) => Math.abs(e - v) <= eps);
     if (idx === -1) {
-      // insert and keep sorted if an edge fell between tolerance (rare)
       edges.push(v);
       edges.sort((a, b) => a - b);
       idx = edges.indexOf(v);
@@ -64,15 +81,20 @@ function buildGrid(input: PreviewSchema, epsilonPct = 0.01) {
     return idx;
   };
 
-  const items: GridItem[] = norms.map((r, i) => {
-    const cs = findIndex(xEdges, r.left, epsX) + 1;
-    const ce = findIndex(xEdges, r.right, epsX) + 1;
-    const rs = findIndex(yEdges, r.top, epsY) + 1;
-    const re = findIndex(yEdges, r.bottom, epsY) + 1;
+  const items: GridItem[] = layout.map(({ rect: r }, i) => {
+    const cs = findIndex(xEdges, r.x, epsX) + 1;
+    const ce = findIndex(xEdges, r.x + r.width, epsX) + 1;
+    const rs = findIndex(yEdges, r.y, epsY) + 1;
+    const re = findIndex(yEdges, r.y + r.height, epsY) + 1;
     return { id: i, colStart: cs, colEnd: ce, rowStart: rs, rowEnd: re };
   });
 
-  return { gridTemplateColumns, gridTemplateRows, items };
+  return {
+    container: { widthPx: containerW, heightPx: containerH, scale },
+    gridTemplateColumns,
+    gridTemplateRows,
+    items,
+  };
 }
 
 type GridRendererProps = {
@@ -104,15 +126,14 @@ export function GridRenderer({
   showDebugBorders = false,
   ComponentRenderer
 }: GridRendererProps) {
-  const { contentBounds: cb } = data;
-  const { gridTemplateColumns, gridTemplateRows, items } = buildGrid(data);
+  const { gridTemplateColumns, gridTemplateRows, items, container } = buildGrid(data);
 
   const containerStyle: React.CSSProperties = {
     display: "grid",
     gridTemplateColumns,
     gridTemplateRows,
-    width: "100%",
-    aspectRatio: `${cb.width} / ${cb.height}`,
+    width: container.widthPx,
+    height: container.heightPx,
     boxSizing: "border-box",
     ...style,
   };
