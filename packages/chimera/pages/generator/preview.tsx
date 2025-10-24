@@ -1,8 +1,12 @@
+import { ThemeProvider, CssBaseline } from "@mui/material"
 import { useEffect, useRef, useState } from "react"
 import { PreviewSchema, readPreviewSchema } from "../../util/localstorage"
 import { PreviewAnnotation } from "../../components/generator/preview-annotation"
 import { GridRenderer } from "../../components/generator/dynamicGrid"
 import { DynamicMuiComponent } from "../../components/mui/service-manual-dynamic"
+import { randomMuiTheme } from "../../components/mui/theme"
+
+const theme = randomMuiTheme()
 
 const PreviewPage = () => {
   const fetched = useRef<boolean>(false)
@@ -25,14 +29,17 @@ const PreviewPage = () => {
     return null
   }
   return (
-    <div>
-      <SchemaMeta schema={schema} />
-      <hr />
-      <GridRenderer data={schema}
-        showDebugBorders
-        ComponentRenderer={DynamicMuiComponent}
-      />
-    </div>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <div>
+        <SchemaMeta schema={schema} />
+        <hr />
+        <GridRenderer data={schema}
+          showDebugBorders
+          ComponentRenderer={DynamicMuiComponent}
+        />
+      </div>
+    </ThemeProvider>
   )
 }
 

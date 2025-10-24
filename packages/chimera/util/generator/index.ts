@@ -147,3 +147,28 @@ export function mergeColsFlat({
 
   return items;
 }
+
+function clamp(n: number, a = 0, b = 1) { return Math.max(a, Math.min(b, n)); }
+
+export function getHeaderLevel(
+  rect: Rect,
+  textContent: string,
+  pageWidth: number
+): 'h1' | 'h2' | 'h3' | 'h4' | 'h5' {
+
+  const w = Math.max(1, rect.width);
+  const h = Math.max(1, rect.height);
+  const chars = Math.max(1, textContent.trim().length);
+  const widthRatio = clamp(w / Math.max(1, pageWidth));           // 0–1
+  const avgPxPerChar = w / chars;                                  // proxy for font size
+  const fontScore = clamp(avgPxPerChar / 20);                      // ~20px/char ≈ large
+  const heightScore = clamp(h / 120);                              // 120px tall ≈ very large
+  const shortBonus = chars <= 12 ? 0.2 : 0;
+  const score = clamp(0.5 * fontScore + 0.3 * widthRatio + 0.1 * heightScore + shortBonus);
+
+  if (score >= 0.85) return 'h1';
+  if (score >= 0.65) return 'h2';
+  if (score >= 0.45) return 'h3';
+  if (score >= 0.25) return 'h4';
+  return 'h5';
+}

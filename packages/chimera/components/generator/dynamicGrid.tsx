@@ -4,6 +4,7 @@ import { PreviewSchema } from "../../util/localstorage";
 import { DynamicMuiComponent } from "../mui/service-manual-dynamic";
 import { Flex } from "./flex";
 import { useMemo } from "react";
+import { List, ListItem, SxProps, Theme } from "@mui/material";
 
 type GridItem = {
   id: number;
@@ -82,11 +83,17 @@ type GridRendererProps = {
   ComponentRenderer: ({
     label,
     children,
-    rect
+    rect,
+    page,
+    sx,
+    container
   }: {
     label: ServiceManualLabel
     children?: React.ReactNode
-    rect?: Rect
+    rect: Rect
+    page: { width: number; height:  number }
+    sx?: SxProps<Theme>
+    container: Rect
   }) => React.ReactNode
 };
 
@@ -132,37 +139,94 @@ export function GridRenderer({
 function DynamicRegion({
   id,
   data,
-  ComponentRenderer
+  ComponentRenderer,
+  padding = 12,
 }: {
   id: number
+  padding?: number
 } & Pick<GridRendererProps, 'ComponentRenderer' | 'data'>) {
   const region = data.layout[id]
+  const page = {
+    width: data.annotations.viewWidth,
+    height: data.annotations.viewHeight,
+  }
   if (!region) {
     console.error('cannot find region definition from id', id)
     return null
   }
+  const componentCount = data.annotations.payload.annotations.filter(a => {
+    return region.components.includes(a.id)
+  }).length
+
+  const onlyChild = componentCount !== 1
+    ? null
+    : data.annotations.payload.annotations[0].label
 
   const content = useMemo(() => {
     const components = data.annotations.payload.annotations.filter(a => {
       return region.components.includes(a.id)
     })
+    const bulletpoints = components.filter(c => c.label === ServiceManualLabel.bulletpoint)
     return (
       <>
         {
-          components.map(c => {
-            return (
-              <ComponentRenderer label={c.label as ServiceManualLabel} rect={c.rect}>
-                {c.textContent ?? null}
-              </ComponentRenderer>
+          components.filter(c => c.label !== ServiceManualLabel.bulletpoint)
+            .map(c => {
+              const maybeBold = c.label === ServiceManualLabel.heading
+                && Math.random() > 0.7
+              return (
+                <ComponentRenderer page={page}
+                  container={data.layout[id].rect}
+                  sx={{
+                    ...(maybeBold ? {
+                      fontWeight: 'bold !important'
+                    } : undefined),
+                  }}
+                  key={c.id} label={c.label as ServiceManualLabel} rect={c.rect}>
+                  {c.textContent ?? null}
+                </ComponentRenderer>
+              )
+            })
+        }
+        {
+          bulletpoints.length > 0
+            ? (
+              <List sx={{ listStyleType: 'disc', pl: 2 }}>
+                {
+                  bulletpoints.map(bp => {
+                    return (
+                      <ComponentRenderer
+                        container={data.layout[id].rect}
+                        rect={bp.rect} page={page}
+                        label={ServiceManualLabel.bulletpoint} key={bp.id}>
+                        {bp.textContent}
+                      </ComponentRenderer>
+                    )
+                  })
+                }
+              </List>
             )
-          })
+            : null
         }
       </>
     )
-  }, [data, id, ComponentRenderer])
+  }, [data, id, ComponentRenderer, page, componentCount])
+
+  const maybeCentered = useMemo(() => {
+    return onlyChild === ServiceManualLabel.heading
+      ? Math.random() > (id === 0 ? 0.2 : 0.8)
+      : false
+  }, [componentCount, onlyChild, id])
 
   return (
-    <Flex wrap>
+    <Flex col style={{
+        padding: `${padding}px`,
+        gap: '4px',
+        ...(maybeCentered
+          ? { justifyContent: 'center '}
+          : undefined
+        )
+       }}>
       {content}
     </Flex>
   )
