@@ -1,5 +1,6 @@
 import { LayoutTree, XyNode } from "infer-layout";
 import { AnnotationPayload } from "ui-labelling-shared";
+import { PreviewSchema } from "../localstorage";
 
 type SingleAnnotation = AnnotationPayload['annotations'][0]
 export type Rect = SingleAnnotation['rect']
@@ -230,4 +231,42 @@ export function estimateFontAndTrackingBox(
   }
 
   return { fontPx, letterSpacingPx: n > 1 ? lsClamped : 0, lineCount: L };
+}
+
+// estimate the top and left padding for a given region
+export function estimateRegionPad(
+  regionId: number,
+  schema: PreviewSchema
+): {
+  top: number
+  left: number
+} {
+  const { components: cids, rect: regionRect } = schema.layout[regionId]
+  if (cids.length < 1) {
+    return { top: 0, left: 0 }
+  }
+
+  const { minLeft, minTop }
+    = schema.annotations.payload.annotations
+      .reduce((acc, a) => {
+        if (!cids.includes(a.id)) {
+          return acc
+        }
+        return {
+          minLeft: Math.min(a.rect.x, acc.minLeft),
+          minTop: Math.min(a.rect.y, acc.minTop),
+        }
+      }, { minLeft: Infinity, minTop: Infinity } as {
+        minLeft: number
+        minTop: number
+      })
+
+  if (minLeft === Infinity || minTop === Infinity) {
+    throw Error('seriously wtf')
+  }
+
+  return {
+    top: minTop - regionRect.y,
+    left: minLeft - regionRect.x,
+  }
 }

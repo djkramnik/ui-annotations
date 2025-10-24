@@ -1,10 +1,9 @@
 import { ServiceManualLabel } from "ui-labelling-shared";
-import { estimateFontAndTrackingBox, Rect } from "../../util/generator";
+import { estimateFontAndTrackingBox, estimateRegionPad, Rect } from "../../util/generator";
 import { PreviewSchema } from "../../util/localstorage";
-import { DynamicMuiComponent } from "../mui/service-manual-dynamic";
 import { Flex } from "./flex";
 import { useMemo } from "react";
-import { List, ListItem, SxProps, Theme } from "@mui/material";
+import { List, SxProps, Theme } from "@mui/material";
 
 type GridItem = {
   id: number;
@@ -272,7 +271,7 @@ function DynamicRegion({
         }
       </>
     )
-  }, [data, id, ComponentRenderer, page, componentCount])
+  }, [data, id, ComponentRenderer, page, componentCount, scale])
 
   const maybeCentered = useMemo(() => {
     return onlyChild === ServiceManualLabel.heading
@@ -280,8 +279,18 @@ function DynamicRegion({
       : false
   }, [componentCount, onlyChild, id])
 
+  const { top: topP, left: leftP } = useMemo(() => {
+    return estimateRegionPad(id, data)
+  }, [id, data])
+
+  const padStyle = {
+    paddingLeft: `${Math.floor(leftP * scale)}px`,
+    paddingTop: `${Math.floor(topP * scale)}px`,
+  }
+
   return (
     <Flex col style={{
+        ...padStyle,
         gap: '4px',
         ...(maybeCentered
           ? { justifyContent: 'center '}
