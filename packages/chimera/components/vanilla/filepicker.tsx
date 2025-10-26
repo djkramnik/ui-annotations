@@ -6,7 +6,12 @@ import {
   AttachFileOutlined,
   AttachFileRounded,
   AttachFileSharp,
+  AttachFileTwoTone,
   AudioFile,
+  AudioFileOutlined,
+  AudioFileRounded,
+  AudioFileSharp,
+  AudioFileTwoTone,
   Close,
   Cloud,
   CloudCircle,
@@ -132,6 +137,14 @@ export const FilePicker = ({ theme }: { theme: VanillaTheme }) => {
       {withMuiIcon ? (
         <RandomMuiIcon
           icons={[
+            AttachEmail,
+            AttachFile,
+            AttachEmailRounded,
+            AttachEmailTwoTone,
+            AttachFileOutlined,
+            AttachFileRounded,
+            AttachFileTwoTone,
+            AttachFileSharp,
             Download,
             DownloadForOffline,
             FileDownload,
@@ -316,6 +329,10 @@ export const FilePickerSlim = ({ theme }: { theme: VanillaTheme }) => {
             icons={[
               AttachFile,
               AudioFile,
+              AudioFileOutlined,
+              AudioFileRounded,
+              AudioFileSharp,
+              AudioFileTwoTone,
               DriveFileMove,
               DriveFileMoveOutline,
               AttachEmail,
@@ -324,6 +341,7 @@ export const FilePickerSlim = ({ theme }: { theme: VanillaTheme }) => {
               AttachFileOutlined,
               AttachFileRounded,
               AttachFileSharp,
+              AttachFileTwoTone,
             ]}
           />
         </Flex>
@@ -331,7 +349,9 @@ export const FilePickerSlim = ({ theme }: { theme: VanillaTheme }) => {
       <input
         type="text"
         placeholder={placeholder}
+        value={selected ? placeholder : ''}
         style={{
+          color: theme.palette.typography.primary,
           minWidth: `${minWidth}px`,
           border: 'none',
           padding: `${vPad}px ${hPad}px`,

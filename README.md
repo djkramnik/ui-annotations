@@ -22,8 +22,6 @@ that or completely _rebuild_ the screen with an updated one, that can be auto an
 * add synthetic component generator
 
 * labels to synthetic augment first
-  * filepicker (variants)
-  * selectablecard
   * accordion
   * video
   * textarea

@@ -5,6 +5,8 @@ import { useComponent } from "../../hooks/useComponent"
 import MuiDatePicker from "../../components/mui/datepicker"
 import { useMemo } from "react"
 import { randomMuiTheme } from "../../components/mui/theme"
+import { MuiSelectableCard } from "../../components/mui/selectable-card"
+import { RandomMuiIcon } from "../../components/mui/icon"
 
 const MuiComponent = () => {
   const component = useComponent()
@@ -17,6 +19,10 @@ const MuiComponent = () => {
           options={['Male', 'Female', 'Binary', 'Zim']}
           selected={1}
         />
+      )
+    case InteractiveLabel.selectablecard:
+      return (
+        <MuiSelectableCard />
       )
     case InteractiveLabel.datepicker:
       return (
