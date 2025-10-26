@@ -1,18 +1,30 @@
 import {
+  AttachEmail,
+  AttachEmailRounded,
+  AttachEmailTwoTone,
+  AttachFile,
+  AttachFileOutlined,
+  AttachFileRounded,
+  AttachFileSharp,
+  AudioFile,
+  Close,
   Cloud,
   CloudCircle,
   CloudCircleOutlined,
   CloudCircleRounded,
   CloudCircleSharp,
-  CloudDownloadOutlined,
-  CloudOutlined,
-  CloudUploadOutlined,
+  Delete,
+  DeleteOutline,
   Download,
   DownloadForOffline,
+  DriveFileMove,
+  DriveFileMoveOutline,
   FileDownload,
   FileDownloadOutlined,
   Folder,
   Image,
+  RemoveCircle,
+  RemoveCircleOutline,
   Upload,
   UploadFile,
   UploadFileOutlined,
@@ -21,22 +33,48 @@ import {
   UploadFileTwoTone,
 } from '@mui/icons-material'
 import { VanillaTheme } from './type'
-import { randInt } from '../../util/random'
+import { randInt, randomPick } from '../../util/random'
 import { RandomMuiIcon } from '../mui/icon'
 import { VanillaButton } from './button'
 import { RandomAntIcon } from '../ant/icon'
-import { AntCloudOutlined, DownloadOutlined, FileAddFilled, FileAddOutlined, FileExcelFilled, FileExcelOutlined, FileExcelTwoTone, FileImageFilled, FileImageOutlined, FileJpgOutlined, FileProtectOutlined, FileSearchOutlined, FileZipFilled, FileZipOutlined, ProfileOutlined, ProfileTwoTone, UploadOutlined } from '@ant-design/icons'
+import {
+  AntCloudOutlined,
+  DownloadOutlined,
+  FileAddFilled,
+  FileAddOutlined,
+  FileExcelFilled,
+  FileExcelOutlined,
+  FileExcelTwoTone,
+  FileImageFilled,
+  FileImageOutlined,
+  FileJpgOutlined,
+  FileProtectOutlined,
+  FileSearchOutlined,
+  FileZipFilled,
+  FileZipOutlined,
+  ProfileOutlined,
+  ProfileTwoTone,
+  UploadOutlined,
+} from '@ant-design/icons'
+import { Flex } from '../generator/flex'
+import {
+  fpButtonTexts,
+  fpClauses,
+  fpHeaders,
+  fpTernarys,
+  randomFilePath,
+} from '../../util/faker/filepicker'
+import { useEffect, useRef, useState } from 'react'
 
 // need a variant where its just a button and the icon
 // need a variant where its just an input with a couple of file related decorations
 // (like a text input with a choose file button inside)
 
 export const FilePicker = ({ theme }: { theme: VanillaTheme }) => {
-
-  const header = headers[randInt(0, headers.length - 1)]
-  const clause = clauses[randInt(0, clauses.length - 1)]
-  const tertiary = ternarys[randInt(0, ternarys.length - 1)]
-  const buttonText = buttonTexts[randInt(0, buttonTexts.length - 1)]
+  const header = randomPick(fpHeaders)
+  const clause = randomPick(fpClauses)
+  const tertiary = randomPick(fpTernarys)
+  const buttonText = randomPick(fpButtonTexts)
 
   const centered = randInt(0, 3) > 0
   const flexEnd = randInt(0, 1) === 1
@@ -91,58 +129,52 @@ export const FilePicker = ({ theme }: { theme: VanillaTheme }) => {
         border: `${borderWidth}px ${borderStyle} currentColor`,
       }}
     >
-      {
-        withMuiIcon
-          ? (
-            <RandomMuiIcon
-              icons={[
-                Download,
-                DownloadForOffline,
-                FileDownload,
-                FileDownloadOutlined,
-                Cloud,
-                CloudCircle,
-                CloudCircleOutlined,
-                CloudCircleRounded,
-                CloudCircleSharp,
-                Image,
-                Folder,
-                Upload,
-                UploadFile,
-                UploadFileOutlined,
-                UploadFileRounded,
-                UploadFileSharp,
-                UploadFileTwoTone,
-              ]}
-            />
-          )
-          : (
-            <RandomAntIcon
-              icons={[
-                UploadOutlined,
-                DownloadOutlined,
-                FileAddOutlined,
-                FileAddFilled,
-                FileExcelOutlined,
-                FileExcelTwoTone,
-                FileExcelFilled,
-                FileJpgOutlined,
-                FileProtectOutlined,
-                FileSearchOutlined,
-                ProfileOutlined,
-                FileZipOutlined,
-                FileZipFilled,
-                ProfileTwoTone,
-                AntCloudOutlined,
-                CloudDownloadOutlined,
-                CloudOutlined,
-                CloudUploadOutlined,
-                FileImageOutlined,
-                FileImageFilled
-              ]}
-            />
-          )
-      }
+      {withMuiIcon ? (
+        <RandomMuiIcon
+          icons={[
+            Download,
+            DownloadForOffline,
+            FileDownload,
+            FileDownloadOutlined,
+            Cloud,
+            CloudCircle,
+            CloudCircleOutlined,
+            CloudCircleRounded,
+            CloudCircleSharp,
+            Image,
+            Folder,
+            Upload,
+            UploadFile,
+            UploadFileOutlined,
+            UploadFileRounded,
+            UploadFileSharp,
+            UploadFileTwoTone,
+          ]}
+        />
+      ) : (
+        <RandomAntIcon
+          icons={[
+            UploadOutlined,
+            DownloadOutlined,
+            FileAddOutlined,
+            FileAddFilled,
+            FileExcelOutlined,
+            FileExcelTwoTone,
+            FileExcelFilled,
+            FileJpgOutlined,
+            FileProtectOutlined,
+            FileSearchOutlined,
+            ProfileOutlined,
+            FileZipOutlined,
+            FileZipFilled,
+            ProfileTwoTone,
+            AntCloudOutlined,
+
+            FileImageOutlined,
+            FileImageFilled,
+          ]}
+        />
+      )}
       {extraHeaderMargin ? (
         <div style={{ height: `${buttonMargin}px` }} />
       ) : null}
@@ -150,9 +182,10 @@ export const FilePicker = ({ theme }: { theme: VanillaTheme }) => {
         style={{
           fontSize: `${fontSize}px`,
           textAlign: 'center',
-          margin: withTertiary && tertiaryAbsolute
-            ? `${headerMarginForTertiarySpacing}px`
-            : 0,
+          margin:
+            withTertiary && tertiaryAbsolute
+              ? `${headerMarginForTertiarySpacing}px`
+              : 0,
           textTransform: capitalizeHeader ? 'capitalize' : 'initial',
         }}
       >
@@ -190,197 +223,172 @@ export const FilePicker = ({ theme }: { theme: VanillaTheme }) => {
   )
 }
 
-type FilePickerText = {
-  header: string
-  clause: string
-  tertiary: string
-  button: string
+export const FilePickerSlim = ({ theme }: { theme: VanillaTheme }) => {
+  const inputRef = useRef<HTMLDivElement | null>(null)
+
+  const [hPad, setHpad] = useState<number>(8)
+  const [vPad, setVPad] = useState<number>(7)
+  const [placeholder, setPlaceholder] = useState<string>('Select file')
+  const [fontSize, setFontSize] = useState<number>(14)
+  const [minWidth, setMinWidth] = useState<number>(240)
+  const [iconSize, setIconSize] = useState<number>(24)
+  const [focus, setFocus] = useState<boolean>(false)
+  const [selected, setSelected] = useState<boolean>(false)
+  const [bookEndPos, setBookEndPos] = useState<'start' | 'end'>('end')
+
+  const [bookEndW, setBookEndWidth] = useState<number | null>(null)
+
+  // randomize everything
+  useEffect(() => {
+    const _hPad = randInt(8, 20)
+    const _vPad = Math.round(_hPad / 1.2)
+    const _selected = Math.random() > 0.5
+    const _placeholder = !_selected ? randomPick(fpHeaders) : randomFilePath()
+
+    setHpad(_hPad)
+    setVPad(_vPad)
+    setSelected(_selected)
+    setPlaceholder(_placeholder)
+    setFontSize(randInt(12, 18))
+    setMinWidth(randInt(200, 500))
+    setFocus(Math.random() > 0.7)
+    setIconSize(randInt(24, 30))
+    setBookEndPos(Math.random() > 0.7 ? 'start' : 'end')
+  }, [
+    setHpad,
+    setVPad,
+    setPlaceholder,
+    setSelected,
+    setFontSize,
+    setMinWidth,
+    setFocus,
+    setIconSize,
+    setBookEndPos,
+  ])
+
+  useEffect(() => {
+    if (!inputRef.current) {
+      return
+    }
+    setTimeout(() => {
+      setBookEndWidth(inputRef.current!.clientHeight)
+    }, 0)
+  }, [
+    hPad,
+    vPad,
+    placeholder,
+    fontSize,
+    minWidth,
+    focus,
+    selected,
+    iconSize,
+    setBookEndWidth,
+  ])
+
+  const border = focus
+    ? `1px solid ${theme.palette.typography.primary}`
+    : `3px solid ${theme.palette.typography.primary}`
+
+  return (
+    <Flex
+      gap="4px"
+      aic
+      ref={inputRef}
+      style={{
+        border,
+        position: 'relative',
+        backgroundColor: theme.palette.backgroundColor,
+        color: theme.palette.typography.primary,
+      }}
+    >
+      {bookEndW && bookEndPos === 'start' ? (
+        <Flex
+          jcc
+          aic
+          style={{
+            width: `${bookEndW}px`,
+            height: `${bookEndW}px`,
+            borderRight: `1px solid ${theme.palette.typography.primary}`,
+          }}
+        >
+          <RandomMuiIcon
+            sizeRange={[iconSize, iconSize]}
+            icons={[
+              AttachFile,
+              AudioFile,
+              DriveFileMove,
+              DriveFileMoveOutline,
+              AttachEmail,
+              AttachEmailRounded,
+              AttachEmailTwoTone,
+              AttachFileOutlined,
+              AttachFileRounded,
+              AttachFileSharp,
+            ]}
+          />
+        </Flex>
+      ) : null}
+      <input
+        type="text"
+        placeholder={placeholder}
+        style={{
+          minWidth: `${minWidth}px`,
+          border: 'none',
+          padding: `${vPad}px ${hPad}px`,
+          paddingLeft: `${vPad}px`,
+          fontSize: `${fontSize}px`,
+          background: 'transparent',
+          fontFamily: theme.font.fontFamily.primary,
+        }}
+        color={theme.palette.primary}
+      />
+      {selected ? (
+        <RandomMuiIcon
+          sx={{
+            ...(bookEndPos === 'start'
+                ? {
+                  marginRight: '4px'
+                }
+                : {}
+            )
+          }}
+          sizeRange={[iconSize, iconSize]}
+          icons={[
+            RemoveCircle,
+            RemoveCircleOutline,
+            Close,
+            Delete,
+            DeleteOutline,
+          ]}
+        />
+      ) : null}
+      {bookEndW && bookEndPos === 'end' ? (
+        <Flex
+          jcc
+          aic
+          style={{
+            width: `${bookEndW}px`,
+            height: `${bookEndW}px`,
+            borderLeft: `1px solid ${theme.palette.typography.primary}`,
+          }}
+        >
+          <RandomMuiIcon
+            sizeRange={[iconSize, iconSize]}
+            icons={[
+              AttachFile,
+              AudioFile,
+              DriveFileMove,
+              DriveFileMoveOutline,
+              AttachEmail,
+              AttachEmailRounded,
+              AttachEmailTwoTone,
+              AttachFileOutlined,
+              AttachFileRounded,
+              AttachFileSharp,
+            ]}
+          />
+        </Flex>
+      ) : null}
+    </Flex>
+  )
 }
-
-const FILE_PICKER_TEXTS: FilePickerText[] = [
-  {
-    header: 'Drag & drop files here',
-    clause: 'or click to browse',
-    tertiary: 'Supports JPG, PNG, PDF up to 10 MB',
-    button: 'Browse',
-  },
-  {
-    header: 'Upload your document',
-    clause: 'Drag it here or choose a file',
-    tertiary: 'Max file size: 5 MB · Formats: PDF, DOCX',
-    button: 'Select File',
-  },
-  {
-    header: 'Drop images to upload',
-    clause: 'or tap below to pick',
-    tertiary: 'PNG, JPG, WEBP up to 8 MB',
-    button: 'Upload Image',
-  },
-  {
-    header: 'Select your files',
-    clause: 'Drag files anywhere on this area',
-    tertiary: 'Up to 5 files, each 20 MB max',
-    button: 'Choose Files',
-  },
-  {
-    header: 'Upload project assets',
-    clause: 'Drag and drop, or click the button',
-    tertiary: 'Supports ZIP, RAR, TAR.GZ (max 50 MB)',
-    button: 'Upload',
-  },
-  {
-    header: 'Attach your resume',
-    clause: 'Drop it here or click below',
-    tertiary: 'Accepted formats: PDF, DOCX, RTF (10 MB limit)',
-    button: 'Attach',
-  },
-  {
-    header: 'Import a CSV dataset',
-    clause: 'Click or drag a CSV file here',
-    tertiary: 'Comma-separated values only, up to 15 MB',
-    button: 'Import CSV',
-  },
-  {
-    header: 'Add your profile photo',
-    clause: 'Drag an image or browse your device',
-    tertiary: 'Square images preferred · Max 2 MB',
-    button: 'Choose Photo',
-  },
-  {
-    header: 'Upload receipts',
-    clause: 'Drop receipts here or use file picker',
-    tertiary: 'Supports PDF, JPG, PNG up to 5 MB each',
-    button: 'Upload Receipts',
-  },
-  {
-    header: 'Upload design mockups',
-    clause: 'Drag files or tap to select',
-    tertiary: 'Figma exports · PNG, JPG, ZIP allowed',
-    button: 'Select Files',
-  },
-  {
-    header: 'Drop media files here',
-    clause: 'or browse local storage',
-    tertiary: 'Video: MP4, MOV · Audio: MP3 · Max 100 MB',
-    button: 'Upload Media',
-  },
-  {
-    header: 'Drag your invoice',
-    clause: 'Click to browse invoices',
-    tertiary: 'PDF format required · 20 MB max',
-    button: 'Upload Invoice',
-  },
-  {
-    header: 'Upload backup archive',
-    clause: 'Drag your ZIP here or select manually',
-    tertiary: 'ZIP or TAR.GZ only · Up to 250 MB',
-    button: 'Select Archive',
-  },
-  {
-    header: 'Drop your logo image',
-    clause: 'or choose a file from your device',
-    tertiary: 'Recommended size: 512×512px · PNG/JPG',
-    button: 'Upload Logo',
-  },
-  {
-    header: 'Upload signed agreement',
-    clause: 'Drag the PDF here or use the button',
-    tertiary: 'One file only · Must be under 5 MB',
-    button: 'Upload PDF',
-  },
-  {
-    header: 'Upload spreadsheet',
-    clause: 'Drop Excel or CSV file here',
-    tertiary: 'XLSX, CSV formats supported · 10 MB limit',
-    button: 'Select Spreadsheet',
-  },
-  {
-    header: 'Submit assignment',
-    clause: 'Drag your file here or browse',
-    tertiary: 'Allowed: PDF, DOCX · 15 MB max',
-    button: 'Submit',
-  },
-  {
-    header: 'Upload screenshots',
-    clause: 'Click or drag images into this area',
-    tertiary: 'PNG, JPG only · Up to 10 images · 5 MB each',
-    button: 'Upload Images',
-  },
-  {
-    header: 'Upload source code',
-    clause: 'Drop files or click below',
-    tertiary: 'ZIP or TAR.GZ only · 100 MB limit',
-    button: 'Upload Code',
-  },
-  {
-    header: 'Drag files to begin upload',
-    clause: 'or choose files manually',
-    tertiary: 'Supports common document types',
-    button: 'Start Upload',
-  },
-  {
-    header: 'Upload configuration file',
-    clause: 'Drag your JSON or YAML here',
-    tertiary: 'Max 2 MB · Must be valid format',
-    button: 'Upload Config',
-  },
-  {
-    header: 'Add attachments',
-    clause: 'Click or drop files below',
-    tertiary: 'Any type up to 25 MB total',
-    button: 'Add Files',
-  },
-  {
-    header: 'Upload a new version',
-    clause: 'Drag the file here or click to select',
-    tertiary: 'Versioned uploads replace previous files',
-    button: 'Upload',
-  },
-  {
-    header: 'Submit supporting documents',
-    clause: 'Drag and drop or browse local storage',
-    tertiary: 'PDF, DOC, JPG accepted · 30 MB total',
-    button: 'Submit Files',
-  },
-  {
-    header: 'Drop profile background image',
-    clause: 'or tap to select a file',
-    tertiary: 'JPEG or PNG · 2 MB limit · Landscape preferred',
-    button: 'Select Image',
-  },
-  {
-    header: 'Upload medical report',
-    clause: 'Drag report here or choose file',
-    tertiary: 'PDF or DICOM format · Max 20 MB',
-    button: 'Upload Report',
-  },
-  {
-    header: 'Upload 3D model',
-    clause: 'Drop GLB, OBJ or FBX file',
-    tertiary: 'Max 50 MB · Preview available after upload',
-    button: 'Upload Model',
-  },
-  {
-    header: 'Drop dataset here',
-    clause: 'or click to upload',
-    tertiary: 'CSV, JSON, or ZIP archives up to 200 MB',
-    button: 'Upload Dataset',
-  },
-  {
-    header: 'Upload compressed folder',
-    clause: 'Drag or click to select ZIP file',
-    tertiary: 'Single ZIP file · Up to 100 MB',
-    button: 'Choose ZIP',
-  },
-  {
-    header: 'Upload photos for gallery',
-    clause: 'Drag & drop multiple files',
-    tertiary: 'JPG, PNG up to 5 MB each · 20 files max',
-    button: 'Add Photos',
-  },
-]
-
-const headers = FILE_PICKER_TEXTS.map(f => f.header)
-const clauses = FILE_PICKER_TEXTS.map(f => f.clause)
-const ternarys = FILE_PICKER_TEXTS.map(f => f.tertiary)
-const buttonTexts = FILE_PICKER_TEXTS.map(f => f.button)

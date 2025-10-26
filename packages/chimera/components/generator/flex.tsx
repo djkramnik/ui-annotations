@@ -1,16 +1,6 @@
-import { CSSProperties } from "react"
+import React, { CSSProperties } from 'react'
 
-export const Flex = ({
-  style,
-  children,
-  aic,
-  jcsb,
-  jcc,
-  jcsa,
-  wrap,
-  col,
-  gap
-}: {
+type FlexProps = {
   style?: CSSProperties
   children?: React.ReactNode
   col?: boolean
@@ -20,21 +10,28 @@ export const Flex = ({
   jcsa?: boolean
   wrap?: boolean
   gap?: CSSProperties['gap']
-}) => {
+}
 
+export const Flex = React.forwardRef<HTMLDivElement, FlexProps>(function Flex(
+  { style, children, aic, jcsb, jcc, jcsa, wrap, col, gap },
+  ref,
+) {
   return (
-    <div style={{
-      display: 'flex',
-      ...(gap ? { gap } : {}),
-      ...(col ? { flexDirection: 'column'} : {}),
-      ...(aic ? { alignItems: 'center'} : {}),
-      ...(jcsb ? { justifyContent: 'space-between' } : {}),
-      ...(jcsa ? { justifyContent: 'space-around' } : {}),
-      ...(jcc ? { justifyContent: 'center'} : {}),
-      ...(wrap ? { flexWrap: 'wrap'} : {} ),
-      ...style
-    }}>
+    <div
+      ref={ref}
+      style={{
+        display: 'flex',
+        ...(gap ? { gap } : {}),
+        ...(col ? { flexDirection: 'column' } : {}),
+        ...(aic ? { alignItems: 'center' } : {}),
+        ...(jcsb ? { justifyContent: 'space-between' } : {}),
+        ...(jcsa ? { justifyContent: 'space-around' } : {}),
+        ...(jcc ? { justifyContent: 'center' } : {}),
+        ...(wrap ? { flexWrap: 'wrap' } : {}),
+        ...style,
+      }}
+    >
       {children}
     </div>
   )
-}
+})

@@ -49,8 +49,6 @@ that or completely _rebuild_ the screen with an updated one, that can be auto an
   * dropdowns open state
   * logo
 
-
-
 * collapse tab into menuitem
 
 * create synthetic element generator for label balancing.. (must inflate everything to 3k... )
