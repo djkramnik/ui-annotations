@@ -270,3 +270,29 @@ export function estimateRegionPad(
     left: minLeft - regionRect.x,
   }
 }
+
+export function getRegionLayoutDirection(components: Rect[]): 'row' | 'col' {
+  if (components.length <= 1) return 'col';
+
+  // Compute component centers
+  const centers = components.map(r => ({
+    cx: r.x + r.width / 2,
+    cy: r.y + r.height / 2,
+  }));
+
+  // Get spreads
+  const minX = Math.min(...centers.map(c => c.cx));
+  const maxX = Math.max(...centers.map(c => c.cx));
+  const minY = Math.min(...centers.map(c => c.cy));
+  const maxY = Math.max(...centers.map(c => c.cy));
+
+  const horizontalSpread = maxX - minX;
+  const verticalSpread = maxY - minY;
+
+  // Simple heuristic: whichever spread dominates determines direction
+  const ratio = verticalSpread / (horizontalSpread + 1e-6); // avoid div/0
+
+  // >1.3 → stacked vertically → column layout
+  // <1.3 → row-like (wider horizontally)
+  return ratio > 1.3 ? 'col' : 'row';
+}

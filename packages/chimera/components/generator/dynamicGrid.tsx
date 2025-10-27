@@ -1,5 +1,5 @@
 import { ServiceManualLabel } from "ui-labelling-shared";
-import { estimateFontAndTrackingBox, estimateRegionPad, Rect } from "../../util/generator";
+import { estimateFontAndTrackingBox, estimateRegionPad, getRegionLayoutDirection, Rect } from "../../util/generator";
 import { PreviewSchema } from "../../util/localstorage";
 import { Flex } from "./flex";
 import { useMemo } from "react";
@@ -197,11 +197,20 @@ function DynamicRegion({
     ? null
     : data.annotations.payload.annotations[0].label
 
-  const content = useMemo(() => {
+  const flow: 'row' | 'col' = useMemo(() => {
     const components = data.annotations.payload.annotations.filter(a => {
       return region.components.includes(a.id)
     })
-    const bulletpoints = components.filter(c => c.label === ServiceManualLabel.bulletpoint)
+    return getRegionLayoutDirection(components.map(c => c.rect))
+  }, [data])
+
+  const content: React.ReactNode = useMemo(() => {
+    const components = data.annotations.payload.annotations.filter(a => {
+      return region.components.includes(a.id)
+    }).sort((a, b) => a.rect.y - b.rect. y || a.rect.x - b.rect.x)
+
+    const bulletpoints =
+      components.filter(c => c.label === ServiceManualLabel.bulletpoint)
 
     // must have the same font size and letter spacing across all these bulletpoints,
     // at least within a given region ffs
@@ -218,57 +227,71 @@ function DynamicRegion({
         }
       : null
 
+    // sort comments from top left to bottom right
+
+    let sortedElems: React.ReactNode[] = []
+
+    let firstBulletpoint: boolean = false
+    for (const c of components) {
+
+      // hack for bulletpoints
+      // we assume within a given region that there is only one actual list
+      // and once we encounter a bulletpoint we mark that as the start of the list
+      // and put all the bulletpoints under it
+      if (c.label === ServiceManualLabel.bulletpoint) {
+        if (!firstBulletpoint) {
+          firstBulletpoint = true
+          sortedElems.push(
+            <List sx={{ listStyleType: 'disc', pl: 2 }}>
+              {
+                bulletpoints.map(bp => {
+                  return (
+                    <ComponentRenderer
+                      scale={scale}
+                      container={data.layout[id].rect}
+                      rect={bp.rect} page={page}
+                      label={ServiceManualLabel.bulletpoint} key={bp.id}
+                      sx={{
+                        padding: 0,
+                        ...bpFs ?? {}
+                      }}
+                      >
+                      {bp.textContent}
+                    </ComponentRenderer>
+                  )
+                })
+              }
+            </List>
+          )
+        }
+        continue // except for the first bulletpoint where we do everything, skip
+      }
+
+      const maybeBold = c.label === ServiceManualLabel.heading
+        && Math.random() > 0.7
+
+      sortedElems.push(
+        <ComponentRenderer
+          page={page}
+          container={data.layout[id].rect}
+          sx={{
+            ...(maybeBold ? {
+              fontWeight: 'bold !important'
+            } : undefined),
+          }}
+          key={c.id} label={c.label as ServiceManualLabel}
+          rect={c.rect}
+          scale={scale}
+          >
+          {c.textContent ?? null}
+        </ComponentRenderer>
+      )
+
+    }
+
     return (
       <>
-        {
-          components.filter(c => c.label !== ServiceManualLabel.bulletpoint)
-            .map(c => {
-              const maybeBold = c.label === ServiceManualLabel.heading
-                && Math.random() > 0.7
-              return (
-                <ComponentRenderer
-                  page={page}
-                  container={data.layout[id].rect}
-                  sx={{
-                    ...(maybeBold ? {
-                      fontWeight: 'bold !important'
-                    } : undefined),
-                  }}
-                  key={c.id} label={c.label as ServiceManualLabel}
-                  rect={c.rect}
-                  scale={scale}
-                  >
-                  {c.textContent ?? null}
-                </ComponentRenderer>
-              )
-            })
-        }
-        {
-          bulletpoints.length > 0
-            ? (
-              <List sx={{ listStyleType: 'disc', pl: 2 }}>
-                {
-                  bulletpoints.map(bp => {
-                    return (
-                      <ComponentRenderer
-                        scale={scale}
-                        container={data.layout[id].rect}
-                        rect={bp.rect} page={page}
-                        label={ServiceManualLabel.bulletpoint} key={bp.id}
-                        sx={{
-                          padding: 0,
-                          ...bpFs ?? {}
-                        }}
-                        >
-                        {bp.textContent}
-                      </ComponentRenderer>
-                    )
-                  })
-                }
-              </List>
-            )
-            : null
-        }
+        {sortedElems}
       </>
     )
   }, [data, id, ComponentRenderer, page, componentCount, scale])
@@ -288,8 +311,15 @@ function DynamicRegion({
     paddingTop: `${Math.floor(topP * scale)}px`,
   }
 
+  const flexProps = flow === 'row'
+    ? {
+      wrap: true
+    }
+    : {
+      col: true
+    }
   return (
-    <Flex col style={{
+    <Flex {...flexProps} style={{
         ...padStyle,
         gap: '4px',
         ...(maybeCentered
