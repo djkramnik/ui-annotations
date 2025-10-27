@@ -13,3 +13,9 @@
 .themed-collapse .ant-collapse-content-box {
   background: var(--ant-color-bg-container, #fff); /* respects Ant v5 var */
 }
+.ant-collapse,
+.ant-collapse-item,
+.ant-collapse-header,
+.ant-collapse-content {
+  border-radius: 0 !important;
+}
