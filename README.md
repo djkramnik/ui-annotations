@@ -22,9 +22,6 @@ that or completely _rebuild_ the screen with an updated one, that can be auto an
 * add synthetic component generator
 
 * labels to synthetic augment first
-  * accordion
-  * video
-  * textarea
   * toggle
   * slider
   * avatar
@@ -34,11 +31,14 @@ that or completely _rebuild_ the screen with an updated one, that can be auto an
   * dropdown (including opened)
   * textinput
   * button
+  * video
 
 * done-ish
   * radio
   * datepicker
   * filepicker
+  * accordion
+  * textarea
 
 * need more examples but real ones only.  scrape for these directly
   * ads

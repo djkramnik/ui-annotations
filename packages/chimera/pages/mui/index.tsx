@@ -7,11 +7,16 @@ import { randomMuiTheme } from "../../components/mui/theme"
 import { MuiSelectableCard } from "../../components/mui/selectable-card"
 import { MuiAccordion } from '../../components/mui/accordion'
 import { MuiTextarea } from "../../components/mui/textarea"
+import { MuiToggle } from "../../components/mui/toggle"
 
 const MuiComponent = () => {
   const component = useComponent()
 
   switch(component) {
+    case InteractiveLabel.toggle:
+      return (
+        <MuiToggle />
+      )
     case InteractiveLabel.textarea:
       return (
         <MuiTextarea />
