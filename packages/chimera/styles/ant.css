@@ -19,3 +19,47 @@
 .ant-collapse-content {
   border-radius: 0 !important;
 }
+
+/* === AntSlider (horizontal + vertical) === */
+
+.ant-slider-rail {
+  height: 6px;
+  background: var(--ant-color-fill-secondary);
+}
+.ant-slider-track {
+  height: 6px;
+  background: var(--ant-color-primary);
+}
+
+/* vertical thickness + length */
+.ant-slider-vertical {
+  height: 240px;
+}
+.ant-slider-vertical .ant-slider-rail {
+  width: 6px;
+  height: 100%;
+  background: var(--ant-color-fill-secondary);
+}
+.ant-slider-vertical .ant-slider-track {
+  width: 6px;
+  background: var(--ant-color-primary);
+}
+
+/* handle: ring in primary, center in rail color */
+.ant-slider-handle {
+  background: var(--ant-color-primary);
+  border-radius: 50%;
+  border-color: var(--ant-color-primary);
+  box-shadow: none;
+  width: 14px;
+  height: 14px;
+}
+.ant-slider-handle::after {
+  background-color: var(--ant-color-primary) !important;
+  border-radius: 50% !important;
+}
+
+/* optional: remove focus outline flicker */
+.ant-slider-handle:focus-visible {
+  outline: none;
+}

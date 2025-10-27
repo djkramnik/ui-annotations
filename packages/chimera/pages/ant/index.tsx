@@ -11,7 +11,7 @@ import { AntSelectableCard } from "../../components/ant/selectable-card";
 import { AntAccordion } from "../../components/ant/accordion";
 import { AntTextarea } from "../../components/ant/textarea";
 import { AntToggle } from "../../components/ant/toggle";
-import { AntSliders } from "../../components/ant/slider";
+import { AntSlider } from "../../components/ant/slider";
 
 const AntdComponent = () => {
   const { query } = useRouter();
@@ -19,7 +19,7 @@ const AntdComponent = () => {
 
   switch (component) {
     case InteractiveLabel.slider:
-      return (<AntSliders />)
+      return (<AntSlider />)
     case InteractiveLabel.toggle:
       return (
         <AntToggle />
