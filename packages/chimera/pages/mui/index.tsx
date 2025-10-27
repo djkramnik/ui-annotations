@@ -8,11 +8,16 @@ import { MuiSelectableCard } from "../../components/mui/selectable-card"
 import { MuiAccordion } from '../../components/mui/accordion'
 import { MuiTextarea } from "../../components/mui/textarea"
 import { MuiToggle } from "../../components/mui/toggle"
+import { MuiSlider } from "../../components/mui/slider"
 
 const MuiComponent = () => {
   const component = useComponent()
 
   switch(component) {
+    case InteractiveLabel.slider:
+      return (
+        <MuiSlider />
+      )
     case InteractiveLabel.toggle:
       return (
         <MuiToggle />

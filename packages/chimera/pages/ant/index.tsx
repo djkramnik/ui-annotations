@@ -11,12 +11,15 @@ import { AntSelectableCard } from "../../components/ant/selectable-card";
 import { AntAccordion } from "../../components/ant/accordion";
 import { AntTextarea } from "../../components/ant/textarea";
 import { AntToggle } from "../../components/ant/toggle";
+import { AntSliders } from "../../components/ant/slider";
 
 const AntdComponent = () => {
   const { query } = useRouter();
   const component = String(query.component) as InteractiveLabel;
 
   switch (component) {
+    case InteractiveLabel.slider:
+      return (<AntSliders />)
     case InteractiveLabel.toggle:
       return (
         <AntToggle />
