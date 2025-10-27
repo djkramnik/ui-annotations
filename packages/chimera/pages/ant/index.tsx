@@ -8,12 +8,17 @@ import AntDatePicker from "../../components/ant/datepicker";
 import { randomAntTheme } from "../../components/ant/theme";
 import { useMemo } from "react";
 import { AntSelectableCard } from "../../components/ant/selectable-card";
+import { AntAccordion } from "../../components/ant/accordion";
 
 const AntdComponent = () => {
   const { query } = useRouter();
   const component = String(query.component) as InteractiveLabel;
 
   switch (component) {
+    case InteractiveLabel.accordion:
+      return (
+        <AntAccordion />
+      )
     case InteractiveLabel.selectablecard:
       return (
         <AntSelectableCard />
@@ -38,7 +43,7 @@ const AntdComponent = () => {
 export default function Page() {
   const theme = useMemo(() => randomAntTheme(), [])
   return (
-    <ConfigProvider theme={theme}>
+    <ConfigProvider theme={theme} >
       <div
         style={{
           backgroundColor: "#fafafa", // or use token.colorBgLayout if you configure a theme

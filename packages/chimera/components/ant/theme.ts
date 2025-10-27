@@ -28,6 +28,7 @@ export function randomAntTheme(): ThemeConfig {
   const algorithm = dark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm
 
   const config: ThemeConfig = {
+    cssVar: true,
     algorithm,
     token: {
       // Core brand & text

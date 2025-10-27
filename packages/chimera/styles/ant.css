@@ -1,7 +1,15 @@
+/* checkbox */
 .cb-contrast .ant-checkbox-inner {
   border-color: currentColor !important;   /* adapts to light/dark text */
   border-width: 2px;                       /* thicker outline */
 }
 .cb-contrast:hover .ant-checkbox-inner {
   border-color: color-mix(in srgb, currentColor 80%, transparent) !important;
+}
+
+/* accordion */
+.themed-collapse .ant-collapse-header,
+.themed-collapse .ant-collapse-content,
+.themed-collapse .ant-collapse-content-box {
+  background: var(--ant-color-bg-container, #fff); /* respects Ant v5 var */
 }
