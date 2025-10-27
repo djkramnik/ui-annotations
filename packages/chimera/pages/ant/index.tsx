@@ -9,12 +9,17 @@ import { randomAntTheme } from "../../components/ant/theme";
 import { useMemo } from "react";
 import { AntSelectableCard } from "../../components/ant/selectable-card";
 import { AntAccordion } from "../../components/ant/accordion";
+import { AntTextarea } from "../../components/ant/textarea";
 
 const AntdComponent = () => {
   const { query } = useRouter();
   const component = String(query.component) as InteractiveLabel;
 
   switch (component) {
+    case InteractiveLabel.textarea:
+      return (
+        <AntTextarea />
+      )
     case InteractiveLabel.accordion:
       return (
         <AntAccordion />
