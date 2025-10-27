@@ -1,15 +1,23 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Slider, theme as antdTheme } from 'antd'
+import { randInt } from '../../util/random'
+import { getClamp } from '../../util/clamp'
 
 export function AntSlider() {
   const { token } = antdTheme.useToken()
   const [value, setValue] = useState(40)
+  const [vertical, setVertical] = useState<boolean>(false)
+  const [railLen, setRailLen] = useState<number>(180)
 
-  // Random once per mount
-  const { vertical, railLen } = useMemo(() => ({
-    vertical: Math.random() < 0.3,
-    railLen: Math.floor(Math.random() * 100 + 80), // 180–320px (vertical length)
-  }), [])
+  useEffect(() => {
+    setValue(getClamp(0, 100)(randInt(-10, 110)))
+    setVertical(Math.random() > 0.7)
+    setRailLen(Math.floor(Math.random() * 100 + 80)) // 180–320px (vertical length))
+  }, [
+    setVertical,
+    setRailLen,
+    setValue
+  ])
 
   const styles = {
     rail:  { backgroundColor: token.colorFillSecondary },
