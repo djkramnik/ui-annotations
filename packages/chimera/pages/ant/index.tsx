@@ -7,12 +7,17 @@ import { AntRadioGroup } from "../../components/ant/radio";
 import AntDatePicker from "../../components/ant/datepicker";
 import { randomAntTheme } from "../../components/ant/theme";
 import { useMemo } from "react";
+import { AntSelectableCard } from "../../components/ant/selectable-card";
 
 const AntdComponent = () => {
   const { query } = useRouter();
   const component = String(query.component) as InteractiveLabel;
 
   switch (component) {
+    case InteractiveLabel.selectablecard:
+      return (
+        <AntSelectableCard />
+      )
     case InteractiveLabel.radio:
       return (
         <AntRadioGroup

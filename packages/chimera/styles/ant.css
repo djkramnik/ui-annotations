@@ -1,0 +1,7 @@
+.cb-contrast .ant-checkbox-inner {
+  border-color: currentColor !important;   /* adapts to light/dark text */
+  border-width: 2px;                       /* thicker outline */
+}
+.cb-contrast:hover .ant-checkbox-inner {
+  border-color: color-mix(in srgb, currentColor 80%, transparent) !important;
+}
