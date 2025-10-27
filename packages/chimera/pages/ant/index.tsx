@@ -10,12 +10,17 @@ import { useMemo } from "react";
 import { AntSelectableCard } from "../../components/ant/selectable-card";
 import { AntAccordion } from "../../components/ant/accordion";
 import { AntTextarea } from "../../components/ant/textarea";
+import { AntToggle } from "../../components/ant/toggle";
 
 const AntdComponent = () => {
   const { query } = useRouter();
   const component = String(query.component) as InteractiveLabel;
 
   switch (component) {
+    case InteractiveLabel.toggle:
+      return (
+        <AntToggle />
+      )
     case InteractiveLabel.textarea:
       return (
         <AntTextarea />
