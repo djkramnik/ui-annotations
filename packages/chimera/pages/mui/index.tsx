@@ -3,15 +3,18 @@ import { InteractiveLabel } from 'ui-labelling-shared'
 import { MuiRadioGroup } from '../../components/mui/radio'
 import { useComponent } from "../../hooks/useComponent"
 import MuiDatePicker from "../../components/mui/datepicker"
-import { useMemo } from "react"
 import { randomMuiTheme } from "../../components/mui/theme"
 import { MuiSelectableCard } from "../../components/mui/selectable-card"
-import { RandomMuiIcon } from "../../components/mui/icon"
+import { MuiAccordion } from '../../components/mui/accordion'
 
 const MuiComponent = () => {
   const component = useComponent()
 
   switch(component) {
+    case InteractiveLabel.accordion:
+      return (
+        <MuiAccordion />
+      )
     case InteractiveLabel.radio:
       return (
         <MuiRadioGroup

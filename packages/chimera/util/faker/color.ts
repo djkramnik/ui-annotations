@@ -1,3 +1,5 @@
+import { randomPick } from "../random";
+
 export const LIGHT_COLOR_SCHEMES = [
   // ---------- LIGHT (majority) ----------
   { primary:"#2563EB", secondary:"#64748B", bgDefault:"#FFFFFF", bgPaper:"#FFFFFF", textPrimary:"#111827", textSecondary:"#374151" },
@@ -48,3 +50,20 @@ export const DARK_COLOR_SCHEMES = [
   { primary:"#3B82F6", secondary:"#F59E0B", bgDefault:"#111827", bgPaper:"#1F2937", textPrimary:"#E5E7EB", textSecondary:"#9CA3AF" },
   { primary:"#A78BFA", secondary:"#22C55E", bgDefault:"#0B1120", bgPaper:"#1E293B", textPrimary:"#E2E8F0", textSecondary:"#94A3B8" }
 ]
+
+export function randomShadow(): string {
+  const offsets = [0, 1, 2, 3, 4, 5]
+  const blurs = [4, 6, 8, 10, 12]
+  const opacities = [0.15, 0.25, 0.35, 0.45]
+
+  const x = randomPick(offsets)
+  const y = randomPick(offsets)
+  const blur = randomPick(blurs)
+  const alpha = randomPick(opacities)
+
+  // pick a slight color tint
+  const colors = ['0,0,0', '50,50,100', '0,50,100', '100,0,50']
+  const color = randomPick(colors)
+
+  return `rgba(${color},${alpha}) ${x}px ${y}px ${blur}px`
+}
