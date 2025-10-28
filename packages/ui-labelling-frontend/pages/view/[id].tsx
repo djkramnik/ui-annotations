@@ -84,7 +84,7 @@ const NewAnnotationForm = ({
             ...annotations,
             payload: {
               annotations: annotations.payload.annotations.concat({
-                id: String(new Date().getTime()), // I am baffled why I ever included this
+                id: crypto.randomUUID(),
                 label: select.value,
                 rect: pageState.drawCandidate,
                 ...(currText ? { textContent: currText } : {}),
