@@ -26,6 +26,7 @@ model Annotation {
 
   ocr         Ocr[]
   Interactive Interactive[]
+  ImageCrop ImageCrop[]
 
   @@map("annotations")
 }
@@ -60,4 +61,16 @@ model Interactive {
 
   @@index([annotationId])
   @@map("interactive")
+}
+
+model ImageCrop {
+  id           Int         @id @default(autoincrement())
+  screenshot  Bytes
+  trueId       String?     @map("true_id") @db.Uuid
+  annotationId  Int?
+  annotation   Annotation? @relation(fields: [annotationId], references: [id])
+  aspectRatio Float
+
+  @@index([annotationId])
+  @@map("image_crop")
 }

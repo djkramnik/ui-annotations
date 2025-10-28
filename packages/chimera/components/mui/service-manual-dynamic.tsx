@@ -37,7 +37,7 @@ export const DynamicMuiComponent = ({
         letterSpacing: `${inferredFontInfo.letterSpacingPx * scale}px`,
       }
     : null
-  console.log('labels!', label)
+
   switch (label) {
     case ServiceManualLabel.diagram_number:
       return <Avatar sx={sx}>{children}</Avatar>

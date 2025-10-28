@@ -347,7 +347,7 @@ function getRegularContent({
       if (!firstBulletpoint) {
         firstBulletpoint = true
         sortedElems.push(
-          <List sx={{ pl: 6 }}>
+          <List sx={{ pl: 2 }}>
             {bulletpoints.map((bp) => {
               return (
                 <ComponentRenderer
