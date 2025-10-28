@@ -347,7 +347,7 @@ function getRegularContent({
       if (!firstBulletpoint) {
         firstBulletpoint = true
         sortedElems.push(
-          <List sx={{ listStyleType: 'disc', pl: 2 }}>
+          <List sx={{ pl: 6 }}>
             {bulletpoints.map((bp) => {
               return (
                 <ComponentRenderer
@@ -434,11 +434,22 @@ function getRegularContent({
     const maybeBold =
       c.label === ServiceManualLabel.heading && Math.random() > 0.7
 
+    const cr = data.layout[id].rect
+    const absPos = c.label === ServiceManualLabel.diagram_number
+      ? {
+        position: 'absolute',
+        top: `${(c.rect.y - cr.y) * scale}px`,
+        left: `${(c.rect.x - cr.x) * scale}px`,
+        zIndex: 1
+      }
+      : null
+
     sortedElems.push(
       <ComponentRenderer
         page={page}
         container={data.layout[id].rect}
         sx={{
+          ...(absPos ?? {}),
           ...(maybeBold
             ? {
                 fontWeight: 'bold !important',

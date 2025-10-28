@@ -187,7 +187,15 @@ function GenSyntheticForm({
         )
       )
 
-      const layout: PreviewSchema['layout'] = assignments.map(({ idx, components }) => {
+      const layout: PreviewSchema['layout'] = assignments
+      // resort from top to bottom sigh
+      .sort((a, b) => {
+        const aRegion = regionBoxes[a.idx]!
+        const bRegion = regionBoxes[b.idx]!
+        return aRegion.region[1] - bRegion.region[1] || aRegion.region[0] - bRegion.region[0]
+      })
+
+      .map(({ idx, components }) => {
         return {
           rect: bboxToRect(regionBoxes[idx].region),
           components
