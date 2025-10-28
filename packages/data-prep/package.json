@@ -7,6 +7,8 @@
     "prep-ocr": "npm run build && node dist/prep_ocr.js",
     "ocr": "npm run build && node dist/write_ocr.js",
     "start": "npm run build && node dist/index.js",
+    "fix_ids": "npm run build && node dist/fix_anno_ids.js",
+    "write_crops": "npm run build && node dist/write_img_crops.js",
     "write_interactive": "npm run build && node dist/write_interactive.js",
     "start:textregion": "npm run build && CLASS_NAMES=textRegion OUTPUT_ROOT=coco_textregion TAG=textregion node dist/index.js",
     "start:interactive": "npm run build && CLASS_NAMES=interactive OUTPUT_ROOT=coco_interactive TAG=interactive node dist/index.js",

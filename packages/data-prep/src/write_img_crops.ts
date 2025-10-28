@@ -147,13 +147,7 @@ async function main(tag: string, labels: string[]) {
   console.log('sample hunk', badAnnotationIds[0])
 
   await prisma.imageCrop.createMany({
-    data: crops.map((c) => ({
-      screenshot: c.screenshot,
-      true_id: c.trueId,
-      annotationId: c.annotationId,
-      aspectRatio: c.aspectRatio,
-      ogWidth: c.ogWidth
-    })),
+    data: crops,
   })
 }
 
