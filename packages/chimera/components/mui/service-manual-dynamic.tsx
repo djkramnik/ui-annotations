@@ -7,6 +7,7 @@ import {
 } from '../../util/generator'
 import { Avatar, ListItem, Typography } from '@mui/material'
 import { MultiLine } from '../generator/multi-line'
+import { DynamicPlaceholderImg } from '../generator/dynamic-img'
 
 export const DynamicMuiComponent = ({
   label,
@@ -43,18 +44,10 @@ export const DynamicMuiComponent = ({
       return <Avatar sx={sx}>{children}</Avatar>
     case ServiceManualLabel.diagram:
     case ServiceManualLabel.image:
-      const pctW =
-        Math.round(Math.min(rect.width, container.width) / container.width) *
-        100
       return (
-        <div
-          style={{
-            width: `${pctW}%`,
-            aspectRatio: `${Math.floor(rect.width)} / ${Math.floor(rect.height)}`,
-            border: `1px solid currentColor`,
-            backgroundRepeat: 'no-repeat',
-            backgroundSize: 'contain',
-          }}
+        <DynamicPlaceholderImg
+          width={Math.round(Math.min(rect.width, container.width) / container.width) * 100}
+          rect={rect}
         />
       )
     case ServiceManualLabel.heading:

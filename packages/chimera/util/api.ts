@@ -13,6 +13,34 @@ export type TightenResponse = {
   }
 }
 
+export const fetchCrops = async ({
+  minRatio,
+  maxRatio,
+  total
+}: {
+  minRatio: number
+  maxRatio: number
+  total?: number
+}): Promise<{ screenshot: ArrayBuffer; aspectRatio: number }[]> => {
+  try {
+    const resp = await fetch(`/api/screenshot/crop`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ minRatio, maxRatio, total })
+    })
+    if (!resp.ok) {
+      throw Error(`failed to fetch image crops: ${resp.status}`)
+    }
+    const { data } = (await resp.json()) as { data: { screenshot: ArrayBuffer; aspectRatio: number }[] }
+    return data
+  } catch(e) {
+    console.error(e)
+    throw e
+  }
+}
+
 export const fetchAnnotationById = async (id: number): Promise<Annotations | null> => {
   try {
     const resp = await fetch(`/api/annotation/${id}`)

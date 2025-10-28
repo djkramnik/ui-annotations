@@ -23,36 +23,42 @@ screenshotRouter.post('/crop', async (req: Request, res: Response) => {
 
   const { minRatio, maxRatio, total } = body ?? {}
   if (typeof minRatio !== 'number' || typeof maxRatio !== 'number') {
-    res.status(400).send({
-      reason: 'missing min and max ratio'
-    })
-    return
+    return res.status(400).send({ reason: 'missing min and max ratio' })
   }
 
   try {
-    const crops = await prisma.imageCrop.findMany({
-      where: {
-        aspectRatio: {
-          gte: minRatio,
-          lte: maxRatio
-        }
-      },
-      take: total ?? 10
-    })
+    const limit = total ?? 10
+
+    // Use a parameterized raw query
+    const crops = await prisma.$queryRawUnsafe<
+      Array<{ id: string; ogWidth: number; screenshot: Buffer; aspectRatio: number }>
+    >(
+      `
+      SELECT id, "ogWidth", screenshot, "aspectRatio"
+      FROM image_crop
+      WHERE "aspectRatio" BETWEEN $1 AND $2
+      ORDER BY RANDOM()
+      LIMIT $3
+      `,
+      minRatio,
+      maxRatio,
+      limit
+    )
+
     res.status(200).send({
-      data: crops.map(c => {
-        return {
-          ogWidth: c.ogWidth,
-          screenshot: Array.from(c.screenshot),
-          aspectRatio: c.aspectRatio,
-          id: c.id,
-        }
-      })
+      data: crops.map(c => ({
+        id: c.id,
+        ogWidth: c.ogWidth,
+        screenshot: Array.from(c.screenshot),
+        aspectRatio: c.aspectRatio,
+      })),
     })
-  } catch(e) {
+  } catch (e) {
+    console.error(e)
     res.status(500).send({ error: String(e) })
   }
 })
+
 
 screenshotRouter.post('/tighten/:id', async (req: Request, res: Response) => {
   try {

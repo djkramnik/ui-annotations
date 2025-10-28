@@ -1,4 +1,5 @@
 import { CSSProperties, useMemo } from "react"
+import { getDataUrl } from "../../util/b64"
 
 export const Base64Img = ({
   source,
@@ -8,7 +9,7 @@ export const Base64Img = ({
   style?: CSSProperties
 }) => {
   const screenshotDataUrl: string =
-    useMemo(() => `data:image/png;base64,${Buffer.from(source).toString('base64')}`, [source])
+    useMemo(() => getDataUrl(source), [source])
   return (
     <img style={style} src={screenshotDataUrl} />
   )
