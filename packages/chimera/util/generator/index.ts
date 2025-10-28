@@ -359,4 +359,63 @@ export function withinRect(
     .filter(i => i !== -1);
 }
 
+export function roughlyCenteredInRegion({
+  container,
+  component,
+  tol = 0.1 // by default allow 10% diff
+}: {
+  container: Rect
+  component: Rect
+  tol?: number
+}): boolean {
+  const leftSpace = component.x - container.x
+  const rightSpace = (container.x + container.width) - (component.x + component.width)
+  console.log('left', leftSpace)
+  console.log('right', rightSpace)
+  console.log('thresh', container.width, container.width * tol)
+  if (leftSpace < 0 || rightSpace < 0) {
+    console.error('component cannot be centered because it is not bound')
+    return false
+  }
+  return Math.abs(rightSpace - leftSpace) <= Math.floor(container.width * tol)
+}
 
+
+export const assignAnnotations = (
+  regions: Rect[],
+  annotations: AnnotationPayload['annotations']
+): Array<{
+  idx: number // index of the array passed in as the first parameter
+  components: string[]
+}> => {
+  const regionsWithIndex = regions.map((r, i) => ({ r, i, area: r.width * r.height }))
+
+  regionsWithIndex.sort((a, b) => a.area - b.area)
+
+  const assigned = new Set<string>()
+
+  const result: Array<{
+    idx: number // index of the array passed in as the first parameter
+    components: string[]
+  }> = []
+
+  for(const region of regionsWithIndex) {
+    const { i, r } = region
+    const remaining = annotations.filter(a => !assigned.has(a.id))
+    const hits = withinRect(r, remaining.map(({ rect }) => rect), 5)
+
+    const assignment: {idx: number; components: string[]} = { idx: i, components: []}
+
+    const idsToAdd = hits.map(i => remaining[i]!.id)
+
+    // I need those hits
+    for(const id of idsToAdd) {
+      assigned.add(id)
+      assignment.components.push(id)
+    }
+
+    result.push(assignment)
+  }
+
+  return result
+}

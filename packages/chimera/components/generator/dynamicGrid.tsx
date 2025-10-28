@@ -1,16 +1,21 @@
-import { ServiceManualLabel } from 'ui-labelling-shared'
+import {
+  AnnotationPayload,
+  Annotations,
+  ServiceManualLabel,
+} from 'ui-labelling-shared'
 import {
   estimateFontAndTrackingBox,
   estimateRegionPad,
   getAbsoluteXPositioning,
   getRegionLayoutDirection,
   Rect,
+  roughlyCenteredInRegion,
   withinRect,
 } from '../../util/generator'
 import { PreviewSchema } from '../../util/localstorage'
 import { Flex } from './flex'
 import { useMemo } from 'react'
-import { List, SxProps, Theme } from '@mui/material'
+import { List, SxProps, Theme, useTheme } from '@mui/material'
 
 type GridItem = {
   id: number
@@ -18,6 +23,30 @@ type GridItem = {
   colEnd: number
   rowStart: number
   rowEnd: number
+}
+
+type GridRendererProps = {
+  data: PreviewSchema
+  style?: React.CSSProperties
+  className?: string
+  showDebugBorders?: boolean
+  ComponentRenderer: ({
+    label,
+    children,
+    rect,
+    page,
+    sx,
+    container,
+    scale,
+  }: {
+    label: ServiceManualLabel
+    children?: React.ReactNode
+    rect: Rect
+    page: { width: number; height: number }
+    sx?: SxProps<Theme>
+    container: Rect
+    scale: number
+  }) => React.ReactNode
 }
 
 function buildGrid({
@@ -108,30 +137,6 @@ function buildGrid({
   }
 }
 
-type GridRendererProps = {
-  data: PreviewSchema
-  style?: React.CSSProperties
-  className?: string
-  showDebugBorders?: boolean
-  ComponentRenderer: ({
-    label,
-    children,
-    rect,
-    page,
-    sx,
-    container,
-    scale,
-  }: {
-    label: ServiceManualLabel
-    children?: React.ReactNode
-    rect: Rect
-    page: { width: number; height: number }
-    sx?: SxProps<Theme>
-    container: Rect
-    scale: number
-  }) => React.ReactNode
-}
-
 export function GridRenderer({
   data,
   style,
@@ -191,6 +196,7 @@ function DynamicRegion({
   id: number
   scale: number
 } & Pick<GridRendererProps, 'ComponentRenderer' | 'data'>) {
+  const theme = useTheme()
   const region = data.layout[id]
 
   const page = {
@@ -222,6 +228,28 @@ function DynamicRegion({
   )
 
   const content: React.ReactNode = useMemo(() => {
+    const estimatedPadding = estimateRegionPad(id, data)
+    if (onlyChild === ServiceManualLabel.heading) {
+      const onlyHeader = data.annotations.payload.annotations.find((a) => {
+        return (
+          region.components.includes(a.id) &&
+          a.label === ServiceManualLabel.heading
+        )
+      })
+      if (onlyHeader) {
+        return getSolitaryHeader({
+          region: region.rect,
+          id,
+          scale,
+          header: onlyHeader,
+          ComponentRenderer,
+          page,
+          flow,
+          estimatedPadding,
+          theme,
+        })
+      }
+    }
     return getRegularContent({
       data,
       region,
@@ -230,48 +258,23 @@ function DynamicRegion({
       page,
       ComponentRenderer,
       hasPageContext,
+      flow,
+      estimatedPadding,
     })
-  }, [data, id, ComponentRenderer, page, scale, hasPageContext])
+  }, [
+    flow,
+    data,
+    id,
+    ComponentRenderer,
+    page,
+    scale,
+    hasPageContext,
+    onlyChild,
+    componentCount,
+    theme
+  ])
 
-  const maybeCentered = useMemo(() => {
-    return onlyChild === ServiceManualLabel.heading
-      ? Math.random() > (id === 0 ? 0.2 : 0.8)
-      : false
-  }, [componentCount, onlyChild, id])
-
-  const { top: topP, left: leftP } = useMemo(() => {
-    return estimateRegionPad(id, data)
-  }, [id, data])
-
-  const padStyle = {
-    paddingLeft: `${Math.floor(leftP * scale)}px`,
-    paddingTop: `${Math.floor(topP * scale)}px`,
-  }
-
-  const flexProps =
-    flow === 'row'
-      ? {
-          wrap: true,
-          jcsb: true,
-          aic: true,
-        }
-      : {
-          col: true,
-        }
-
-  return (
-    <Flex
-      {...flexProps}
-      style={{
-        position: 'relative', // important because we will sometimes abs pos children
-        ...padStyle,
-        gap: '4px',
-        ...(maybeCentered ? { justifyContent: 'center ' } : undefined),
-      }}
-    >
-      {content}
-    </Flex>
-  )
+  return content
 }
 
 function getRegularContent({
@@ -282,12 +285,16 @@ function getRegularContent({
   id,
   page,
   hasPageContext,
+  flow,
+  estimatedPadding,
 }: {
   region: (typeof data)['layout'][0]
   scale: number
   id: number
   page: { width: number; height: number }
   hasPageContext?: boolean
+  flow: 'row' | 'col'
+  estimatedPadding: { top: number; left: number }
 } & Pick<GridRendererProps, 'ComponentRenderer' | 'data'>) {
   const components = data.annotations.payload.annotations
     .filter((a) => {
@@ -380,24 +387,28 @@ function getRegularContent({
         scale,
       })
 
-      const tallestH = Math.max(...pageCtxChildren.map(c => c.rect.height)) * scale
+      const tallestH =
+        Math.max(...pageCtxChildren.map((c) => c.rect.height)) * scale
       sortedElems.push(
         /** make as tall as tallest element of pageCtxChildren */
-        <div style={{
-          position: 'relative',
-          height: `${tallestH}px`,
-          width: '100%',
-          margin: `${(tallestH / 2)}px 0`
-          }}>
+        <div
+          style={{
+            position: 'relative',
+            height: `${tallestH}px`,
+            width: '100%',
+            margin: `${tallestH / 2}px 0`,
+          }}
+        >
           {pageCtxChildren.map((c, idx) => {
-            const perhapsBold = c.label === ServiceManualLabel.heading && Math.random() > 0.7
+            const perhapsBold =
+              c.label === ServiceManualLabel.heading && Math.random() > 0.7
             return (
               <ComponentRenderer
                 page={page}
                 container={data.layout[id].rect}
                 sx={{
                   position: 'absolute',
-                  left: positions.find(p => p.id === idx)!.left + 'px',
+                  left: positions.find((p) => p.id === idx)!.left + 'px',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   ...(perhapsBold
@@ -443,5 +454,143 @@ function getRegularContent({
       </ComponentRenderer>,
     )
   }
-  return <>{sortedElems}</>
+
+  const padStyle = {
+    paddingLeft: `${Math.floor(estimatedPadding.left * scale)}px`,
+    paddingTop: `${Math.floor(estimatedPadding.top * scale)}px`,
+  }
+
+  const flexProps =
+    flow === 'row'
+      ? {
+          wrap: true,
+          jcsb: true,
+          aic: true,
+        }
+      : {
+          col: true,
+        }
+
+  return (
+    <Flex
+      {...flexProps}
+      style={{
+        position: 'relative', // important because we will sometimes abs pos children
+        ...padStyle,
+        gap: '4px',
+      }}
+    >
+      {sortedElems}
+    </Flex>
+  )
+}
+
+function getSolitaryHeader({
+  header,
+  region,
+  id,
+  scale,
+  page,
+  ComponentRenderer,
+  estimatedPadding,
+  flow,
+  theme
+}: {
+  region: Rect
+  id: number
+  scale: number
+  header: AnnotationPayload['annotations'][0]
+  page: { width: number; height: number }
+  ComponentRenderer: GridRendererProps['ComponentRenderer']
+  estimatedPadding: { top: number; left: number }
+  flow: 'row' | 'col'
+  theme: Theme
+}) {
+
+  if (id === 0) {
+    const roughlyCentered = roughlyCenteredInRegion({
+      container: region,
+      component: header.rect,
+      tol: 0.15
+    })
+    const maybeBold = Math.random() > 0.2
+    return (
+      <Flex
+        aic
+        jcc={roughlyCentered}
+        style={{
+
+        }}
+      >
+        <ComponentRenderer
+          page={page}
+          container={region}
+          sx={{
+            backgroundColor: theme.palette.primary.main,
+            ...(maybeBold
+              ? {
+                  fontWeight: 'bold !important',
+                }
+              : undefined),
+          }}
+          key={header.id}
+          label={header.label as ServiceManualLabel}
+          rect={header.rect}
+          scale={scale}
+        >
+          {header.textContent ?? null}
+        </ComponentRenderer>
+      </Flex>
+    )
+  }
+
+  const maybeCentered = ServiceManualLabel.heading ? Math.random() > 0.5 : false
+
+  const padStyle = {
+    paddingLeft: `${Math.floor(estimatedPadding.left * scale)}px`,
+    paddingTop: `${Math.floor(estimatedPadding.top * scale)}px`,
+  }
+
+  const flexProps =
+    flow === 'row'
+      ? {
+          wrap: true,
+          jcsb: true,
+          aic: true,
+        }
+      : {
+          col: true,
+        }
+
+  // the further down the page you get the less likely to be bold
+  const maybeBold = Math.random() > Math.min(0.95, id / 10 + 0.1)
+  return (
+    <Flex
+      {...flexProps}
+      style={{
+        position: 'relative', // important because we will sometimes abs pos children
+        ...padStyle,
+        gap: '4px',
+        ...(maybeCentered ? { justifyContent: 'center ' } : undefined),
+      }}
+    >
+      <ComponentRenderer
+        page={page}
+        container={region}
+        sx={{
+          ...(maybeBold
+            ? {
+                fontWeight: 'bold !important',
+              }
+            : undefined),
+        }}
+        key={header.id}
+        label={header.label as ServiceManualLabel}
+        rect={header.rect}
+        scale={scale}
+      >
+        {header.textContent ?? null}
+      </ComponentRenderer>
+    </Flex>
+  )
 }

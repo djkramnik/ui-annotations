@@ -9,7 +9,7 @@ import { fetchAnnotationById, fetchTighterAnnotations } from '../../util/api'
 import { PreviewAnnotation } from '../../components/generator/preview-annotation'
 import { Flex } from '../../components/generator/flex'
 import { xyCut } from 'infer-layout'
-import { bboxToRect, mergeColsFlat } from '../../util/generator'
+import { assignAnnotations, bboxToRect, mergeColsFlat } from '../../util/generator'
 import { PreviewSchema, readPreviewSchema, writePreviewSchema } from '../../util/localstorage'
 import { GeneratedPreview } from '../../components/generator/preview'
 
@@ -142,7 +142,7 @@ function GenSyntheticForm({
         ? (await getTighter(annotations, id))
         : annotations
 
-      const components = annotations.payload.annotations
+      const layoutComponents = processedAnnotations.payload.annotations
         .filter(a => !ignoreForLayout.includes(a.label as ServiceManualLabel))
         .map(a => ({
           type: a.label,
@@ -156,7 +156,7 @@ function GenSyntheticForm({
         }))
 
       const root = xyCut({
-        components,
+        components: layoutComponents,
         page: {
           width: annotations.viewWidth,
           height: annotations.viewHeight,
@@ -173,19 +173,30 @@ function GenSyntheticForm({
         useContentBounds: true
       })
 
-      const layout: PreviewSchema['layout'] = mergeColsFlat({
+      const regionBoxes = mergeColsFlat({
         node: root,
         pageW: root.region[2] - root.region[0]
-      }).map(({ region, components }) => {
+      })
+
+      // we have to recalculate where all the annotations fall since we discarded some when
+      // calculating layout
+      const assignments = assignAnnotations(
+        regionBoxes.map(({ region }) => bboxToRect(region)),
+        processedAnnotations.payload.annotations.filter(
+          a => !ignoreForGen.includes(a.label as ServiceManualLabel)
+        )
+      )
+
+      const layout: PreviewSchema['layout'] = assignments.map(({ idx, components }) => {
         return {
-          components,
-          rect: bboxToRect(region),
+          rect: bboxToRect(regionBoxes[idx].region),
+          components
         }
       })
 
       onSubmit({
         annotations: {
-          ...processedAnnotations,
+          ...annotations,
           payload: {
             annotations: processedAnnotations.payload.annotations
               .filter(a => {

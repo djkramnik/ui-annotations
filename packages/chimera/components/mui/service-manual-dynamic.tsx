@@ -5,7 +5,7 @@ import {
   getHeaderLevel,
   Rect,
 } from '../../util/generator'
-import { ListItem, Typography } from '@mui/material'
+import { Avatar, ListItem, Typography } from '@mui/material'
 import { MultiLine } from '../generator/multi-line'
 
 export const DynamicMuiComponent = ({
@@ -37,7 +37,11 @@ export const DynamicMuiComponent = ({
         letterSpacing: `${inferredFontInfo.letterSpacingPx * scale}px`,
       }
     : null
+  console.log('labels!', label)
   switch (label) {
+    case ServiceManualLabel.diagram_number:
+
+      return <Avatar>{children}</Avatar>
     case ServiceManualLabel.diagram:
     case ServiceManualLabel.image:
       const pctW =
