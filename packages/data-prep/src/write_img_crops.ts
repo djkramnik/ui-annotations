@@ -31,6 +31,7 @@ type ImageCropRecord = {
   trueId: string
   aspectRatio: number
   ogWidth: number
+  ogLabel: string
 }
 
 function getClamp(min: number, max: number) {
@@ -134,7 +135,8 @@ async function main(tag: string, labels: string[]) {
           screenshot: clip,
           trueId: a.id,
           ogWidth: Math.round(scaledRoundedRect.width),
-          aspectRatio: Number((scaledRoundedRect.width / scaledRoundedRect.height).toFixed(2))
+          aspectRatio: Number((scaledRoundedRect.width / scaledRoundedRect.height).toFixed(2)),
+          ogLabel: a.label
         })
       } catch (e) {
         console.error('wtf (sharp?)', e)

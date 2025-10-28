@@ -496,6 +496,7 @@ function getRegularContent({
   )
 }
 
+// wtf is this
 function getSolitaryHeader({
   header,
   region,
@@ -525,6 +526,7 @@ function getSolitaryHeader({
       tol: 0.15
     })
     const maybeBold = Math.random() > 0.2
+    const maybeColouredBg = Math.random() > 0.8
     return (
       <Flex
         aic
@@ -537,7 +539,8 @@ function getSolitaryHeader({
           page={page}
           container={region}
           sx={{
-            backgroundColor: theme.palette.primary.main,
+            backgroundColor: maybeColouredBg
+              ? theme.palette.primary.main: 'initial',
             ...(maybeBold
               ? {
                   fontWeight: 'bold !important',

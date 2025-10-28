@@ -24,6 +24,7 @@ export const DynamicPlaceholderImg = ({
       }
       if (!crops.length) {
         console.warn('no appropriate image found')
+        return
       }
       setDataUrl(getDataUrl(crops[0].screenshot))
     })
