@@ -79,6 +79,7 @@ export const DynamicMuiComponent = ({
         </Typography>
       )
     case ServiceManualLabel.text_block:
+    case ServiceManualLabel.page_num:
       if (!children) {
         return null
       }

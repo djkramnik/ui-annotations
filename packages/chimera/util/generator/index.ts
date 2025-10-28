@@ -296,3 +296,67 @@ export function getRegionLayoutDirection(components: Rect[]): 'row' | 'col' {
   // <1.3 → row-like (wider horizontally)
   return ratio > 1.3 ? 'col' : 'row';
 }
+
+type PositionItem = { id: number; left: number };
+
+/**
+ * Returns left offsets (in px) for absolutely-positioned children,
+ * relative to the region's left edge, after applying a uniform scale.
+ *
+ * Assumes component coords are in the same coordinate space as region.
+ */
+export function getAbsoluteXPositioning({
+  region,
+  components,
+  scale = 1,
+  opts = { clamp: true, round: true },
+}: {
+  region: Rect
+  components: Rect[]
+  scale: number
+  opts?: { clamp?: boolean; round?: boolean }
+}): PositionItem[] {
+  const clamp = opts?.clamp ?? true;   // keep inside [0, region.width*scale - comp.width*scale]
+  const round = opts?.round ?? false;  // optionally pixel-round
+
+  return components.map((c, i) => {
+    const leftRaw = (c.x - region.x) * scale;
+
+    let left = leftRaw;
+    if (clamp) {
+      const maxLeft = Math.max(0, region.width * scale - c.width * scale);
+      left = Math.min(Math.max(0, leftRaw), maxLeft);
+    }
+    if (round) left = Math.round(left);
+
+    return { id: i, left };
+  });
+}
+
+/**
+ * Returns the indices of components whose rects lie within the target rect,
+ * allowing a small tolerance for overlap outside the target.
+ */
+export function withinRect(
+  target: Rect,
+  components: Rect[],
+  threshold = 10 // px tolerance
+): number[] {
+  const left = target.x - threshold;
+  const right = target.x + target.width + threshold;
+  const top = target.y - threshold;
+  const bottom = target.y + target.height + threshold;
+
+  return components
+    .map((r, i) => {
+      const inside =
+        r.x >= left &&
+        r.x + r.width <= right &&
+        r.y >= top &&
+        r.y + r.height <= bottom;
+      return inside ? i : -1;
+    })
+    .filter(i => i !== -1);
+}
+
+
