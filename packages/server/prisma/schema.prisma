@@ -71,6 +71,7 @@ model ImageCrop {
   annotation   Annotation? @relation(fields: [annotationId], references: [id])
   aspectRatio Float
   ogWidth Int
+  ogLabel String?
 
   @@index([annotationId])
   @@map("image_crop")
