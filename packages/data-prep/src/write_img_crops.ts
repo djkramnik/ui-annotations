@@ -5,7 +5,15 @@ import sharp from 'sharp'
 import { getRasterSize } from './utils/raster'
 
 
-main(process.argv[2] ?? 'service_manual')
+const tag: string = process.argv[2] ?? 'service_manual'
+
+const _labelArg = process.argv[3]
+
+const labels: string[] = typeof _labelArg === 'string'
+  ? _labelArg.split(',')
+  : ['diagram', 'image']
+
+main(tag, labels)
 
 // the type of the annotation jsonb
 type Payload = {
@@ -34,7 +42,8 @@ function getClamp(min: number, max: number) {
   }
 }
 
-async function main(tag: string) {
+async function main(tag: string, labels: string[]) {
+  console.log('writing image crops for tag: ', tag, ' labels: ', labels.join(','))
   const prisma = new PrismaClient()
 
   // find annotations that are not linked to any existing interactive record
@@ -80,6 +89,9 @@ async function main(tag: string) {
     for (const a of payload.annotations) {
       if (a.id?.length !== 36) {
         badAnnotationIds.push(a.id ?? 'none')
+        continue
+      }
+      if (!labels.includes(a.label)) {
         continue
       }
 
