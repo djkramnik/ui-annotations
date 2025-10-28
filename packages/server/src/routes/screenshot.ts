@@ -17,83 +17,39 @@ type Rect = {
 }
 
 export const screenshotRouter = Router()
+// post
+screenshotRouter.post('/crop', async (req: Request, res: Response) => {
+  const body = req.body as { minRatio: number; maxRatio: number; total?: number }
 
-screenshotRouter.put('/:id', async (req: Request, res: Response) => {
-  const { rect } = req.body as {
-    rect: Rect
+  const { minRatio, maxRatio, total } = body ?? {}
+  if (typeof minRatio !== 'number' || typeof maxRatio !== 'number') {
+    res.status(400).send({
+      reason: 'missing min and max ratio'
+    })
+    return
   }
+
   try {
-    const annotationId = Number(req.params.id)
-    const annotation = await prisma.annotation.findFirstOrThrow({
+    const crops = await prisma.imageCrop.findMany({
       where: {
-        id: annotationId,
+        aspectRatio: {
+          gte: minRatio,
+          lte: maxRatio
+        }
       },
+      take: total ?? 10
     })
-    const vw = annotation.viewWidth
-    const vh = annotation.viewHeight
-    const ogScreen = annotation.screenshot
-    if (ogScreen === null) {
-      res
-        .status(404)
-        .send({ message: 'annotation with [id] has no screenshot ' })
-      return
-    }
-
-    const buf = Buffer.from(ogScreen)
-    const img = sharp(buf)
-    const meta = await img.metadata()
-    const imgW = meta.width ?? vw
-    const imgH = meta.height ?? vh
-
-    const sx = imgW / vw
-    const sy = imgH / vh
-
-    const { x, y, width, height } = scaleRect({
-      rect,
-      sx,
-      sy,
-      imgW,
-      imgH,
+    res.status(200).send({
+      data: crops.map(c => {
+        return {
+          ogWidth: c.ogWidth,
+          screenshot: Array.from(c.screenshot),
+          aspectRatio: c.aspectRatio,
+          id: c.id,
+        }
+      })
     })
-
-    const newImg = await img
-      .composite([
-        {
-          input: {
-            create: {
-              width,
-              height,
-              channels: 4,
-              background: { r: 255, g: 255, b: 255, alpha: 1 },
-            },
-          },
-          left: x,
-          top: y,
-          blend: 'over',
-        },
-      ])
-      .toBuffer()
-
-    await prisma.annotation.update({
-      where: {
-        id: annotationId,
-      },
-      data: {
-        screenshot: newImg,
-      },
-    })
-
-    // probably redundant, just being paranoid
-    const newSavedScreen = await prisma.annotation.findFirstOrThrow({
-      where: {
-        id: annotationId,
-      },
-    })
-
-    res
-      .status(200)
-      .send({ updatedScreen: Array.from(newSavedScreen.screenshot!) })
-  } catch (e) {
+  } catch(e) {
     res.status(500).send({ error: String(e) })
   }
 })
@@ -203,6 +159,88 @@ screenshotRouter.post('/clips', async (req: Request, res: Response) => {
     })
   } catch (e) {
     console.error('failed to clip?', String(e))
+    res.status(500).send({ error: String(e) })
+  }
+})
+
+// put
+
+screenshotRouter.put('/:id', async (req: Request, res: Response) => {
+  const { rect } = req.body as {
+    rect: Rect
+  }
+  try {
+    const annotationId = Number(req.params.id)
+    const annotation = await prisma.annotation.findFirstOrThrow({
+      where: {
+        id: annotationId,
+      },
+    })
+    const vw = annotation.viewWidth
+    const vh = annotation.viewHeight
+    const ogScreen = annotation.screenshot
+    if (ogScreen === null) {
+      res
+        .status(404)
+        .send({ message: 'annotation with [id] has no screenshot ' })
+      return
+    }
+
+    const buf = Buffer.from(ogScreen)
+    const img = sharp(buf)
+    const meta = await img.metadata()
+    const imgW = meta.width ?? vw
+    const imgH = meta.height ?? vh
+
+    const sx = imgW / vw
+    const sy = imgH / vh
+
+    const { x, y, width, height } = scaleRect({
+      rect,
+      sx,
+      sy,
+      imgW,
+      imgH,
+    })
+
+    const newImg = await img
+      .composite([
+        {
+          input: {
+            create: {
+              width,
+              height,
+              channels: 4,
+              background: { r: 255, g: 255, b: 255, alpha: 1 },
+            },
+          },
+          left: x,
+          top: y,
+          blend: 'over',
+        },
+      ])
+      .toBuffer()
+
+    await prisma.annotation.update({
+      where: {
+        id: annotationId,
+      },
+      data: {
+        screenshot: newImg,
+      },
+    })
+
+    // probably redundant, just being paranoid
+    const newSavedScreen = await prisma.annotation.findFirstOrThrow({
+      where: {
+        id: annotationId,
+      },
+    })
+
+    res
+      .status(200)
+      .send({ updatedScreen: Array.from(newSavedScreen.screenshot!) })
+  } catch (e) {
     res.status(500).send({ error: String(e) })
   }
 })
