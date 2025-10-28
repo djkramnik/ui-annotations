@@ -3,7 +3,7 @@ import { useComponent } from "../hooks/useComponent"
 import { FilePicker, FilePickerSlim } from "../components/vanilla/filepicker"
 import { VanillaTheme } from "../components/vanilla/type"
 import { useRandomTheme } from "../hooks/useRandomTheme"
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import { RandomVariation } from "../components/vanilla/variation"
 
 const VanillaComponent = ({ theme }: { theme: VanillaTheme }) => {

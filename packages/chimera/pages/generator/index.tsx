@@ -11,11 +11,15 @@ import { Flex } from '../../components/generator/flex'
 import { xyCut } from 'infer-layout'
 import { bboxToRect, mergeColsFlat } from '../../util/generator'
 import { PreviewSchema, readPreviewSchema, writePreviewSchema } from '../../util/localstorage'
+import { GeneratedPreview } from '../../components/generator/preview'
 
 const GenerateFromExample = () => {
   const [annoId, setAnnoId] = useState<string>('2460')
   const [queryId, setQueryId] = useState<number | null>(null)
   const [annotations, setAnnotations] = useState<Annotations | null>(null)
+  const [preview, setPreview] = useState<PreviewSchema | null>(null)
+  const [previewIter, setPreviewIter] = useState<number>(0)
+
   const handleSubmit = useCallback(
     async (event: FormEvent) => {
       event.preventDefault()
@@ -37,6 +41,11 @@ const GenerateFromExample = () => {
     },
     [annoId, setAnnotations, setQueryId],
   )
+
+  const generate = useCallback((preview: PreviewSchema) => {
+    setPreview(preview)
+    setPreviewIter(i => i + 1)
+  }, [setPreviewIter, setPreview])
 
   return (
     <Container>
@@ -66,17 +75,26 @@ const GenerateFromExample = () => {
           <h3>Generate Synthetic Copy of Annotation?</h3>
           <Flex gap="24px">
             <PreviewAnnotation annotations={annotations} />
-            <GenSyntheticForm annotations={annotations} id={queryId as number} />
+            <GenSyntheticForm annotations={annotations} id={queryId as number}
+              onSubmit={generate}
+            />
           </Flex>
         </>
       ) : null}
+      {
+        preview
+          ? (
+            <div key={previewIter}>
+              <GeneratedPreview preview={preview} iter={previewIter} />
+            </div>
+          )
+          : null
+      }
     </Container>
   )
 }
 
 export default GenerateFromExample
-
-
 
 // when calculating layout ignore these
 const ignoreForLayout: ServiceManualLabel[] = [
@@ -94,24 +112,16 @@ const ignoreForGen: ServiceManualLabel[] = [
 
 function GenSyntheticForm({
   annotations,
-  id
+  id,
+  onSubmit
 }: {
   annotations: Annotations
   id: number
+  onSubmit: (schema: PreviewSchema) => any
 }) {
   const [tighten, setTighten] = useState<boolean>(true)
   const [designPref, setDesignPref] = useState<'mui' | 'ant'>('mui')
   const [schemaConfirmed, setSchemaConfirmed] = useState<boolean>(false)
-
-  useEffect(() => {
-    const maybeSchema = readPreviewSchema()
-    if (maybeSchema === null) {
-      return
-    }
-    setSchemaConfirmed(
-      maybeSchema.annotations.id === id
-    )
-  }, [setSchemaConfirmed, id])
 
   // optionally perform tighten
   // save preferences (for now just mui or ant)
@@ -173,7 +183,7 @@ function GenSyntheticForm({
         }
       })
 
-      writePreviewSchema({
+      onSubmit({
         annotations: {
           ...processedAnnotations,
           payload: {
@@ -187,13 +197,7 @@ function GenSyntheticForm({
         designPref,
         contentBounds: bboxToRect(root.region)
       })
-
-      const maybeSchema = readPreviewSchema()
-      if (maybeSchema === null) {
-        console.error('wtf we just wrote this schema!')
-        return
-      }
-      setSchemaConfirmed(maybeSchema.annotations.id === id)
+      setSchemaConfirmed(true)
     },
     [designPref, tighten, annotations, setSchemaConfirmed, id],
   )
@@ -252,7 +256,7 @@ function GenSyntheticForm({
       {
         schemaConfirmed
           ? (
-            'Schema is saved!'
+            'Preview generated!'
           )
           : null
       }
