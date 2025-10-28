@@ -6,18 +6,22 @@ import { getDataUrl } from '../../util/b64'
 export const DynamicPlaceholderImg = ({
   rect,
   width,
+  label,
 }: {
   width: number // width of the image in its container as pct
   rect: Rect // the bounding box of the image
+  label?: string
 }) => {
   const [dataUrl, setDataUrl] = useState<string | null>(null)
+
   useEffect(() => {
     let cancelled = false
     const aspectRatio = Number((rect.width / rect.height).toFixed(2))
     fetchCrops({
+      label,
       minRatio: aspectRatio - 0.5,
       maxRatio: aspectRatio + 0.5,
-      total: 1
+      total: 1,
     }).then(crops => {
       if (cancelled) {
         return

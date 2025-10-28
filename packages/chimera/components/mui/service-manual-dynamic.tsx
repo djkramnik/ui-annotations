@@ -46,6 +46,7 @@ export const DynamicMuiComponent = ({
     case ServiceManualLabel.image:
       return (
         <DynamicPlaceholderImg
+          label={label}
           width={Math.round(Math.min(rect.width, container.width) / container.width) * 100}
           rect={rect}
         />
