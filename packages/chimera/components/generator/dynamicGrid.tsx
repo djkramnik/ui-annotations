@@ -347,11 +347,12 @@ function getRegularContent({
     // we assume within a given region that there is only one actual list
     // and once we encounter a bulletpoint we mark that as the start of the list
     // and put all the bulletpoints under it
+
     if (c.label === ServiceManualLabel.bulletpoint) {
       if (!firstBulletpoint) {
         firstBulletpoint = true
         sortedElems.push(
-          <List sx={{ pl: 2 }}>
+          <List sx={{ listStyleType: 'disc', pl: 4 }}>
             {bulletpoints.map((bp) => {
               return (
                 <ComponentRenderer

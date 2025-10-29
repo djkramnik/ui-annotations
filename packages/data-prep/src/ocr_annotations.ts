@@ -58,7 +58,6 @@ const labels: string[] =
 main({
   tag,
   labels,
-  overwrite: true
 })
 
 async function main({
@@ -78,7 +77,6 @@ async function main({
     where: {
       tag,
       published: published ? 1 : 0,
-      id: 1420
     },
   })
   console.log('annos length', annos.length)
@@ -87,6 +85,14 @@ async function main({
     const payload = anno.payload as Payload
     if (!payload.annotations || !anno.screenshot) {
       console.log('skipping annotation cause empty payload: ', anno.id)
+      continue
+    }
+
+    const requiresOcr = payload.annotations.filter(a =>
+      Object.values(ServiceManualTextLabel).includes(a.label as ServiceManualTextLabel) && (!a.textContent || overwrite)
+    )
+    if (requiresOcr.length === 0) {
+      console.log('skipping annotation cause it dont need nothin from nobody: ', anno.id)
       continue
     }
 
