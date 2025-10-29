@@ -17,21 +17,32 @@ enum ServiceManualTextLabel {
   toc_entry = 'toc_entry',
 }
 
+type Rect = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 // the type of the annotation jsonb
 type Payload = {
   annotations?: Array<{
     id: string
-    rect: { x: number; y: number; width: number; height: number }
+    rect: Rect
     label: string
     textContent?: string
   }>
 }
 
-type OcrRecord = {
-  rect: { x: number; y: number; width: number; height: number }
-  screenshot: Buffer
-  annotationId: number
-  textContent: string
+type YoloPredictResponse = {
+  width: number
+  height: number
+  detections: {
+    box: [number, number, number, number], // x1,y1,x2,y2
+    conf: number
+    label: string
+    text?: string
+  }[]
 }
 
 const tag: string = process.argv[2] ?? 'service_manual'
@@ -52,6 +63,7 @@ async function main(tag: string, labels: string[], published = true) {
     where: {
       tag,
       published: published ? 1 : 0,
+      id: 1420
     },
   })
   console.log('annos length', annos.length)
@@ -63,9 +75,36 @@ async function main(tag: string, labels: string[], published = true) {
       continue
     }
 
-    const requiresOcr = payload.annotations.filter(
-      (a) => labels.includes(a.label) && !a.textContent,
-    )
+    // run text_predict yolo...
+    // get boxes
+    const fullScreen= Buffer.from(anno.screenshot).toString('base64')
+
+    const textRegionsResp = await fetch('http://localhost:8000/predict_textregions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image_base64: fullScreen, conf: 0.1, imgsz: 1024 }),
+    })
+
+    const { detections, width, height } =
+      (await textRegionsResp.json()) as YoloPredictResponse
+
+
+    let detectionZones: {
+      rect: Rect,
+      textContent?: string
+    }[] = detections.map((d) => {
+      const [x1, y1, x2, y2] = d.box
+      return {
+        rect: {
+          x: x1,
+          y: y1,
+          width: x2 - x1,
+          height: y2 - y1,
+        }
+      }
+    }).sort((a, b) => {
+      return a.rect.y - b.rect.y || a.rect.x - b.rect.x
+    }) // important.. sort from top to bottom.  need to keep the ordering on this across variants as well
 
     const clipsResp = await fetch(
       'http://localhost:4000/api/screenshot/clips',
@@ -74,7 +113,7 @@ async function main(tag: string, labels: string[], published = true) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           noScale: true,
-          rects: requiresOcr.map((a) => a.rect),
+          rects: detectionZones.map(d => d.rect),
           vw: -1,
           vh: -1,
           fullScreen: Buffer.from(anno.screenshot).toString('base64'),
@@ -96,18 +135,40 @@ async function main(tag: string, labels: string[], published = true) {
       results: Array<{text: string; score: number}>
     }
 
-    const payloadWithOcr = payload.annotations.map(a => {
-      const idx = requiresOcr.indexOf(a)
-      if (idx === -1) {
-        return a // noop
-      }
+    // we have bounding boxes plus their accompanying text
+    //
+    detectionZones = detectionZones.map((d, i) => ({
+      ...d,
+      textContent: results[i].text
+    }))
+    const detectionBoxes = detectionZones.map(d => d.rect)
 
-      const { text, score } = results[idx]
-      // optionally can gate on score here
+    console.log('ocr results', detectionZones.map(d => d.textContent))
+
+    const payloadWithOcr = payload.annotations.map(a => {
+      const skip =
+        a.textContent || !Object.values(ServiceManualTextLabel).includes(a.label as ServiceManualTextLabel)
+      if (skip) {
+        return a
+      }
+      const textChunksInAnnotation =
+        withinRect(
+          a.rect,
+          detectionBoxes,
+          5, // tolerance for being outside
+        )
+      const constructedText =
+        detectionZones.reduce((acc: string, dz, i) => {
+          if (textChunksInAnnotation.includes(i)) {
+            return acc.concat(dz.textContent || '')
+          }
+          return acc
+        }, '')
       return {
         ...a,
-        textContent: text
+        textContent: constructedText
       }
+
     })
 
     await prisma.annotation.update({
@@ -120,4 +181,26 @@ async function main(tag: string, labels: string[], published = true) {
     })
 
   }
+}
+
+function withinRect(
+  target: Rect,
+  components: Rect[],
+  threshold = 10 // px tolerance
+): number[] {
+  const left = target.x - threshold;
+  const right = target.x + target.width + threshold;
+  const top = target.y - threshold;
+  const bottom = target.y + target.height + threshold;
+
+  return components
+    .map((r, i) => {
+      const inside =
+        r.x >= left &&
+        r.x + r.width <= right &&
+        r.y >= top &&
+        r.y + r.height <= bottom;
+      return inside ? i : -1;
+    })
+    .filter(i => i !== -1);
 }
