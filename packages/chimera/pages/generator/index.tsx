@@ -175,7 +175,8 @@ function GenSyntheticForm({
 
       const regionBoxes = mergeColsFlat({
         node: root,
-        pageW: root.region[2] - root.region[0]
+        pageW: root.region[2] - root.region[0],
+        opts: { maxFrac: 0.3 }
       })
 
       // we have to recalculate where all the annotations fall since we discarded some when

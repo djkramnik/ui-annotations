@@ -140,7 +140,8 @@ const TextHeuristics = () => {
 
     const processedRegions = mergeColsFlat({
       node: root,
-      pageW: root.region[2] - root.region[0]
+      pageW: root.region[2] - root.region[0],
+      opts: { maxFrac: 0.3 }
     })
 
     const newAnnotations = regionsToAnnotations(processedRegions)

@@ -144,7 +144,7 @@ export function GridRenderer({
   className,
   showDebugBorders = false,
   ComponentRenderer,
-  maxWidth = 1050
+  maxWidth = 1400
 }: GridRendererProps) {
   const gridWidth = Math.min(maxWidth, data.annotations.viewWidth)
   const { gridTemplateColumns, gridTemplateRows, items, container }
