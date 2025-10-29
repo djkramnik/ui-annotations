@@ -30,6 +30,7 @@ export const DynamicPlaceholderImg = ({
         console.warn('no appropriate image found')
         return
       }
+
       setDataUrl(getDataUrl(crops[0].screenshot))
     })
     return () => { cancelled = true }

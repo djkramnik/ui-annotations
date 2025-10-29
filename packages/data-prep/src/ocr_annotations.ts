@@ -89,7 +89,7 @@ async function main({
     }
 
     const requiresOcr = payload.annotations.filter(a =>
-      Object.values(ServiceManualTextLabel).includes(a.label as ServiceManualTextLabel) && (!a.textContent || overwrite)
+      labels.includes(a.label as ServiceManualTextLabel) && (!a.textContent || overwrite)
     )
     if (requiresOcr.length === 0) {
       console.log('skipping annotation cause it dont need nothin from nobody: ', anno.id)
@@ -168,7 +168,7 @@ async function main({
 
     const payloadWithOcr = payload.annotations.map(a => {
       const skip =
-        (a.textContent && !overwrite) || !Object.values(ServiceManualTextLabel).includes(a.label as ServiceManualTextLabel)
+        (a.textContent && !overwrite) || !labels.includes(a.label as ServiceManualTextLabel)
       if (skip) {
         return a
       }

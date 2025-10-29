@@ -495,7 +495,6 @@ function getRegularContent({
       {...flexProps}
       style={{
         position: 'relative', // important because we will sometimes abs pos children
-        ...padStyle,
         gap: '4px',
       }}
     >

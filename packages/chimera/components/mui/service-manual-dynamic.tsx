@@ -44,10 +44,11 @@ export const DynamicMuiComponent = ({
       return <Avatar sx={sx}>{children}</Avatar>
     case ServiceManualLabel.diagram:
     case ServiceManualLabel.image:
+      const frac = Math.min(rect.width, container.width) / container.width
       return (
         <DynamicPlaceholderImg
           label={label}
-          width={Math.round(Math.min(rect.width, container.width) / container.width) * 100}
+          width={Math.round(frac * 100)}
           rect={rect}
         />
       )
