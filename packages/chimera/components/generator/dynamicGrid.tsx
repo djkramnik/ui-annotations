@@ -59,7 +59,7 @@ function buildGrid({
   epsPct?: number
   scale?: number
 }): {
-  container: { widthPx: number; heightPx: number; scale: number }
+  container: { widthPx: number; heightPx?: number; scale: number }
   gridTemplateColumns: string
   gridTemplateRows: string
   items: GridItem[]
@@ -68,11 +68,7 @@ function buildGrid({
   const pageW = Math.max(1, annotations.viewWidth)
   const pageH = Math.max(1, annotations.viewHeight)
 
-  // Fixed container: half page width, preserve aspect ratio
   const containerW = Math.round(pageW * scale)
-
-  const containerH = Math.round(pageH * scale)
-
   const epsX = epsPct * pageW
   const epsY = epsPct * pageH
 
@@ -81,17 +77,14 @@ function buildGrid({
     arr.push(v)
   }
 
-  // Start with full-page edges (so margins are explicit grid tracks)
   const xEdges: number[] = [0, pageW]
   const yEdges: number[] = [0, pageH]
 
-  // Also add contentBounds edges to delineate margins vs. content
   snapPush(xEdges, cb.x, epsX)
   snapPush(xEdges, cb.x + cb.width, epsX)
   snapPush(yEdges, cb.y, epsY)
   snapPush(yEdges, cb.y + cb.height, epsY)
 
-  // Add all region edges (rects are assumed in absolute page coords)
   layout.forEach(({ rect: r }) => {
     snapPush(xEdges, r.x, epsX)
     snapPush(xEdges, r.x + r.width, epsX)
@@ -102,15 +95,24 @@ function buildGrid({
   xEdges.sort((a, b) => a - b)
   yEdges.sort((a, b) => a - b)
 
-  // Produce pixel track sizes, scaled to the fixed container
   const toPxTracks = (edges: number[]) =>
     edges
       .slice(0, -1)
       .map((e, i) => Math.max(0, Math.round((edges[i + 1] - e) * scale)) + 'px')
       .join(' ')
 
+  // new: content-flexible rows
+  const toRowTracks = (edges: number[]) =>
+    edges
+      .slice(0, -1)
+      .map((e, i) => {
+        const base = Math.max(0, Math.round((edges[i + 1] - e) * scale))
+        return `minmax(${base}px, auto)`
+      })
+      .join(' ')
+
   const gridTemplateColumns = toPxTracks(xEdges)
-  const gridTemplateRows = toPxTracks(yEdges)
+  const gridTemplateRows = toRowTracks(yEdges)
 
   const findIndex = (edges: number[], v: number, eps: number) => {
     let idx = edges.findIndex((e) => Math.abs(e - v) <= eps)
@@ -131,12 +133,13 @@ function buildGrid({
   })
 
   return {
-    container: { widthPx: containerW, heightPx: containerH, scale },
+    container: { widthPx: containerW, scale },
     gridTemplateColumns,
     gridTemplateRows,
     items,
   }
 }
+
 
 export function GridRenderer({
   data,
@@ -159,7 +162,7 @@ export function GridRenderer({
     gridTemplateColumns,
     gridTemplateRows,
     width: container.widthPx,
-    height: container.heightPx,
+    height: 'auto',
     boxSizing: 'border-box',
     border: '1px solid currentColor',
     ...style,
