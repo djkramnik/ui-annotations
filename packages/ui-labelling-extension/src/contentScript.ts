@@ -1142,6 +1142,7 @@ import {
 
     if (isPrimed) {
       event.stopImmediatePropagation()
+      event.preventDefault()
       window.alert('primed brah')
       keysPressed['&'] = false
       keysPressed['*'] = false
@@ -1159,6 +1160,7 @@ import {
       case '+':
       case '_':
         event.stopImmediatePropagation()
+        event.preventDefault()
         keysPressed[event.key] = true
         break
     }
@@ -1194,11 +1196,6 @@ import {
 
   chrome.runtime.onMessage.addListener(
     (message: { type?: string; content: null | Record<string, any> }) => {
-      // remove adhoc screenshot logic
-      window.removeEventListener('keydown', primeTakeScreenshot, true)
-      window.removeEventListener('keydown', takeScreenshot, true)
-      window.removeEventListener('keyup', handleKeyup, true)
-
       log.info('content script received message', message)
       if (typeof message?.type !== 'string') {
         log.error('Could not parse runtime message', message)
@@ -1389,6 +1386,11 @@ import {
           keyDownController.removeThyself()
           break
         case ExtensionMessage.startMain:
+          // remove adhoc screenshot logic
+          window.removeEventListener('keydown', primeTakeScreenshot, true)
+          window.removeEventListener('keydown', takeScreenshot, true)
+          window.removeEventListener('keyup', handleKeyup, true)
+
           removePredictions()
           window.removeEventListener('keypress', removePredictions)
           keyDownController.init()
