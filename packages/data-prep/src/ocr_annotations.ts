@@ -54,9 +54,24 @@ const labels: string[] =
     ? _labelArg.split(',')
     : Object.values(ServiceManualTextLabel)
 
-main(tag, labels)
 
-async function main(tag: string, labels: string[], published = true) {
+main({
+  tag,
+  labels,
+  overwrite: true
+})
+
+async function main({
+  tag,
+  labels,
+  published = true,
+  overwrite = false,
+}: {
+  tag: string
+  labels: string[]
+  published?: boolean
+  overwrite?: boolean
+}) {
   const prisma = new PrismaClient()
 
   const annos = await prisma.annotation.findMany({
@@ -176,7 +191,9 @@ async function main(tag: string, labels: string[], published = true) {
         id: anno.id
       },
       data: {
-        payload: payloadWithOcr
+        payload: {
+          annotations: payloadWithOcr
+        }
       }
     })
 
