@@ -1093,47 +1093,72 @@ import {
   })
 
 
+  // ADHOC SCREENSHOT ==================
   // adhoc screenshot logic.  take a screenshot at any time before the extension is otherwise initialized
   // allows for taking screenshots of special state (focus / hover etc)
   let keysPressed: {
-    q: boolean
-    w: boolean
-  } = { q: false, w: false }
+    "+": boolean
+    "_": boolean
+    "*": boolean
+    "&": boolean
+    "^": boolean
+  } = {
+    "+": false,
+    "_": false,
+    "*": false,
+    "&": false,
+    "^": false
+  }
 
   async function handleKeyup(event: KeyboardEvent) {
     switch(event.key) {
-      case 'q':
-        keysPressed.q = false
-        break
-      case 'w':
-        keysPressed.w = false
+      case '+':
+      case '_':
+      case '*':
+      case '&':
+      case '^':
+        keysPressed[event.key] = false
         break
       default:
         break
     }
   }
 
-  // prior to any popup button being clicked, create this humble keydown listener that takes a screenshot
-  // when you have q and w keys pressed simultaneously
-  // this listener is removed once any popup button is clicked
-  async function takeScreenshot(event: KeyboardEvent) {
-    event.preventDefault()
-    if (event.key !== 'q' && event.key !== 'w') {
-      return
-    }
-    switch(event.key) {
-      case 'q':
-        keysPressed.q = true
+  // usage: if you hold "*" + "&" + "^" all together, it will 'prime' this logic.
+  // afterwards if you press "+" and "_" down together a screenshot will be taken and sent to the backend
+
+  async function primeTakeScreenshot(event: KeyboardEvent) {
+    switch (event.key) {
+      case '*':
+      case '&':
+      case '^':
+        keysPressed[event.key] = true
         break
-      case 'w':
-        keysPressed.w = true
+      default:
+        break
+    }
+    const isPrimed = keysPressed['*'] && keysPressed['&'] &&
+      keysPressed['^']
+
+    if (isPrimed) {
+      event.stopImmediatePropagation()
+      window.alert('primed brah')
+      // remove this listener, add the ad hoc screenshot listener
+      window.removeEventListener('keydown', primeTakeScreenshot, true)
+      window.addEventListener('keydown', takeScreenshot, true)
+    }
+  }
+
+  // while in take screenshot mode "+"" and "_" keys are disabled from ordinary use
+  async function takeScreenshot(event: KeyboardEvent) {
+    switch(event.key) {
+      case '+':
+      case '_':
+        event.stopImmediatePropagation()
+        keysPressed[event.key] = true
         break
     }
 
-    // only proceed if all the keys be pressed
-    if (!Object.values(keysPressed).every(v => v)) {
-      return
-    }
     const payload = {
       annotations: [],
       url: window.location.href,
@@ -1151,16 +1176,18 @@ import {
       content: payload,
       type: 'adhoc_screen'
     })
+    console.log('screenshot exported?')
   }
 
-  window.addEventListener('keydown', takeScreenshot, true)
+  window.addEventListener('keydown', primeTakeScreenshot, true)
   window.addEventListener('keyup', handleKeyup, true)
 
-  // end ad hoc screenshot logic
+  // END ADHOC SCREENSHOT LOGIC
 
   chrome.runtime.onMessage.addListener(
     (message: { type?: string; content: null | Record<string, any> }) => {
-      // remove
+      // remove adhoc screenshot logic
+      window.removeEventListener('keydown', primeTakeScreenshot, true)
       window.removeEventListener('keydown', takeScreenshot, true)
       window.removeEventListener('keyup', handleKeyup, true)
 
