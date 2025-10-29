@@ -1143,6 +1143,10 @@ import {
     if (isPrimed) {
       event.stopImmediatePropagation()
       window.alert('primed brah')
+      keysPressed['&'] = false
+      keysPressed['*'] = false
+      keysPressed['^'] = false // reset these in case
+
       // remove this listener, add the ad hoc screenshot listener
       window.removeEventListener('keydown', primeTakeScreenshot, true)
       window.addEventListener('keydown', takeScreenshot, true)
@@ -1159,6 +1163,10 @@ import {
         break
     }
 
+    const goForScreenshot = keysPressed['+'] && keysPressed['_']
+    if (!goForScreenshot) {
+      return
+    }
     const payload = {
       annotations: [],
       url: window.location.href,
