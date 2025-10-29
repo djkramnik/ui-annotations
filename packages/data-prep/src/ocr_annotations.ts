@@ -162,7 +162,7 @@ async function main({
 
     const payloadWithOcr = payload.annotations.map(a => {
       const skip =
-        a.textContent || !Object.values(ServiceManualTextLabel).includes(a.label as ServiceManualTextLabel)
+        (a.textContent && !overwrite) || !Object.values(ServiceManualTextLabel).includes(a.label as ServiceManualTextLabel)
       if (skip) {
         return a
       }
@@ -175,15 +175,14 @@ async function main({
       const constructedText =
         detectionZones.reduce((acc: string, dz, i) => {
           if (textChunksInAnnotation.includes(i)) {
-            return acc.concat(dz.textContent || '')
+            return acc.concat(dz.textContent || '') + '\n' // must add in newlines bruh
           }
           return acc
-        }, '')
+        }, '').replace(/\n$/, '') // must replace trailing newline bruh
       return {
         ...a,
         textContent: constructedText
       }
-
     })
 
     await prisma.annotation.update({

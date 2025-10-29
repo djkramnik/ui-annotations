@@ -30,6 +30,7 @@ type GridRendererProps = {
   style?: React.CSSProperties
   className?: string
   showDebugBorders?: boolean
+  maxWidth?: number
   ComponentRenderer: ({
     label,
     children,
@@ -143,12 +144,15 @@ export function GridRenderer({
   className,
   showDebugBorders = false,
   ComponentRenderer,
+  maxWidth = 1050
 }: GridRendererProps) {
-  const { gridTemplateColumns, gridTemplateRows, items, container } = buildGrid(
-    {
-      input: data,
-    },
-  )
+  const gridWidth = Math.min(maxWidth, data.annotations.viewWidth)
+  const { gridTemplateColumns, gridTemplateRows, items, container }
+    = buildGrid({
+        input: data,
+        scale: gridWidth / data.annotations.viewWidth
+      })
+
   console.log('scale', container.scale)
   const containerStyle: React.CSSProperties = {
     display: 'grid',

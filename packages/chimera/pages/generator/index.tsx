@@ -48,7 +48,7 @@ const GenerateFromExample = () => {
   }, [setPreviewIter, setPreview])
 
   return (
-    <Container>
+    <Container sx={{ maxWidth: '96vw !important'}}>
       <Box>
         <h3>Get Annotations By Id</h3>
         <form onSubmit={handleSubmit}>
