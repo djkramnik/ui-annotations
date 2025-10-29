@@ -1169,6 +1169,9 @@ import {
     if (!goForScreenshot) {
       return
     }
+    keysPressed['_'] = false
+    keysPressed['+'] = false // reset
+
     const payload = {
       annotations: [],
       url: window.location.href,
