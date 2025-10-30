@@ -37,6 +37,18 @@ import { useAdjustRect } from '../../hooks/adjust'
 import { adjustAnnotation } from '../../utils/adjust'
 import { useMode } from '../../hooks/mode'
 
+type TightenResponse = {
+  id: string
+  rect: Rect,
+  similar: {
+    ok: boolean
+    aspectDrift: number
+    areaRatio: number
+    original: Rect
+    candidate: Rect
+  }
+}
+
 const NewAnnotationForm = ({
   labels,
   resetPageState,
@@ -621,6 +633,44 @@ export default function AnnotationPage() {
     [handleDrawClick, handleToggleClick, setPageState],
   )
 
+  const handleTighten = useCallback(async () => {
+    if (!originalAnnotations.current) {
+      return
+    }
+    fetch(`/api/screenshot/tighten/${query.id}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+      .then((r) => r.json())
+      .then((resp: TightenResponse[]) => {
+        setAnnotations(annotations => {
+          if (!annotations) {
+            return null
+          }
+          return {
+            ...annotations,
+            payload: {
+              annotations: originalAnnotations.current!.map(a => {
+                const entry = resp.find(r => r.id === a.id)
+                if (!entry) {
+                  console.error('could not find update for this annotation', a.id)
+                  return a
+                }
+                return {
+                  ...a,
+                  rect: entry.rect,
+                }
+              })
+            }
+          }
+        })
+      })
+      .catch(console.error)
+
+  }, [query, setAnnotations])
+
   useMode(pageState.mode, setModeFromKeypress)
   // end keypress page mode support
 
@@ -828,6 +878,8 @@ export default function AnnotationPage() {
                 Process Text
               </button>
               <button onClick={processNested}>Process Nested</button>
+              <button onClick={handleTighten}>Tighter</button>
+
             </Flex>
             {pageState.mode === 'toggle' &&
             typeof pageState.currToggleIndex === 'number' ? (
