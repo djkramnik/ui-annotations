@@ -1,48 +1,46 @@
 // adaptation of write_interactive
 // will we refactor this?  odds not looking good
 import { PrismaClient } from '@prisma/client'
+import { Annotation } from 'ui-labelling-shared'
 
 main('service_manual')
-
-type Annotations = {
-  annotations: { id: string }[]
-}
 
 async function main(tag: string) {
   const prisma = new PrismaClient()
 
-  const annos = await prisma.annotation.findMany({
+  const screens = await prisma.screenshot.findMany({
     where: {
-      screenshot: {
+      image_data: {
         not: null
       },
       tag
     }
   })
 
-  for(const a of annos) {
-    console.log('updating: ', a.id)
-    const payload = a.payload as unknown as Annotations
-    if (!Array.isArray(payload?.annotations)) {
-      console.log('missing payload', a.id)
+  for(const s of screens) {
+    console.log('updating annotation ids for screenshot: ', s.id)
+
+    const annotations = s.annotations as unknown as Annotation[]
+
+    if (!Array.isArray(annotations)) {
+      console.log('missing annotations for screenshot: ', s.id)
       continue
     }
 
-    const newPayload = {
-      annotations: payload.annotations.map(a => {
+    const updatedAnnotations: Annotation[]
+      =  annotations.map(a => {
         if (a.id.length === 36) {
           return a
         }
         return {...a, id: crypto.randomUUID() }
       })
-    }
 
-    await prisma.annotation.update({
+    await prisma.screenshot.update({
       where: {
-        id: a.id
+        id: s.id
       },
       data: {
-        payload: newPayload
+        annotations: updatedAnnotations
       }
     })
 

@@ -5,6 +5,7 @@ import { detectImageExt, getRasterSize } from './utils/raster';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { trainTestSplit } from './utils/split_data';
+import { Annotation } from 'ui-labelling-shared';
 
 const prisma = new PrismaClient();
 
@@ -24,17 +25,6 @@ type UiLabel = (typeof CLASS_NAMES)[number];
 const CAT_ID_BY_NAME = new Map<UiLabel, number>(
   CLASS_NAMES.map((n, i) => [n, i + 1])
 );
-
-/* =========================
-   Types for payload
-   ========================= */
-type Payload = {
-  annotations?: Array<{
-    id: string;
-    rect: { x: number; y: number; width: number; height: number };
-    label: UiLabel;
-  }>;
-};
 
 /* =========================
    COCO types
@@ -68,14 +58,14 @@ async function ensureDirs() {
 }
 
 async function readRows(tag?: string) {
-  return prisma.annotation.findMany({
+  return prisma.screenshot.findMany({
     orderBy: { id: 'asc' },
     select: {
       id: true,
-      viewWidth: true,
-      viewHeight: true,
-      screenshot: true,
-      payload: true
+      view_width: true,
+      view_height: true,
+      image_data: true,
+      annotations: true
     },
     where: {
       published: 1,
@@ -115,17 +105,14 @@ async function main() {
   // Normalize to internal structure
   const items = rows.map(r => ({
     id: r.id,
-    width: r.viewWidth,
-    height: r.viewHeight,
-    screenshot: r.screenshot as Buffer | null,
-    payload: r.payload as Payload | null
+    width: r.view_width,
+    height: r.view_height,
+    screenshot: r.image_data as Buffer | null,
+    annotations: r.annotations as Annotation[]
   }));
 
-  // Keep rows with at least one box of our known labels AND a screenshot
   const usable = items.filter(it => {
-    const anns = (it.payload as any)?.annotations;
-    const hasArray = Array.isArray(anns);
-    return hasArray && !!it.screenshot && it.width > 0 && it.height > 0;
+    return Array.isArray(it.annotations) && !!it.screenshot && it.width > 0 && it.height > 0;
   });
   console.log(`Counted ${usable.length} usable rows`)
 
@@ -171,7 +158,7 @@ async function main() {
     const W_img = size.width;
     const H_img = size.height;
 
-    // Your previous meta dims (likely CSS px you saved as viewWidth/viewHeight)
+    // Your previous meta dims (likely CSS px you saved as view_width/view_height)
     const W_meta = it.width;
     const H_meta = it.height;
 
@@ -188,7 +175,7 @@ async function main() {
     };
 
     // Build annotations
-    const rawAnns = it.payload?.annotations ?? [];
+    const rawAnns = it.annotations
     const anns: CocoAnnotation[] = [];
     for (const a of rawAnns) {
       if (!a?.rect || !CAT_ID_BY_NAME.has(a.label)) continue;
