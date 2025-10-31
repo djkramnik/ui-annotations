@@ -82,7 +82,6 @@ export const serviceManualLabel: Record<ServiceManualLabel, string> = {
   unit: '#ed9121'
 }
 
-
 export enum AnnotationLabel {
   textRegion = 'textRegion',
   button = 'button',
@@ -486,9 +485,8 @@ export async function* gatherInteractiveRegions(
   yield out
 }
 
-export interface AnnotationRequest {
-  annotations: AnnotationPayload['annotations']
-  screenshot: string
+export interface ScreenshotRequest {
+  annotations: Annotation[]
   url: string
   date: string
   window: {
@@ -499,19 +497,24 @@ export interface AnnotationRequest {
   tag?: string
 }
 
-export interface AnnotationPayload {
-  annotations: {
-    id: string
-    label: string
-    rect: { x: number; y: number; width: number; height: number }
-    textContent?: string
-  }[]
+export type Rect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number
 }
 
-export interface Annotations {
+export type Annotation = {
+  id: string
+  label: string
+  rect: Rect
+  textContent?: string
+}
+
+export interface Screenshot {
   url: string
-  payload: AnnotationPayload
-  screenshot: ArrayBuffer
+  annotations: Annotation[]
+  image_data: ArrayBuffer
   scrollY: number
   viewHeight: number
   viewWidth: number
@@ -521,7 +524,6 @@ export interface Annotations {
   tag?: string
 }
 
-type Rect = AnnotationPayload['annotations'][0]['rect']
 function contains(outer: Rect, inner: Rect): boolean {
   return (
     inner.x >= outer.x &&
@@ -533,11 +535,11 @@ function contains(outer: Rect, inner: Rect): boolean {
 
 // remove annotations that are contained within bigger annotations
 export async function* postProcessNested(
-  annotations: AnnotationPayload['annotations'],
+  annotations: Annotation[],
   opts?: Partial<{
     filterBy: string
     batchSize: number
-  }>): AsyncGenerator<number | AnnotationPayload['annotations']> {
+  }>): AsyncGenerator<number | Annotation[]> {
     const {
       filterBy,
       batchSize = 50,
@@ -549,7 +551,7 @@ export async function* postProcessNested(
     const sortedRegions = regions.sort((a, b) => {
       return (b.rect.width * b.rect.height) - (a.rect.width * a.rect.height)
     })
-    const out: AnnotationPayload['annotations'] = []
+    const out: Annotation[] = []
     let processed = 0
 
     for(const r of sortedRegions) {
@@ -567,14 +569,14 @@ export async function* postProcessNested(
 
 // merge annotations that are horizontally adjacent
 export async function* postProcessAdjacent(
-  annotations: AnnotationPayload['annotations'],
+  annotations: Annotation[],
   opts?: Partial<{
     filterBy: string
     batchSize: number
     tolerance: number
     yTolerance: number
   }>
-): AsyncGenerator<number | AnnotationPayload['annotations']> {
+): AsyncGenerator<number | Annotation[]> {
   const batchSize = Math.max(1, opts?.batchSize ?? 100)
   const tolerance = Math.max(0, opts?.tolerance ?? 2)
   const yTolerance = Math.max(0.5, Math.min(1, opts?.yTolerance ?? 0.95))
@@ -640,7 +642,7 @@ export async function* postProcessAdjacent(
   }
 
   // Merge left→right inside each row
-  const merged: AnnotationPayload['annotations'] = []
+  const merged: Annotation[] = []
   let processed = 0
 
   for (const row of rows) {
