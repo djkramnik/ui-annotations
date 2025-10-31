@@ -63,7 +63,7 @@ async function main() {
       continue
     }
 
-    const buf = row.screenshot
+    const buf = row.image_data
     console.log('processing ', row.id)
     const imgPath = writeImage(row.id, buf as Buffer)
     const label = `./${imgPath.slice(imgPath.lastIndexOf('images/'))}\t${row.text.replace(/\s+/g, ' ')}`

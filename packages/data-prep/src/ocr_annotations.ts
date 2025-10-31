@@ -1,37 +1,21 @@
 import { PrismaClient } from '@prisma/client'
+import { Annotation, Rect, ServiceManualLabel } from 'ui-labelling-shared'
 
 enum ServiceManualTextLabel {
-  text_block = 'text_block',
-  heading = 'heading',
-  bulletpoint = 'bulletpoint',
+  text_block =  ServiceManualLabel.text_block,
+  heading = ServiceManualLabel.heading,
+  bulletpoint = ServiceManualLabel.bulletpoint,
 
-  caption = 'caption', // for an image / diagram
-  image_id = 'image_id', // small non semantic ids attached to images in 2005 manual
+  caption = ServiceManualLabel.caption, // for an image / diagram
+  image_id = ServiceManualLabel.image_id, // small non semantic ids attached to images in 2005 manual
 
-  diagram_number = 'diagram_number', // a number appearing on the diagram w/wo a line
-  diagram_label = 'diagram_label', // a string label appearing on the diagram w/wo a line
+  diagram_number = ServiceManualLabel.diagram_number, // a number appearing on the diagram w/wo a line
+  diagram_label = ServiceManualLabel.diagram_label, // a string label appearing on the diagram w/wo a line
 
-  section_number = 'section_number', // a big number prob
-  page_num = 'page_num', // the actual page number if it appears
+  section_number = ServiceManualLabel.section_number, // a big number prob
+  page_num = ServiceManualLabel.page_num, // the actual page number if it appears
 
-  toc_entry = 'toc_entry',
-}
-
-type Rect = {
-  x: number
-  y: number
-  width: number
-  height: number
-}
-
-// the type of the annotation jsonb
-type Payload = {
-  annotations?: Array<{
-    id: string
-    rect: Rect
-    label: string
-    textContent?: string
-  }>
+  toc_entry = ServiceManualLabel.toc_entry,
 }
 
 type YoloPredictResponse = {
@@ -73,32 +57,32 @@ async function main({
 }) {
   const prisma = new PrismaClient()
 
-  const annos = await prisma.annotation.findMany({
+  const screens = await prisma.screenshot.findMany({
     where: {
       tag,
       published: published ? 1 : 0,
     },
   })
-  console.log('annos length', annos.length)
+  console.log('# screens to ocr: ', screens.length)
 
-  for (const anno of annos) {
-    const payload = anno.payload as Payload
-    if (!payload.annotations || !anno.screenshot) {
-      console.log('skipping annotation cause empty payload: ', anno.id)
+  for (const screen of screens) {
+    const annotations = screen.annotations as Annotation[]
+    if (!Array.isArray(annotations) || !screen.image_data) {
+      console.log('skipping screen cause empty payload: ', screen.id)
       continue
     }
 
-    const requiresOcr = payload.annotations.filter(a =>
+    const requiresOcr = annotations.filter(a =>
       labels.includes(a.label as ServiceManualTextLabel) && (!a.textContent || overwrite)
     )
     if (requiresOcr.length === 0) {
-      console.log('skipping annotation cause it dont need nothin from nobody: ', anno.id)
+      console.log('skipping screen cause it dont need nothin from nobody: ', screen.id)
       continue
     }
 
     // run text_predict yolo...
     // get boxes
-    const fullScreen= Buffer.from(anno.screenshot).toString('base64')
+    const fullScreen= Buffer.from(screen.image_data).toString('base64')
 
     const textRegionsResp = await fetch('http://localhost:8000/predict_textregions', {
       method: 'POST',
@@ -106,9 +90,8 @@ async function main({
       body: JSON.stringify({ image_base64: fullScreen, conf: 0.1, imgsz: 1024 }),
     })
 
-    const { detections, width, height } =
+    const { detections } =
       (await textRegionsResp.json()) as YoloPredictResponse
-
 
     let detectionZones: {
       rect: Rect,
@@ -137,7 +120,7 @@ async function main({
           rects: detectionZones.map(d => d.rect),
           vw: -1,
           vh: -1,
-          fullScreen: Buffer.from(anno.screenshot).toString('base64'),
+          fullScreen: Buffer.from(screen.image_data).toString('base64'),
         }),
       },
     )
@@ -166,7 +149,7 @@ async function main({
 
     console.log('ocr results', detectionZones.map(d => d.textContent))
 
-    const payloadWithOcr = payload.annotations.map(a => {
+    const annotationsWithOcr = annotations.map(a => {
       const skip =
         (a.textContent && !overwrite) || !labels.includes(a.label as ServiceManualTextLabel)
       if (skip) {
@@ -191,20 +174,18 @@ async function main({
       }
     })
 
-    await prisma.annotation.update({
+    await prisma.screenshot.update({
       where: {
-        id: anno.id
+        id: screen.id
       },
       data: {
-        payload: {
-          annotations: payloadWithOcr
-        }
+        annotations: annotationsWithOcr
       }
     })
-
   }
 }
 
+// TODO: dry this up
 function withinRect(
   target: Rect,
   components: Rect[],

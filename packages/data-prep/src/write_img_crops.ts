@@ -3,6 +3,7 @@
 import { PrismaClient } from '@prisma/client'
 import sharp from 'sharp'
 import { getRasterSize } from './utils/raster'
+import { Annotation } from 'ui-labelling-shared'
 
 
 const tag: string = process.argv[2] ?? 'service_manual'
@@ -15,23 +16,13 @@ const labels: string[] = typeof _labelArg === 'string'
 
 main(tag, labels)
 
-// the type of the annotation jsonb
-type Payload = {
-  annotations?: Array<{
-    id: string
-    rect: { x: number; y: number; width: number; height: number }
-    label: string
-    textContent?: string
-  }>
-}
-
 type ImageCropRecord = {
-  screenshot: Buffer
-  annotationId: number
-  trueId: string
-  aspectRatio: number
-  ogWidth: number
-  ogLabel: string
+  image_data: Buffer
+  screenshot_id: number
+  true_id: string
+  aspect_ratio: number
+  og_width: number
+  og_label: string
 }
 
 function getClamp(min: number, max: number) {
@@ -49,45 +40,45 @@ async function main(tag: string, labels: string[]) {
 
   // find annotations that are not linked to any existing interactive record
   // this uses separate queries unoptimally but that is fine for now
-  const convertedAnnos = new Set(
+  const convertedScreens = new Set(
     (
-      await prisma.imageCrop.findMany({
+      await prisma.image_crop.findMany({
         where: {
-          annotationId: {
+          screenshot_id: {
             not: null,
           },
         },
       })
-    ).map((a) => a.annotationId),
+    ).map((a) => a.screenshot_id),
   ) as Set<number>
 
-  console.log('converted annos length', convertedAnnos.size)
-  const unconvertedAnnos = await prisma.annotation.findMany({
+  console.log('converted screens length', convertedScreens.size)
+  const unconvertedScreens = await prisma.screenshot.findMany({
     where: {
       id: {
-        notIn: Array.from(convertedAnnos),
+        notIn: Array.from(convertedScreens),
       },
       tag,
     },
   })
-  console.log('unconverted annos length', unconvertedAnnos.length)
+  console.log('unconverted annos length', unconvertedScreens.length)
 
   let crops: ImageCropRecord[] = []
 
   let badAnnotationIds = []
-  for (const anno of unconvertedAnnos) {
-    const payload = anno.payload as Payload
-    if (!payload.annotations || !anno.screenshot) {
-      console.log('skipping annotation because empty payload: ', anno.id)
+  for (const screen of unconvertedScreens) {
+    const annotations = screen.annotations as Annotation[]
+    if (!Array.isArray(annotations) || !screen.image_data) {
+      console.log('skipping screen because empty annotations: ', screen.id)
       continue
     }
-    const actualSize = getRasterSize(anno.screenshot)
+    const actualSize = getRasterSize(screen.image_data)
     if (actualSize === null) {
-      console.warn('Could not get the raster size for this anno', anno.id)
+      console.warn('Could not get the raster size for this screen', screen.id)
       continue
     }
 
-    for (const a of payload.annotations) {
+    for (const a of annotations) {
       if (a.id?.length !== 36) {
         badAnnotationIds.push(a.id ?? 'none')
         continue
@@ -96,10 +87,10 @@ async function main(tag: string, labels: string[]) {
         continue
       }
 
-      const { screenshot, viewWidth, viewHeight, id } = anno
+      const { image_data, view_width, view_height, id } = screen
 
-      const sx = actualSize.width / viewWidth
-      const sy = actualSize.height / viewHeight
+      const sx = actualSize.width / view_width
+      const sy = actualSize.height / view_height
 
       const scaledRoundedRect = {
         x: Math.round(a.rect.x * sx),
@@ -120,7 +111,7 @@ async function main(tag: string, labels: string[]) {
       )(scaledRoundedRect.height)
 
       try {
-        const clip = await sharp(screenshot as Buffer)
+        const clip = await sharp(image_data as Buffer)
           .rotate() // keep consistent with metadata
           .extract({
             left,
@@ -131,12 +122,12 @@ async function main(tag: string, labels: string[]) {
           .toFormat('png')
           .toBuffer()
         crops.push({
-          annotationId: id,
-          screenshot: clip,
-          trueId: a.id,
-          ogWidth: Math.round(scaledRoundedRect.width),
-          aspectRatio: Number((scaledRoundedRect.width / scaledRoundedRect.height).toFixed(2)),
-          ogLabel: a.label
+          screenshot_id: id,
+          image_data: clip,
+          true_id: a.id,
+          og_width: Math.round(scaledRoundedRect.width),
+          aspect_ratio: Number((scaledRoundedRect.width / scaledRoundedRect.height).toFixed(2)),
+          og_label: a.label
         })
       } catch (e) {
         console.error('wtf (sharp?)', e)
@@ -148,7 +139,7 @@ async function main(tag: string, labels: string[]) {
   console.log('this many bad boys', badAnnotationIds.length)
   console.log('sample hunk', badAnnotationIds[0])
 
-  await prisma.imageCrop.createMany({
+  await prisma.image_crop.createMany({
     data: crops,
   })
 }
