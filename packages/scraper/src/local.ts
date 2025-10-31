@@ -4,6 +4,7 @@ import fs from 'fs'
 import path from 'path'
 import sharp from 'sharp'
 import { waitForEnter } from './util'
+import { Annotation } from 'ui-labelling-shared'
 
 // grab local fs images and upload them as empty annotations
 // for manual labelling on the frontend viewer
@@ -38,15 +39,15 @@ dotenv.config()
 
   const currentDate = new Date().toISOString()
   let errors: number = 0
-  let batchedAnnotations: Array<{
-    screenshot: Buffer<ArrayBufferLike>
+  let batchedScreenshots: Array<{
+    image_data: Buffer<ArrayBufferLike>
     tag: string
-    scrollY: number
+    scroll_y: number
     url: string
     date: string
-    payload: { annotations: [] }
-    viewWidth: number
-    viewHeight: number
+    annotations: Annotation[]
+    view_width: number
+    view_height: number
   }> = []
 
   for(const imgPath of imagePaths) {
@@ -54,17 +55,15 @@ dotenv.config()
     try {
       const img = sharp(imgPath)
       const { width: imgW, height: imgH } = await img.metadata()
-      batchedAnnotations.push({
-        screenshot: await img.toBuffer(),
+      batchedScreenshots.push({
+        image_data: await img.toBuffer(),
         tag: localTag,
-        scrollY: 0,
+        scroll_y: 0,
         url: imgPath,
         date: currentDate,
-        viewWidth: imgW,
-        viewHeight: imgH,
-        payload: {
-          annotations: []
-        }
+        view_width: imgW,
+        view_height: imgH,
+        annotations: []
       })
     } catch(e) {
       console.error('could not process', imgPath)
@@ -72,10 +71,10 @@ dotenv.config()
     }
   }
 
-  await prisma.annotation.createMany({
-    data: batchedAnnotations
+  await prisma.screenshot.createMany({
+    data: batchedScreenshots
   })
 
-  console.log(`uploaded ${batchedAnnotations.length} annotations, with ${errors} errors`)
+  console.log(`uploaded ${batchedScreenshots.length} annotations, with ${errors} errors`)
   process.exit(0)
 })()

@@ -487,6 +487,7 @@ export async function* gatherInteractiveRegions(
 
 export interface ScreenshotRequest {
   annotations: Annotation[]
+  image_data: string
   url: string
   date: string
   window: {

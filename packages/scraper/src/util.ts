@@ -1,8 +1,8 @@
 import { Page } from 'puppeteer-core'
 import * as readline from 'readline'
-import { AnnotationPayload, AnnotationRequest } from 'ui-labelling-shared'
+import { Annotation, ScreenshotRequest } from 'ui-labelling-shared'
 
-export type ProcessAnnotations = (page: Page, link: string) => Promise<Omit<AnnotationRequest, "screenshot" | "annotations"> | undefined>
+export type ProcessScreenshot = (page: Page, link: string) => Promise<Omit<ScreenshotRequest, "image_data" | "annotations"> | undefined>
 export type ApplyTransformations = (page: Page) => Promise<() => Promise<void>> // return async cleanup function
 
 export async function snooze(ms: number = 2000) {
@@ -60,14 +60,13 @@ export const waitForEnter = (): Promise<void> => {
   })
 }
 
-export const postAnnotations = (payload: AnnotationRequest) => {
-  console.log('posting this shit', payload.annotations[0])
+export const postAnnotations = (screenshot: ScreenshotRequest) => {
   return fetch('http://localhost:4000/api/annotation', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(screenshot),
   })
 }
 
@@ -162,10 +161,10 @@ const iouXYWH = (a: Rect, b: Rect) => {
 };
 
 export function filterByOverlap(
-  annotations: AnnotationPayload['annotations'],
+  annotations: Annotation[],
   preds: ScaledYoloPred[],
   options: FilterOpts
-): AnnotationPayload['annotations'] {
+): Annotation[] {
   const { overlapPct, minConf = 0, matchLabel } = options;
 
   // 1) pre-filter preds by conf / label if provided

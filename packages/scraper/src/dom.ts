@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 
 import { ElementHandle, Page } from "puppeteer-core";
-import { AnnotationRequest, TextProposal } from "ui-labelling-shared";
+import { ScreenshotRequest, TextProposal } from "ui-labelling-shared";
 
 export function getHnHrefs() {
   return Array.from(
@@ -9,7 +9,7 @@ export function getHnHrefs() {
   ).map(a => (a as HTMLAnchorElement).href)
 }
 
-export function getMetadata(page: Page, link: string, label: string): Promise<Omit<AnnotationRequest, 'annotations' | 'screenshot'>> {
+export function getMetadata(page: Page, link: string, label: string): Promise<Omit<ScreenshotRequest, 'annotations' | 'image_data'>> {
   return page.evaluate((link: string, label: string) => {
     return {
       url: link,

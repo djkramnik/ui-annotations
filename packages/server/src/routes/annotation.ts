@@ -1,36 +1,14 @@
 import { Router, Request, Response } from 'express'
 import { prisma } from '../db'
-import { AnnotationLabel } from 'ui-labelling-shared'
+import { AnnotationLabel, ScreenshotRequest } from 'ui-labelling-shared'
 import { Prisma } from '@prisma/client'
 
 export const annotationRouter = Router()
 
-type AnnotationPayload = {
-  url: string
-  date: string
-  window: {
-      scrollY: number
-      width: number
-      height: number
-  }
-  annotations: {
-      id: string
-      rect: {
-        x: number
-        y: number
-        width: number
-        height: number
-      }
-      label: string
-  }[]
-  screenshot: string
-  tag?: string
-}
-
 annotationRouter.delete('/:id', async (req: Request, res: Response) => {
   const annotationId = Number(req.params.id)
   try {
-    await prisma.annotation.delete({
+    await prisma.screenshot.delete({
       where: { id: annotationId },
     })
 
@@ -44,16 +22,16 @@ annotationRouter.delete('/:id', async (req: Request, res: Response) => {
 })
 
 annotationRouter.put('/publish/:id', async (req: Request, res: Response) => {
-  const annotationId = Number(req.params.id)
+  const id = Number(req.params.id)
   try {
-    const row = await prisma.annotation.update({
-      where: { id: annotationId },
+    const row = await prisma.screenshot.update({
+      where: { id },
       data: { published: 1 }
     })
 
     res.status(200).send({ data: {
       ...row,
-      screenshot: Array.from(row.screenshot!)
+      image_data: Array.from(row.image_data!) // is this really necessary
     }})
   } catch (err) {
     console.error(err)
@@ -62,16 +40,16 @@ annotationRouter.put('/publish/:id', async (req: Request, res: Response) => {
 })
 
 annotationRouter.put('/unpublish/:id', async (req: Request, res: Response) => {
-  const annotationId = Number(req.params.id)
+  const id = Number(req.params.id)
   try {
-    const row = await prisma.annotation.update({
-      where: { id: annotationId },
+    const row = await prisma.screenshot.update({
+      where: { id },
       data: { published: 0 }
     })
 
     res.status(200).send({ data: {
       ...row,
-      screenshot: Array.from(row.screenshot!)
+      image_data: Array.from(row.image_data!)
     }})
   } catch (err) {
     console.error(err)
@@ -154,24 +132,22 @@ annotationRouter.post('/', async (req: Request, res: Response) => {
       url,
       annotations,
       date,
-      screenshot,
+      image_data,
       window,
       tag
-    } = req.body as AnnotationPayload;
+    } = req.body as ScreenshotRequest;
 
-    const record = await prisma.annotation.create({
+    const record = await prisma.screenshot.create({
       data: {
         tag: tag ?? null,
-        scrollY:   window.scrollY,
-        viewWidth: window.width,
-        viewHeight: window.height,
+        scroll_y:   window.scrollY,
+        view_width: window.width,
+        view_height: window.height,
         date:      new Date(date),                  // ISO string → Date
         url,
-        payload: {
-          annotations,
-        },
-        screenshot: screenshot
-          ? Buffer.from(screenshot, 'base64')
+        annotations,
+        image_data: image_data
+          ? Buffer.from(image_data, 'base64')
           : undefined,
       },
       select: { id: true },
@@ -187,19 +163,17 @@ annotationRouter.post('/', async (req: Request, res: Response) => {
 // this updates only the annotations not the metadata
 annotationRouter.patch('/:id', async (req: Request, res: Response) => {
   try {
-    const annotationId = Number(req.params.id)
+    const id = Number(req.params.id)
     const {
       annotations,
-    } = req.body as Pick<AnnotationPayload, 'annotations'>
+    } = req.body as Pick<ScreenshotRequest, 'annotations'>
 
-    const record = await prisma.annotation.update({
+    const record = await prisma.screenshot.update({
       data: {
-        payload: {
-          annotations,
-        },
+        annotations
       },
       where: {
-        id: annotationId
+        id
       }
     })
     res.status(200).send({ data: record })
@@ -213,8 +187,8 @@ annotationRouter.get('/', async (_req: Request, res: Response) => {
   const published = _req.query.published as string
   const tag = (_req.query.tag as string | undefined)
   try {
-    const rows = await prisma.annotation.findMany({
-      select: { id: true, url: true, scrollY: true, date: true },
+    const rows = await prisma.screenshot.findMany({
+      select: { id: true, url: true, scroll_y: true, date: true },
       orderBy: { id: 'asc' },
       where: {
         ...(
@@ -242,23 +216,23 @@ annotationRouter.get('/', async (_req: Request, res: Response) => {
 });
 
 annotationRouter.get('/:id', async (req: Request, res: Response) => {
-  const annotationId = Number(req.params.id)
+  const id = Number(req.params.id)
 
   try {
-    const row = await prisma.annotation.findUnique({
-      where: { id: annotationId },
+    const row = await prisma.screenshot.findUnique({
+      where: { id },
     })
 
     if (!row) {
       res
         .status(404)
-        .send({ message: 'Could not find annotation with id ' + annotationId })
+        .send({ message: 'Could not find screenshot with id ' + id })
       return
     }
 
     res.status(200).send({ data: {
       ...row,
-      screenshot: Array.from(row.screenshot!)
+      image_data: Array.from(row.image_data!)
     }})
   } catch (err) {
     console.error(err)

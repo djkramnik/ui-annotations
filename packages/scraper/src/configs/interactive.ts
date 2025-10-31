@@ -1,7 +1,7 @@
 import { Page } from "puppeteer-core"
-import { adjustViewport, adjustZoom, changeFontFamily, getDomInteractiveProposal, getDomTextProposal, getMetadata } from "../dom"
-import { AnnotationLabel, AnnotationPayload, postProcessNested } from "ui-labelling-shared"
-import { filterByOverlap, getRandomLocalFont, getRandomZoom, getYoloPredictions, postAnnotations, randInt, scaleYoloPreds, snooze } from "../util"
+import { adjustViewport, adjustZoom, changeFontFamily, getDomInteractiveProposal, getMetadata } from "../dom"
+import { Annotation, AnnotationLabel, postProcessNested } from "ui-labelling-shared"
+import { getRandomLocalFont, getRandomZoom, postAnnotations, randInt, snooze } from "../util"
 
 export async function processScreenForInteractive(page: Page, link: string) {
   const proposals = await getDomInteractiveProposal(page)
@@ -19,7 +19,7 @@ export async function processScreenForInteractive(page: Page, link: string) {
   })
   console.log('unprocessed annotation len:', rawAnnotations.length)
 
-  let processedAnnotations: AnnotationPayload['annotations'] = []
+  let processedAnnotations: Annotation[] = []
   for await (const update of postProcessNested(rawAnnotations)) {
     if (Array.isArray(update)) {
       processedAnnotations = processedAnnotations.concat(update)
@@ -52,7 +52,7 @@ export async function processScreenForInteractive(page: Page, link: string) {
 
   await postAnnotations({
     annotations: processedAnnotations,
-    screenshot,
+    image_data: screenshot,
     ...meta,
   })
   // superstition

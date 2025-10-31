@@ -1,6 +1,6 @@
 import {
+  Annotation,
   AnnotationLabel,
-  AnnotationPayload,
   postProcessAdjacent,
 } from 'ui-labelling-shared'
 import {
@@ -38,7 +38,7 @@ export async function processScreenText(page: Page, link: string) {
   })
   console.log('unprocessed annotation len:', rawAnnotations.length)
 
-  let processedAnnotations: AnnotationPayload['annotations'] = []
+  let processedAnnotations: Annotation[] = []
   for await (const update of postProcessAdjacent(rawAnnotations)) {
     if (Array.isArray(update)) {
       processedAnnotations = processedAnnotations.concat(update)
@@ -71,7 +71,7 @@ export async function processScreenText(page: Page, link: string) {
 
   await postAnnotations({
     annotations: annotationsVerifiedByAi,
-    screenshot,
+    image_data: screenshot,
     ...meta,
   })
   // superstition

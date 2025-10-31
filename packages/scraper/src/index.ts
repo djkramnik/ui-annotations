@@ -2,7 +2,7 @@ import puppeteer, { Browser, Page } from 'puppeteer-core'
 import {
   ApplyTransformations,
   getNumberArg,
-  ProcessAnnotations,
+  ProcessScreenshot,
   waitForEnter,
 } from './util'
 import { PrismaClient } from '@prisma/client'
@@ -12,7 +12,7 @@ import { applyInteractiveTransforms, processScreenForInteractive } from './confi
 
 const prisma = new PrismaClient()
 
-let processScreen: ProcessAnnotations | null = null
+let processScreen: ProcessScreenshot | null = null
 const labelType = process.argv[2]
 switch(labelType) {
   case 'interactive':
@@ -35,14 +35,14 @@ main({
 })
 
 async function fetchUrls(tag: string): Promise<string[]> {
-  const urls = await prisma.annotation
+  const urls = await prisma.screenshot
     .findMany({
       where: {
         tag,
       },
     })
-    .then((annotation) => {
-      return annotation.map((a) => a.url)
+    .then((screenshot) => {
+      return screenshot.map((s) => s.url)
     })
   return Array.from(new Set(urls))
 }
@@ -88,7 +88,7 @@ async function main({
   maxLinks = 1000,
 }: {
   config: {
-    processScreen: ProcessAnnotations
+    processScreen: ProcessScreenshot
     transform: ApplyTransformations
   },
   linkType: string
