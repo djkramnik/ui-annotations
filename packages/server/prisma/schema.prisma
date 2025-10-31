@@ -8,71 +8,54 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Annotation {
-  id                 Int          @id @default(autoincrement())
-  scrollY            Int          @map("scroll_y")
-  viewWidth          Int          @map("view_width")
-  viewHeight         Int          @map("view_height")
-  date               DateTime     @db.Timestamptz(6)
-  url                String
-  payload            Json
-  screenshot         Bytes?
-  published          Int          @default(0)
-  tag                String?
+model image_crop {
+  id            Int         @id @default(autoincrement())
+  image_data    Bytes
+  true_id       String?     @db.Uuid
+  screenshot_id Int?
+  aspect_ratio  Float
+  og_width      Int
+  og_label      String?
+  screenshot    screenshot? @relation(fields: [screenshot_id], references: [id], map: "image_crop_annotationId_fkey")
 
+  @@index([screenshot_id], map: "image_crop_annotationId_idx")
+}
+
+model interactive {
+  id            Int         @id @default(autoincrement())
+  image_data    Bytes
+  label         String?
+  true_id       String?     @db.Uuid
+  screenshot_id Int?
+  screenshot    screenshot? @relation(fields: [screenshot_id], references: [id], map: "interactive_annotationId_fkey")
+
+  @@index([screenshot_id], map: "interactive_annotationId_idx")
+}
+
+model ocr {
+  id            Int         @id @default(autoincrement())
+  image_data    Bytes
+  date          DateTime    @db.Timestamptz(6)
+  text          String
+  screenshot_id Int?
+  screenshot    screenshot? @relation(fields: [screenshot_id], references: [id], map: "ocr_annotationId_fkey")
+}
+
+model screenshot {
+  id                  Int           @id(map: "annotations_pkey") @default(autoincrement())
+  scroll_y            Int
+  view_width          Int
+  view_height         Int
+  date                DateTime      @db.Timestamptz(6)
+  url                 String
+  annotations         Json
+  image_data          Bytes?
+  published           Int           @default(0)
+  tag                 String?
   synthetic_parent_id Int?
-  synthetic_parent    Annotation? @relation("SyntheticParent", fields: [synthetic_parent_id], references: [id])
-  synthetic_children  Annotation[] @relation("SyntheticParent")
-
-  ocr         Ocr[]
-  Interactive Interactive[]
-  ImageCrop ImageCrop[]
-
-  @@map("annotations")
-}
-
-model Ocr {
-  id         Int      @id @default(autoincrement())
-  screenshot Bytes
-  date       DateTime @db.Timestamptz(6)
-  text       String
-
-  // optional foreign key to Annotation
-  annotationId Int?
-  annotation   Annotation? @relation(fields: [annotationId], references: [id])
-
-  // optional bounding box
-  x      Float?
-  y      Float?
-  width  Float?
-  height Float?
-
-  @@map("ocr")
-}
-
-model Interactive {
-  id           Int         @id @default(autoincrement())
-  screenshot   Bytes
-  label        String?
-  trueId       String?     @map("true_id") @db.Uuid
-  // optional foreign key to Annotation
-  annotationId Int?
-  annotation   Annotation? @relation(fields: [annotationId], references: [id])
-
-  @@index([annotationId])
-  @@map("interactive")
-}
-
-model ImageCrop {
-  id           Int         @id @default(autoincrement())
-  screenshot  Bytes
-  trueId       String?     @map("true_id") @db.Uuid
-  annotationId  Int?
-  annotation   Annotation? @relation(fields: [annotationId], references: [id])
-  aspectRatio Float
-  ogWidth Int
-  ogLabel String?
-
-  @@index([annotationId])
-  @@map("image_crop")
+  image_crop          image_crop[]
+  interactive         interactive[]
+  ocr                 ocr[]
+  screenshot          screenshot?   @relation("screenshotToscreenshot", fields: [synthetic_parent_id], references: [id], map: "annotations_synthetic_parent_id_fkey")
+  other_screenshot    screenshot[]  @relation("screenshotToscreenshot")
 }
