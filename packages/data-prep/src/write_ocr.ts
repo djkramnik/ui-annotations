@@ -6,22 +6,13 @@
 import { PrismaClient } from "@prisma/client";
 import sharp from 'sharp'
 import { getRasterSize } from "./utils/raster";
-
-// the type of the annotation jsonb
-type Payload = {
-  annotations?: Array<{
-    id: string;
-    rect: { x: number; y: number; width: number; height: number };
-    label: string;
-    textContent?: string
-  }>;
-};
+import { Annotation, Rect } from "ui-labelling-shared";
 
 type OcrRecord = {
-  rect: { x: number; y: number; width: number; height: number }
-  screenshot: Buffer
-  annotationId: number
-  textContent: string
+  rect: Rect
+  image_data: Buffer
+  screenshot_id: number
+  text: string
 }
 
 function getClamp(min: number, max: number) {
@@ -35,48 +26,48 @@ function getClamp(min: number, max: number) {
 
 async function main() {
   const prisma = new PrismaClient();
-  const convertedAnnos = new Set((await prisma.ocr.findMany({}))
-    .map(a => a.annotationId)
+  const convertedScreens = new Set((await prisma.ocr.findMany({}))
+    .map(a => a.screenshot_id)
     .filter(id => id)) as Set<number>
 
-  console.log('converted annos length', convertedAnnos.size)
-  const unconvertedAnnos = await prisma.annotation.findMany({
+  console.log('converted screens length', convertedScreens.size)
+  const unconvertedScreens = await prisma.screenshot.findMany({
     where: {
       id: {
-        notIn: Array.from(convertedAnnos)
+        notIn: Array.from(convertedScreens)
       },
       tag: 'ocr'
     }
   })
-  console.log('unconverted annos length', unconvertedAnnos.length)
+  console.log('unconverted screens length', unconvertedScreens.length)
 
   let ocrRecords: OcrRecord[] = []
 
-  for (const anno of unconvertedAnnos) {
-    const payload = anno.payload as Payload
-    if (!payload.annotations || !anno.screenshot) {
-      console.log('skipping annotation cause empty payload: ', anno.id)
+  for (const screen of unconvertedScreens) {
+    const annotations = screen.annotations as Annotation[]
+    if (!Array.isArray(annotations) || !screen.image_data) {
+      console.log('skipping screen cause empty data: ', screen.id)
       continue
     }
-    const actualSize = getRasterSize(anno.screenshot)
+    const actualSize = getRasterSize(screen.image_data)
     if (actualSize === null) {
-      console.warn('Could not get the raster size for this anno', anno.id)
+      console.warn('Could not get the raster size for this screen', screen.id)
       continue
     }
 
-    for (const a of payload.annotations) {
+    for (const a of annotations) {
       if (a.label !== 'textRegion' || !a.textContent) {
         continue
       }
       const {
-        screenshot,
-        viewWidth,
-        viewHeight,
+        image_data,
+        view_width,
+        view_height,
         id
-      } = anno
+      } = screen
 
-      const sx = actualSize.width / viewWidth
-      const sy = actualSize.height / viewHeight
+      const sx = actualSize.width / view_width
+      const sy = actualSize.height / view_height
 
       const scaledRoundedRect = {
         x: Math.round(a.rect.x * sx),
@@ -91,7 +82,7 @@ async function main() {
       const height = getClamp(1, actualSize.height - 1)(scaledRoundedRect.height)
 
       try {
-        const clip = await (sharp(screenshot as Buffer)
+        const clip = await (sharp(image_data as Buffer)
           .rotate() // keep consistent with metadata
           .extract({
             left,
@@ -101,9 +92,9 @@ async function main() {
         }).toFormat('png')).toBuffer()
         ocrRecords.push({
           rect: a.rect,
-          annotationId: id,
-          screenshot: clip,
-          textContent: a.textContent
+          screenshot_id: id,
+          image_data: clip,
+          text: a.textContent
         })
       } catch (e) {
         console.error('wtf (sharp?)', e)
@@ -113,20 +104,15 @@ async function main() {
 
   console.log('this many ocr records to write', ocrRecords.length)
   if (ocrRecords.length > 0) {
-    const { textContent, annotationId } = ocrRecords[0]
+    const { text, screenshot_id } = ocrRecords[0]
     console.log('sample ocr..', {
-      text: textContent,
-      annotationId,
+      text,
+      screenshot_id,
     })
   }
 
   await prisma.ocr.createMany({
-    data: ocrRecords.map(r => ({
-      screenshot: r.screenshot,
-      text: r.textContent,
-      date: new Date().toISOString(),
-      annotationId: r.annotationId
-    }))
+    data: ocrRecords.map(ocr => ({ ...ocr, date: new Date().toString() }))
   })
 }
 

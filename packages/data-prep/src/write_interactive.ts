@@ -6,21 +6,12 @@
 import { PrismaClient } from '@prisma/client'
 import sharp from 'sharp'
 import { getRasterSize } from './utils/raster'
-
-// the type of the annotation jsonb
-type Payload = {
-  annotations?: Array<{
-    id: string
-    rect: { x: number; y: number; width: number; height: number }
-    label: string
-    textContent?: string
-  }>
-}
+import { Annotation } from 'ui-labelling-shared'
 
 type InteractiveRecord = {
-  screenshot: Buffer
-  annotationId: number
-  trueId: string
+  image_data: Buffer
+  screenshot_id: number
+  true_id: string
 }
 
 function getClamp(min: number, max: number) {
@@ -37,55 +28,55 @@ async function main() {
 
   // find annotations that are not linked to any existing interactive record
   // this uses separate queries unoptimally but that is fine for now
-  const convertedAnnos = new Set(
+  const convertedScreens = new Set(
     (
       await prisma.interactive.findMany({
         where: {
-          annotationId: {
+          screenshot_id: {
             not: null,
           },
         },
       })
-    ).map((a) => a.annotationId),
+    ).map((a) => a.screenshot_id),
   ) as Set<number>
 
-  console.log('converted annos length', convertedAnnos.size)
-  const unconvertedAnnos = await prisma.annotation.findMany({
+  console.log('converted screens length', convertedScreens.size)
+  const unconvertedScreens = await prisma.screenshot.findMany({
     where: {
       id: {
-        notIn: Array.from(convertedAnnos),
+        notIn: Array.from(convertedScreens),
       },
       tag: 'interactive',
     },
   })
-  console.log('unconverted annos length', unconvertedAnnos.length)
+  console.log('unconverted screens length', unconvertedScreens.length)
 
   let interactiveRecords: InteractiveRecord[] = []
 
   let badAnnotationIds = []
-  for (const anno of unconvertedAnnos) {
-    const payload = anno.payload as Payload
-    if (!payload.annotations || !anno.screenshot) {
-      console.log('skipping annotation because empty payload: ', anno.id)
+  for (const screen of unconvertedScreens) {
+    const annotations = screen.annotations as Annotation[]
+    if (!Array.isArray(annotations) || !screen.image_data) {
+      console.log('skipping screen because empty data: ', screen.id)
       continue
     }
-    const actualSize = getRasterSize(anno.screenshot)
+    const actualSize = getRasterSize(screen.image_data)
     if (actualSize === null) {
-      console.warn('Could not get the raster size for this anno', anno.id)
+      console.warn('Could not get the raster size for this screen', screen.id)
       continue
     }
 
-    for (const a of payload.annotations) {
+    for (const a of annotations) {
       if (a.label !== 'interactive' || typeof a.id !== 'string' || a.id.length !== 36) {
         if (a.id && a.label === 'interactive') {
           badAnnotationIds.push(a.id)
         }
         continue
       }
-      const { screenshot, viewWidth, viewHeight, id } = anno
+      const { image_data, view_width, view_height, id } = screen
 
-      const sx = actualSize.width / viewWidth
-      const sy = actualSize.height / viewHeight
+      const sx = actualSize.width / view_width
+      const sy = actualSize.height / view_height
 
       const scaledRoundedRect = {
         x: Math.round(a.rect.x * sx),
@@ -106,7 +97,7 @@ async function main() {
       )(scaledRoundedRect.height)
 
       try {
-        const clip = await sharp(screenshot as Buffer)
+        const clip = await sharp(image_data as Buffer)
           .rotate() // keep consistent with metadata
           .extract({
             left,
@@ -117,9 +108,9 @@ async function main() {
           .toFormat('png')
           .toBuffer()
         interactiveRecords.push({
-          annotationId: id,
-          screenshot: clip,
-          trueId: a.id
+          screenshot_id: id,
+          image_data: clip,
+          true_id: a.id
         })
       } catch (e) {
         console.error('wtf (sharp?)', e)
@@ -132,19 +123,15 @@ async function main() {
   console.log('sample hunk', badAnnotationIds[0])
 
   if (interactiveRecords.length > 0) {
-    const { trueId, annotationId } = interactiveRecords[0]
+    const { true_id, screenshot_id } = interactiveRecords[0]
     console.log('sample interactive..', {
-      trueId,
-      annotationId,
+      true_id,
+      screenshot_id,
     })
   }
 
   await prisma.interactive.createMany({
-    data: interactiveRecords.map((r) => ({
-      screenshot: r.screenshot,
-      true_id: r.trueId,
-      annotationId: r.annotationId,
-    })),
+    data: interactiveRecords
   })
 }
 
