@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Rect } from '../../util/generator'
 import { fetchCrops } from '../../util/api'
 import { getDataUrl } from '../../util/b64'
+import { Rect } from 'ui-labelling-shared'
 
 export const DynamicPlaceholderImg = ({
   rect,

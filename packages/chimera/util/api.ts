@@ -1,5 +1,4 @@
-import { Annotations } from "ui-labelling-shared"
-import { Rect } from "./generator"
+import { Screenshot, Rect } from "ui-labelling-shared"
 
 export type TightenResponse = {
   id: string
@@ -43,14 +42,14 @@ export const fetchCrops = async ({
   }
 }
 
-export const fetchAnnotationById = async (id: number): Promise<Annotations | null> => {
+export const fetchScreenshotById = async (id: number): Promise<Screenshot | null> => {
   try {
     const resp = await fetch(`/api/annotation/${id}`)
     if (!resp.ok) {
       console.error('could not fetch annotation with id ', id)
       return null
     }
-    const { data } = (await resp.json()) as { data: Annotations }
+    const { data } = (await resp.json()) as { data: Screenshot }
     return data
   } catch(e) {
     console.error(e)

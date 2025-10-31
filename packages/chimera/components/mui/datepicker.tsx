@@ -1,5 +1,4 @@
 import * as React from "react"
-import TextField from "@mui/material/TextField"
 import Box from "@mui/material/Box"
 import { Dayjs } from "dayjs"
 import dayjs from "dayjs"
@@ -10,6 +9,7 @@ import { MobileDatePicker } from "@mui/x-date-pickers/MobileDatePicker"
 import { StaticDatePicker } from "@mui/x-date-pickers/StaticDatePicker"
 import { randInt, randomPick } from "../../util/random"
 import { DATE_PICKER_LABELS } from "../../util/faker/date"
+import { Theme } from "@mui/material"
 
 type MuiDatePickerProps = {
   label: string
@@ -65,7 +65,7 @@ const MuiDatePicker = () => {
       // disabled state
       '&.Mui-disabled': {
         backgroundColor: 'action.disabledBackground',
-        '& input': { WebkitTextFillColor: (theme) => theme.palette.text.disabled },
+        '& input': { WebkitTextFillColor: (theme: Theme) => theme.palette.text.disabled },
       },
     },
   }

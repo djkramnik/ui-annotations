@@ -1,9 +1,8 @@
 import { SxProps, Theme } from '@mui/material/styles'
-import { ServiceManualLabel } from 'ui-labelling-shared'
+import { Rect, ServiceManualLabel } from 'ui-labelling-shared'
 import {
   estimateFontAndTrackingBox,
   getHeaderLevel,
-  Rect,
 } from '../../util/generator'
 import { Avatar, ListItem, Typography } from '@mui/material'
 import { MultiLine } from '../generator/multi-line'

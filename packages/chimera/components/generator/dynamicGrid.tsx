@@ -1,6 +1,6 @@
 import {
-  AnnotationPayload,
-  Annotations,
+  Annotation,
+  Rect,
   ServiceManualLabel,
 } from 'ui-labelling-shared'
 import {
@@ -8,11 +8,10 @@ import {
   estimateRegionPad,
   getAbsoluteXPositioning,
   getRegionLayoutDirection,
-  Rect,
+  PreviewSchema,
   roughlyCenteredInRegion,
   withinRect,
 } from '../../util/generator'
-import { PreviewSchema } from '../../util/localstorage'
 import { Flex } from './flex'
 import { useMemo } from 'react'
 import { List, SxProps, Theme, useTheme } from '@mui/material'
@@ -64,9 +63,9 @@ function buildGrid({
   gridTemplateRows: string
   items: GridItem[]
 } {
-  const { layout, contentBounds: cb, annotations } = input
-  const pageW = Math.max(1, annotations.viewWidth)
-  const pageH = Math.max(1, annotations.viewHeight)
+  const { layout, contentBounds: cb, screenshot } = input
+  const pageW = Math.max(1, screenshot.view_width)
+  const pageH = Math.max(1, screenshot.view_height)
 
   const containerW = Math.round(pageW * scale)
   const epsX = epsPct * pageW
@@ -149,11 +148,11 @@ export function GridRenderer({
   ComponentRenderer,
   maxWidth = 1400
 }: GridRendererProps) {
-  const gridWidth = Math.min(maxWidth, data.annotations.viewWidth)
+  const gridWidth = Math.min(maxWidth, data.screenshot.view_width)
   const { gridTemplateColumns, gridTemplateRows, items, container }
     = buildGrid({
         input: data,
-        scale: gridWidth / data.annotations.viewWidth
+        scale: gridWidth / data.screenshot.view_width
       })
 
   console.log('scale', container.scale)
@@ -207,28 +206,28 @@ function DynamicRegion({
   const region = data.layout[id]
 
   const page = {
-    width: data.annotations.viewWidth,
-    height: data.annotations.viewHeight,
+    width: data.screenshot.view_width,
+    height: data.screenshot.view_height,
   }
   if (!region) {
     console.error('cannot find region definition from id', id)
     return null
   }
-  const componentCount = data.annotations.payload.annotations.filter((a) => {
+  const componentCount = data.screenshot.annotations.filter((a) => {
     return region.components.includes(a.id)
   }).length
 
   const onlyChild =
-    componentCount !== 1 ? null : data.annotations.payload.annotations[0].label
+    componentCount !== 1 ? null : data.screenshot.annotations[0].label
 
   const flow: 'row' | 'col' = useMemo(() => {
-    const components = data.annotations.payload.annotations.filter((a) => {
+    const components = data.screenshot.annotations.filter((a) => {
       return region.components.includes(a.id)
     })
     return getRegionLayoutDirection(components.map((c) => c.rect))
   }, [data])
 
-  const hasPageContext = data.annotations.payload.annotations.some(
+  const hasPageContext = data.screenshot.annotations.some(
     (a) =>
       region.components.includes(a.id) &&
       a.label === ServiceManualLabel.page_context,
@@ -237,7 +236,7 @@ function DynamicRegion({
   const content: React.ReactNode = useMemo(() => {
     const estimatedPadding = estimateRegionPad(id, data)
     if (onlyChild === ServiceManualLabel.heading) {
-      const onlyHeader = data.annotations.payload.annotations.find((a) => {
+      const onlyHeader = data.screenshot.annotations.find((a) => {
         return (
           region.components.includes(a.id) &&
           a.label === ServiceManualLabel.heading
@@ -303,7 +302,7 @@ function getRegularContent({
   flow: 'row' | 'col'
   estimatedPadding: { top: number; left: number }
 } & Pick<GridRendererProps, 'ComponentRenderer' | 'data'>) {
-  const components = data.annotations.payload.annotations
+  const components = data.screenshot.annotations
     .filter((a) => {
       return region.components.includes(a.id)
     })
@@ -518,7 +517,7 @@ function getSolitaryHeader({
   region: Rect
   id: number
   scale: number
-  header: AnnotationPayload['annotations'][0]
+  header: Annotation
   page: { width: number; height: number }
   ComponentRenderer: GridRendererProps['ComponentRenderer']
   estimatedPadding: { top: number; left: number }

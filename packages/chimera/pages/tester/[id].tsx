@@ -1,7 +1,7 @@
 import { Box, Container } from '@mui/material'
 import { useRouter } from 'next/router'
 import { CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
-import { AnnotationPayload, Annotations, ServiceManualLabel, serviceManualLabel } from 'ui-labelling-shared'
+import { Annotation, Screenshot, ServiceManualLabel, serviceManualLabel } from 'ui-labelling-shared'
 import ScreenshotAnnotator from '../../components/generator/screenshot-annotated'
 import { xyCut } from 'infer-layout'
 import { mergeColsFlat, regionsToAnnotations } from '../../util/generator'
@@ -18,10 +18,10 @@ const ignoreLabels: ServiceManualLabel[] = [
 // a partial clone of the frontend annotator...
 const TextHeuristics = () => {
   const { query, isReady } = useRouter()
-  const originalAnnotations = useRef<AnnotationPayload['annotations'] | null>(
+  const originalAnnotations = useRef<Annotation[] | null>(
     null,
   )
-  const [annotations, setAnnotations] = useState<Annotations | null>(null)
+  const [screenshot, setScreenshot] = useState<Screenshot | null>(null)
   const [layout, setLayout] = useState<string>('')
 
   const labelToColor = useCallback((label: string) => {
@@ -63,13 +63,12 @@ const TextHeuristics = () => {
     })
       .then((r) => r.json())
       .then((resp: TightenResponse[]) => {
-        setAnnotations(annotations => {
-          if (!annotations) {
+        setScreenshot(screenshot => {
+          if (!screenshot) {
             return null
           }
           return {
-            ...annotations,
-            payload: {
+            ...screenshot,
               annotations: originalAnnotations.current!.map(a => {
                 const entry = resp.find(r => r.id === a.id)
                 if (!entry) {
@@ -81,24 +80,23 @@ const TextHeuristics = () => {
                   rect: entry.rect,
                 }
               })
-            }
           }
         })
       })
       .catch(console.error)
 
-  }, [query, setAnnotations])
+  }, [query, setScreenshot])
 
   const handleInferLayout = useCallback(() => {
-    if (!annotations) {
+    if (!screenshot) {
       return
     }
     const page = {
-      width: annotations.viewWidth,
-      height: annotations.viewHeight
+      width: screenshot.view_width,
+      height: screenshot.view_height
     }
     // we assume that the layout has a helper label, "text_unit", the height of a single line of body text, to serve as the basis for a min gap threshold
-    const textUnitElem = annotations.payload.annotations.find(
+    const textUnitElem = screenshot.annotations.find(
       a => a.label === ServiceManualLabel.text_unit)
 
     if (!textUnitElem) {
@@ -107,10 +105,10 @@ const TextHeuristics = () => {
     }
     const unitHeight = textUnitElem.rect.height // volatile brew
 
-    const excludeElems = (a: AnnotationPayload['annotations'][0]) => {
+    const excludeElems = (a: Annotation) => {
       return !ignoreLabels.includes(a.label as ServiceManualLabel)
     }
-    const components = annotations.payload.annotations
+    const components = screenshot.annotations
       .filter(excludeElems)
       .map(a => ({
         type: a.label,
@@ -146,37 +144,30 @@ const TextHeuristics = () => {
 
     const newAnnotations = regionsToAnnotations(processedRegions)
 
-    setAnnotations(
-      annotations => ({
-        ...annotations!,
-        payload: {
-          annotations: newAnnotations
-        }
+    setScreenshot(
+      screenshot=> ({
+        ...screenshot!,
+        annotations: newAnnotations
       })
     )
-  }, [annotations, setAnnotations, setLayout])
+  }, [screenshot, setScreenshot, setLayout])
 
   useEffect(() => {
     if (!isReady) return
     fetch(`/api/annotation/${query.id}`)
       .then((r) => r.json())
-      .then(({ data }: { data: Annotations }) => {
+      .then(({ data }: { data: Screenshot }) => {
         if (data.tag !== 'service_manual') {
           window.alert('not a service manual screen')
           return
         }
-        setAnnotations({
-          ...data,
-          payload: {
-            annotations: data.payload.annotations
-          }
-        })
-        originalAnnotations.current = data.payload.annotations
+        setScreenshot(data)
+        originalAnnotations.current = data.annotations
       })
       .catch(console.error)
   }, [isReady, query.id])
 
-  if (!annotations) {
+  if (!screenshot) {
     return (
       <main id="annotation-view">
         <Container>
@@ -186,13 +177,13 @@ const TextHeuristics = () => {
   }
 
   const {
-    payload,
-    screenshot,
-    viewWidth,
-    viewHeight,
-  } = annotations
+    annotations,
+    image_data,
+    view_width,
+    view_height,
+  } = screenshot
 
-  const screenshotDataUrl = `data:image/png;base64,${Buffer.from(screenshot).toString('base64')}`
+  const screenshotDataUrl = `data:image/png;base64,${Buffer.from(image_data).toString('base64')}`
   return (
     <main id="annotation-view">
       <Container maxWidth="xl">
@@ -214,14 +205,10 @@ const TextHeuristics = () => {
               labelToOverride={labelToOverride}
               labelToColor={labelToColor}
               screenshot={screenshotDataUrl}
-              annotations={
-                payload.annotations
-              }
-              frame={{ width: viewWidth, height: viewHeight }}
+              annotations={annotations}
+              frame={{ width: view_width, height: view_height }}
             >
-
             </ScreenshotAnnotator>
-
           </div>
 
           {/* the control panel column */}

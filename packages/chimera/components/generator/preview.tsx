@@ -1,9 +1,9 @@
 import { ThemeProvider, CssBaseline } from "@mui/material"
-import { PreviewSchema } from "../../util/localstorage"
 import { GridRenderer } from "../../components/generator/dynamicGrid"
 import { DynamicMuiComponent } from "../../components/mui/service-manual-dynamic"
 import { randomMuiTheme } from "../../components/mui/theme"
 import { useMemo } from "react"
+import { PreviewSchema } from "../../util/generator"
 
 export const GeneratedPreview = ({
   preview,

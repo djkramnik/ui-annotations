@@ -515,9 +515,9 @@ export interface Screenshot {
   url: string
   annotations: Annotation[]
   image_data: ArrayBuffer
-  scrollY: number
-  viewHeight: number
-  viewWidth: number
+  scroll_y: number
+  view_height: number
+  view_width: number
   date: string
   id: number
   published: | 0 | 1

@@ -1,11 +1,18 @@
 import { LayoutTree, XyNode } from "infer-layout";
-import { AnnotationPayload } from "ui-labelling-shared";
-import { PreviewSchema } from "../localstorage";
+import { Annotation, Rect, Screenshot } from "ui-labelling-shared";
 
-type SingleAnnotation = AnnotationPayload['annotations'][0]
-export type Rect = SingleAnnotation['rect']
+export type PreviewSchema = {
+  screenshot: Screenshot
+  designPref: 'mui' | 'ant'
+  layout: Array<{
+    rect: Rect
+    components: string[]
+  }>
+  contentBounds: Rect
+}
+
 // just return a flattened array of annotations
-export const unpackLayoutTree = (layoutTree: LayoutTree): AnnotationPayload['annotations'] => {
+export const unpackLayoutTree = (layoutTree: LayoutTree): Annotation[] => {
   const {page, regions, snappedComponents} = layoutTree
 
   const denormalizedRegions = regions.map(r => {
@@ -16,7 +23,7 @@ export const unpackLayoutTree = (layoutTree: LayoutTree): AnnotationPayload['ann
     }
   })
 
-  const denormalizedSnapped = snappedComponents.map(c => componentToAnnotation(c, page.width, page.height))
+  const denormalizedSnapped = snappedComponents.map(c => componentToAnnotation(c))
   return denormalizedSnapped
     .concat(denormalizedRegions)
 }
@@ -33,7 +40,7 @@ export const regionsToAnnotations = (regions: Array<{
   })
 }
 
-function componentToAnnotation(component: LayoutTree['snappedComponents'][0], w: number, h: number): SingleAnnotation {
+function componentToAnnotation(component: LayoutTree['snappedComponents'][0]): Annotation {
   return {
     id: component.id,
     rect: bboxToRect(component.bbox),
@@ -50,8 +57,8 @@ export function bboxToRect([x0, y0, x1, y1]: [number, number, number, number]): 
   }
 }
 
-export function xyNodeToAnnotations(node: XyNode, label?: string): AnnotationPayload['annotations'] {
-  let annotations: AnnotationPayload['annotations'] = []
+export function xyNodeToAnnotations(node: XyNode, label?: string): Annotation[] {
+  let annotations: Annotation[] = []
 
   ;(function recurse(node: XyNode) {
     // push current node on to stack
@@ -247,7 +254,7 @@ export function estimateRegionPad(
   }
 
   const { minLeft, minTop }
-    = schema.annotations.payload.annotations
+    = schema.screenshot.annotations
       .reduce((acc, a) => {
         if (!cids.includes(a.id)) {
           return acc
@@ -383,7 +390,7 @@ export function roughlyCenteredInRegion({
 
 export const assignAnnotations = (
   regions: Rect[],
-  annotations: AnnotationPayload['annotations']
+  annotations: Annotation[]
 ): Array<{
   idx: number // index of the array passed in as the first parameter
   components: string[]

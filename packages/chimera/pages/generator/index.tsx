@@ -3,20 +3,19 @@
 // generate data for the preview (which then gets saved in local storage)
 
 import { Box, Container } from '@mui/material'
-import { FormEvent, useCallback, useEffect, useState } from 'react'
-import { Annotations, ServiceManualLabel } from 'ui-labelling-shared'
-import { fetchAnnotationById, fetchTighterAnnotations } from '../../util/api'
-import { PreviewAnnotation } from '../../components/generator/preview-annotation'
+import { FormEvent, useCallback, useState } from 'react'
+import { Screenshot, ServiceManualLabel } from 'ui-labelling-shared'
+import { fetchScreenshotById, fetchTighterAnnotations } from '../../util/api'
+import { PreviewScreenshot } from '../../components/generator/preview-screenshot'
 import { Flex } from '../../components/generator/flex'
 import { xyCut } from 'infer-layout'
-import { assignAnnotations, bboxToRect, mergeColsFlat } from '../../util/generator'
-import { PreviewSchema, readPreviewSchema, writePreviewSchema } from '../../util/localstorage'
+import { assignAnnotations, bboxToRect, mergeColsFlat, PreviewSchema } from '../../util/generator'
 import { GeneratedPreview } from '../../components/generator/preview'
 
 const GenerateFromExample = () => {
   const [annoId, setAnnoId] = useState<string>('2460')
   const [queryId, setQueryId] = useState<number | null>(null)
-  const [annotations, setAnnotations] = useState<Annotations | null>(null)
+  const [screenshot, setScreenshot] = useState<Screenshot | null>(null)
   const [preview, setPreview] = useState<PreviewSchema | null>(null)
   const [previewIter, setPreviewIter] = useState<number>(0)
 
@@ -30,16 +29,16 @@ const GenerateFromExample = () => {
       if (Number.isNaN(id)) {
         return
       }
-      const annotations = await fetchAnnotationById(id)
-      if (!annotations) {
-        window.alert('fetch annotations failed')
+      const screenshot = await fetchScreenshotById(id)
+      if (!screenshot) {
+        window.alert('fetch screenshot failed')
         return
       }
-      setAnnotations(annotations)
+      setScreenshot(screenshot)
       setQueryId(id)
-      console.log('annotations', annotations)
+      console.log('screenshot', screenshot)
     },
-    [annoId, setAnnotations, setQueryId],
+    [annoId, setScreenshot, setQueryId],
   )
 
   const generate = useCallback((preview: PreviewSchema) => {
@@ -70,12 +69,12 @@ const GenerateFromExample = () => {
         </form>
       </Box>
       <hr />
-      {annotations && !Number.isNaN(Number(String(queryId))) ? (
+      {screenshot && !Number.isNaN(Number(String(queryId))) ? (
         <>
           <h3>Generate Synthetic Copy of Annotation?</h3>
           <Flex gap="24px">
-            <PreviewAnnotation annotations={annotations} />
-            <GenSyntheticForm annotations={annotations} id={queryId as number}
+            <PreviewScreenshot screenshot={screenshot} />
+            <GenSyntheticForm screenshot={screenshot} id={queryId as number}
               onSubmit={generate}
             />
           </Flex>
@@ -111,11 +110,11 @@ const ignoreForGen: ServiceManualLabel[] = [
 ]
 
 function GenSyntheticForm({
-  annotations,
+  screenshot,
   id,
   onSubmit
 }: {
-  annotations: Annotations
+  screenshot: Screenshot
   id: number
   onSubmit: (schema: PreviewSchema) => any
 }) {
@@ -130,7 +129,7 @@ function GenSyntheticForm({
     async (event: FormEvent) => {
       event.preventDefault()
 
-      const textUnitElem = annotations.payload.annotations.find(
+      const textUnitElem = screenshot.annotations.find(
         a => a.label === ServiceManualLabel.text_unit)
 
       if (!textUnitElem) {
@@ -138,11 +137,11 @@ function GenSyntheticForm({
         return
       }
 
-      const processedAnnotations = tighten
-        ? (await getTighter(annotations, id))
-        : annotations
+      const processedScreenshot = tighten
+        ? (await getTighter(screenshot, id))
+        : screenshot
 
-      const layoutComponents = processedAnnotations.payload.annotations
+      const layoutComponents = processedScreenshot.annotations
         .filter(a => !ignoreForLayout.includes(a.label as ServiceManualLabel))
         .map(a => ({
           type: a.label,
@@ -158,8 +157,8 @@ function GenSyntheticForm({
       const root = xyCut({
         components: layoutComponents,
         page: {
-          width: annotations.viewWidth,
-          height: annotations.viewHeight,
+          width: processedScreenshot.view_width,
+          height: processedScreenshot.view_height,
         },
         unitHeight: textUnitElem.rect.height,
         opts: {
@@ -183,7 +182,7 @@ function GenSyntheticForm({
       // calculating layout
       const assignments = assignAnnotations(
         regionBoxes.map(({ region }) => bboxToRect(region)),
-        processedAnnotations.payload.annotations.filter(
+        processedScreenshot.annotations.filter(
           a => !ignoreForGen.includes(a.label as ServiceManualLabel)
         )
       )
@@ -204,14 +203,12 @@ function GenSyntheticForm({
       })
 
       onSubmit({
-        annotations: {
-          ...annotations,
-          payload: {
-            annotations: processedAnnotations.payload.annotations
-              .filter(a => {
-                return !ignoreForGen.includes(a.label as ServiceManualLabel)
-              })
-          }
+        screenshot: {
+          ...screenshot,
+          annotations: processedScreenshot.annotations
+            .filter(a => {
+              return !ignoreForGen.includes(a.label as ServiceManualLabel)
+            }),
         },
         layout,
         designPref,
@@ -219,7 +216,7 @@ function GenSyntheticForm({
       })
       setSchemaConfirmed(true)
     },
-    [designPref, tighten, annotations, setSchemaConfirmed, id],
+    [designPref, tighten, screenshot, setSchemaConfirmed, id],
   )
 
   return (
@@ -284,15 +281,14 @@ function GenSyntheticForm({
   )
 }
 
-async function getTighter(annotations: Annotations, id: number): Promise<Annotations> {
+async function getTighter(screenshot: Screenshot, id: number): Promise<Screenshot> {
   const resp = await fetchTighterAnnotations(id)
   if (resp === null) {
     throw Error('failed to get tighter')
   }
   return {
-    ...annotations,
-    payload: {
-      annotations: annotations.payload.annotations.map(a => {
+    ...screenshot,
+    annotations: screenshot.annotations.map(a => {
         const matching = resp.find(r => r.id === a.id)
         if (!matching) {
           return a
@@ -302,6 +298,5 @@ async function getTighter(annotations: Annotations, id: number): Promise<Annotat
           rect: matching.rect
         }
       })
-    }
   }
 }
