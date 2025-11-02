@@ -16,6 +16,8 @@ import {
   serviceManualLabel,
   postProcessAdjacent,
   postProcessNested,
+  Screenshot,
+  Annotation,
 } from 'ui-labelling-shared'
 import ScreenshotAnnotator from '../../components/screenshot-annotated' // ← NEW
 import { SimpleDate } from '../../components/date'
@@ -60,7 +62,7 @@ const NewAnnotationForm = ({
       updateOriginalAnnotations: boolean
     }>,
   ) => void
-  setAnnotations: Dispatch<SetStateAction<Annotations>>
+  setAnnotations: Dispatch<SetStateAction<Screenshot>>
   pageState: {
     mode: PageMode
     toggleState: ToggleState | null
@@ -90,16 +92,14 @@ const NewAnnotationForm = ({
           const select = e.currentTarget.elements.namedItem(
             'label',
           ) as HTMLSelectElement
-          setAnnotations((annotations) => ({
-            ...annotations,
-            payload: {
-              annotations: annotations.payload.annotations.concat({
+          setAnnotations((screenshot) => ({
+            ...screenshot,
+            annotations: screenshot.annotations.concat({
                 id: crypto.randomUUID(),
                 label: select.value,
                 rect: pageState.drawCandidate,
                 ...(currText ? { textContent: currText } : {}),
-              }),
-            },
+              })
           }))
           resetPageState()
         }}
@@ -140,7 +140,7 @@ const NewAnnotationForm = ({
 }
 
 export default function AnnotationPage() {
-  const originalAnnotations = useRef<AnnotationPayload['annotations'] | null>(
+  const originalAnnotations = useRef<Annotation[] | null>(
     null,
   )
   const [changed, setChanged] = useState<boolean>(false)
@@ -174,7 +174,7 @@ export default function AnnotationPage() {
   }, [push, query])
 
   const [updatedScreen, setUpdatedScreen] = useState<string | null>(null)
-  const [annotations, setAnnotations] = useState<Annotations | null>(null)
+  const [annotations, setAnnotations] = useState<Screenshot | null>(null)
   // this is just some hack to force a reset of the adjustment value
   const [adjustReset, setAdjustReset] = useState<boolean>(false)
 
@@ -218,7 +218,7 @@ export default function AnnotationPage() {
         setChanged(false)
       }
       if (updateOriginalAnnotations) {
-        originalAnnotations.current = annotations.payload.annotations
+        originalAnnotations.current = annotations.annotations
       }
     },
     [setPageState, setChanged, annotations],
@@ -325,9 +325,7 @@ export default function AnnotationPage() {
     }
     setDisabled(true)
     try {
-      updateAnnotation(Number(String(query.id)), {
-        annotations: annotations.payload.annotations,
-      }).then(() =>
+      updateAnnotation(Number(String(query.id)), annotations.annotations).then(() =>
         resetPageState({
           restoreNoChange: true,
           updateOriginalAnnotations: true,
@@ -419,7 +417,7 @@ export default function AnnotationPage() {
 
         state.currToggleIndex =
           proposedPrev < 0
-            ? annotations.payload.annotations.length - 1
+            ? annotations.annotations.length - 1
             : proposedPrev
         return { ...state }
       })
@@ -438,7 +436,7 @@ export default function AnnotationPage() {
           return state
         }
         state.currToggleIndex =
-          proposedNext > annotations.payload.annotations.length - 1
+          proposedNext > annotations.annotations.length - 1
             ? 0
             : proposedNext
         return { ...state }
@@ -454,11 +452,10 @@ export default function AnnotationPage() {
         return
       }
       setAnnotations((annotations) => {
-        const curr = annotations.payload.annotations[index]
+        const curr = annotations.annotations[index]
         return {
           ...annotations,
-          payload: {
-            annotations: annotations.payload.annotations.map((a) => {
+          annotations: annotations.annotations.map((a) => {
               if (curr.id === a.id) {
                 return adjustAnnotation(
                   {
@@ -471,7 +468,6 @@ export default function AnnotationPage() {
               }
               return a
             }),
-          },
         }
       })
       setAdjustReset((reset) => !reset)
@@ -485,17 +481,15 @@ export default function AnnotationPage() {
       // if (!proceed) {
       //   return
       // }
-      const len = annotations.payload.annotations.length
+      const len = annotations.annotations.length
 
       setAnnotations((annotations) => {
-        const curr = annotations.payload.annotations[index]
+        const curr = annotations.annotations[index]
         return {
           ...annotations,
-          payload: {
-            annotations: annotations.payload.annotations.filter((a) => {
-              return a !== curr
-            }),
-          },
+          annotations: annotations.annotations.filter((a) => {
+            return a !== curr
+          }),
         }
       })
       // this should be fine??
@@ -535,8 +529,8 @@ export default function AnnotationPage() {
   const processAnnotations = useCallback(
     async (
       task: (
-        a: AnnotationPayload['annotations'],
-      ) => AsyncGenerator<number | AnnotationPayload['annotations']>,
+        a: Annotation[],
+      ) => AsyncGenerator<number | Annotation[]>,
     ) => {
       if (pageState.mode !== 'initial') {
         console.warn('process annotations noop: page mode not in initial state')
@@ -545,7 +539,7 @@ export default function AnnotationPage() {
       setDisabled(true)
       setProcessingWork(0)
       try {
-        for await (const update of task(annotations.payload.annotations)) {
+        for await (const update of task(annotations.annotations)) {
           if (typeof update === 'number') {
             setProcessingWork(update)
             await (() => {
@@ -555,10 +549,7 @@ export default function AnnotationPage() {
             setAnnotations((annotations) => {
               return {
                 ...annotations,
-                payload: {
-                  ...annotations.payload,
-                  annotations: update,
-                },
+                annotations: update,
               }
             })
           }
@@ -586,7 +577,7 @@ export default function AnnotationPage() {
   // when you click on a specific annotation, go immediately into the toggle mode at the correct index for that annotation
   const handleAnnotationClick = useCallback(
     (id: string) => {
-      const index = annotations.payload.annotations.findIndex(
+      const index = annotations.annotations.findIndex(
         (a) => a.id === id,
       )
       if (index === -1) {
@@ -676,9 +667,9 @@ export default function AnnotationPage() {
     if (!isReady) return
     fetch(`/api/screenshot/${query.id}`)
       .then((r) => r.json())
-      .then(({ data }: { data: Annotations }) => {
+      .then(({ data }: { data: Screenshot }) => {
         setAnnotations(data)
-        originalAnnotations.current = data.payload.annotations
+        originalAnnotations.current = data.annotations
       })
       .catch(console.error)
   }, [isReady, query.id])
@@ -691,7 +682,7 @@ export default function AnnotationPage() {
     if (!annotations || !originalAnnotations.current) {
       return
     }
-    const newPayload = annotations.payload.annotations
+    const newPayload = annotations.annotations
     setChanged(
       newPayload.length !== originalAnnotations.current.length ||
         newPayload.some((item, index) => {
@@ -722,17 +713,17 @@ export default function AnnotationPage() {
   const {
     url,
     date,
-    scrollY,
-    payload,
-    screenshot,
-    viewWidth,
-    viewHeight,
+    scroll_y,
+    annotations: payload,
+    image_data,
+    view_width,
+    view_height,
     published,
   } = annotations
 
   const screenshotDataUrl =
     updatedScreen ??
-    `data:image/png;base64,${Buffer.from(screenshot).toString('base64')}`
+    `data:image/png;base64,${Buffer.from(image_data).toString('base64')}`
 
   return (
     <main id="annotation-view">
@@ -756,7 +747,7 @@ export default function AnnotationPage() {
             </p>
             <p>Scroll: {scrollY}</p>
             <p>
-              Window: {viewWidth}, {viewHeight}
+              Window: {view_width}, {view_height}
             </p>
           </Flex>
           <Flex aic gap="12px">
@@ -775,7 +766,7 @@ export default function AnnotationPage() {
           <h3>Mode: {pageState.mode}</h3>
           <strong>
             {changed
-              ? `THERE BE UNSAVED CHANGES og:${originalAnnotations.current.length} vs. new:${annotations.payload.annotations.length}`
+              ? `THERE BE UNSAVED CHANGES og:${originalAnnotations.current.length} vs. new:${annotations.annotations.length}`
               : `NO CHANGES! og:${originalAnnotations.current.length}`}
           </strong>
         </Flex>
@@ -807,28 +798,28 @@ export default function AnnotationPage() {
               }}
               annotations={
                 pageState.mode !== 'toggle'
-                  ? payload.annotations
+                  ? payload
                   : [
                       adjustAnnotation(
-                        payload.annotations[pageState.currToggleIndex ?? 0],
+                        payload[pageState.currToggleIndex ?? 0],
                         adjustment,
                       ),
                     ]
               }
-              frame={{ width: viewWidth, height: viewHeight }}
+              frame={{ width: view_width, height: view_height }}
             >
               {pageState.mode === 'draw' ? (
                 <DrawSurface
                   handleCandidate={handleNewDrawCandidate}
-                  ogHeight={viewHeight}
-                  ogWidth={viewWidth}
+                  ogHeight={view_height}
+                  ogWidth={view_width}
                 />
               ) : null}
               {pageState.mode === 'occlude' ? (
                 <DrawSurface
                   handleCandidate={handleNewOccludeCandidate}
-                  ogHeight={viewHeight}
-                  ogWidth={viewWidth}
+                  ogHeight={view_height}
+                  ogWidth={view_width}
                 />
               ) : null}
             </ScreenshotAnnotator>
@@ -884,7 +875,7 @@ export default function AnnotationPage() {
               <AnnotationToggler
                 tag={query.tag ? String(query.tag) : undefined}
                 currIndex={pageState.currToggleIndex}
-                annotations={payload.annotations}
+                annotations={payload}
                 handleUpdate={handleAnnotationUpdate}
                 handleRemove={handleRemoveAnnotation}
                 handlePrev={() => handlePrev(pageState.currToggleIndex - 1)}
