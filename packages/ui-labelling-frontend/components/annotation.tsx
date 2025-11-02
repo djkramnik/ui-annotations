@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Flex } from "./flex";
 import { useLabels } from "../hooks/labels";
-import { AnnotationPayload } from "ui-labelling-shared";
+import { Annotation } from "ui-labelling-shared";
 
 export const AnnotationToggler = ({
   currIndex,
@@ -13,7 +13,7 @@ export const AnnotationToggler = ({
   tag
 }: {
   currIndex: number
-  annotations: AnnotationPayload['annotations']
+  annotations: Annotation[]
   handleUpdate: (label: string, textContent: string | null, index: number) => void
   handleRemove: (index: number) => void
   handlePrev: () => void
@@ -75,7 +75,7 @@ export const SelectedAnnotation = (
     tag,
   }: {
     index: number
-    annotation: AnnotationPayload['annotations'][0]
+    annotation: Annotation
     handleUpdate: (label: string, textContent: string | null, index: number) => void
     handleRemove: (index: number) => void
     children?: React.ReactNode

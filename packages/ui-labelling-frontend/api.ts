@@ -1,8 +1,7 @@
 import {
+  Annotation,
   AnnotationLabel,
-  AnnotationPayload,
-  Annotations,
-  annotationLabels
+  Screenshot
 } from "ui-labelling-shared"
 
 const jsonOrThrow = (r: Response) => {
@@ -138,7 +137,7 @@ export const getPublishedAnnotations = (tag?: string) => {
   )
 }
 
-export const getAnnotation = (id: number): Promise<{data: Annotations}> => {
+export const getAnnotation = (id: number): Promise<{data: Screenshot}> => {
   return (
     fetch(`/api/screenshot/${id}`)
       .then(jsonOrThrow)
@@ -154,7 +153,7 @@ export const deleteAnnotation = (id: number) => {
 
 export const updateAnnotation = (
   id: number,
-  payload: Pick<AnnotationPayload, 'annotations'>
+  payload: Annotation[]
 ) => {
   return (
     fetch(`/api/screenshot/${id}`, {

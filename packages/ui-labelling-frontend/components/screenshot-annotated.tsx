@@ -1,9 +1,7 @@
 import React, { useRef, useState, useLayoutEffect, CSSProperties, useEffect } from 'react'
-import { annotationLabels, AnnotationPayload } from 'ui-labelling-shared'        // ← NEW
 import { Rect } from '../utils/type';
 import { useRouter } from 'next/router';
-
-type Annotation  = AnnotationPayload['annotations'][0]
+import { Annotation } from 'ui-labelling-shared';
 
 export default function ScreenshotAnnotator({
   screenshot,

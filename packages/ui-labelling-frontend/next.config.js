@@ -5,7 +5,7 @@ module.exports = {
     ignoreDuringBuilds: true,
   },
   typescript: {
-    ignoreBuildErrors: true
+    ignoreBuildErrors: false
   },
   async rewrites() {
     return [
