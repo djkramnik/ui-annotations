@@ -14,8 +14,6 @@ import { Flex } from '../../components/flex'
 import {
   annotationLabels,
   serviceManualLabel,
-  AnnotationPayload,
-  Annotations,
   postProcessAdjacent,
   postProcessNested,
 } from 'ui-labelling-shared'

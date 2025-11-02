@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import { Annotation, Rect } from "../utils/type"
+import { Annotation, Rect } from "ui-labelling-shared"
 
 export const useAdjustRect = (annotation: Annotation | null, currIndex: number, mutate: boolean) => {
   const [adjust, setAdjust] = useState<Rect>({ x: 0, y: 0, width: 0, height: 0})
