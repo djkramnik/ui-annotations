@@ -22,22 +22,22 @@ export default function InteractivePage() {
       .then(r => {
         const {
           data : {
-            viewHeight,
-            viewWidth,
-            payload,
-            screenshot
+            view_height,
+            view_width,
+            annotations,
+            image_data
           }
         } = r
-        setScreenshot(`data:image/png;base64,${Buffer.from(r.data.screenshot).toString('base64')}`)
-        const individualAnnotation = payload.annotations.find(
+        setScreenshot(`data:image/png;base64,${Buffer.from(r.data.image_data).toString('base64')}`)
+        const individualAnnotation = annotations.find(
           a => a.id === query.boxId
         )
         if (individualAnnotation) {
           setRect(
             getScaledRect({
               rect: individualAnnotation.rect,
-              ogWidth: viewWidth,
-              ogHeight: viewHeight,
+              ogWidth: view_width,
+              ogHeight: view_height,
               imgWidth: IMG_WIDTH
             })
           )
