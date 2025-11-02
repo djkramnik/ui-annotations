@@ -1,5 +1,4 @@
 import React, { useRef, useState, useLayoutEffect, CSSProperties, useEffect } from 'react'
-import { Rect } from '../utils/type';
 import { useRouter } from 'next/router';
 import { Annotation } from 'ui-labelling-shared';
 

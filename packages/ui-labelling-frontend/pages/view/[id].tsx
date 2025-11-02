@@ -18,6 +18,7 @@ import {
   postProcessNested,
   Screenshot,
   Annotation,
+  Rect,
 } from 'ui-labelling-shared'
 import ScreenshotAnnotator from '../../components/screenshot-annotated' // ← NEW
 import { SimpleDate } from '../../components/date'
@@ -29,7 +30,7 @@ import {
   updateAnnotation,
 } from '../../api'
 import { DrawSurface } from '../../components/draw-surface'
-import { Rect, PageMode, ToggleState, DangerState } from '../../utils/type'
+import { PageMode, ToggleState, DangerState } from '../../utils/type'
 import { Popup } from '../../components/popup'
 import { useLabels } from '../../hooks/labels'
 import { AnnotationToggler } from '../../components/annotation'

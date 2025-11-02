@@ -1,4 +1,4 @@
-import { Annotation, Rect } from "./type";
+import { Annotation, Rect } from "ui-labelling-shared"
 
 export const adjustAnnotation = (annotation: Annotation, adjust: Rect) => {
   return {
