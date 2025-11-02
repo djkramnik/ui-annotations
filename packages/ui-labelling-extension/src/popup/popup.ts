@@ -1,4 +1,4 @@
-import { AnnotationPayload, AnnotationRequest } from 'ui-labelling-shared'
+import { Annotation, ScreenshotRequest } from 'ui-labelling-shared'
 import {
   PredictResponse,
   ExtensionMessage,
@@ -257,12 +257,12 @@ function sendMessage(
   )
 }
 
-async function getExportPayload(): Promise<AnnotationRequest> {
+async function getExportPayload(): Promise<ScreenshotRequest> {
   const obj = await chrome.storage.local.get(['annotations', 'meta'])
 
   const annotations = JSON.parse(
     obj['annotations'],
-  ) as AnnotationPayload['annotations']
+  ) as Annotation[]
   const meta = obj['meta'] as {
     url: string
     date: string
@@ -284,7 +284,7 @@ async function getExportPayload(): Promise<AnnotationRequest> {
       rect: a.rect,
       textContent: a.textContent,
     })),
-    screenshot: base64Image,
+    image_data: base64Image,
     ...meta,
   }
 }
