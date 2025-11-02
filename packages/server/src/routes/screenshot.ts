@@ -3,9 +3,9 @@ import { prisma } from '../db'
 import { AnnotationLabel, ScreenshotRequest } from 'ui-labelling-shared'
 import { Prisma } from '@prisma/client'
 
-export const annotationRouter = Router()
+export const screenshotRouter = Router()
 
-annotationRouter.delete('/:id', async (req: Request, res: Response) => {
+screenshotRouter.delete('/:id', async (req: Request, res: Response) => {
   const annotationId = Number(req.params.id)
   try {
     await prisma.screenshot.delete({
@@ -21,7 +21,7 @@ annotationRouter.delete('/:id', async (req: Request, res: Response) => {
   }
 })
 
-annotationRouter.put('/publish/:id', async (req: Request, res: Response) => {
+screenshotRouter.put('/publish/:id', async (req: Request, res: Response) => {
   const id = Number(req.params.id)
   try {
     const row = await prisma.screenshot.update({
@@ -39,7 +39,7 @@ annotationRouter.put('/publish/:id', async (req: Request, res: Response) => {
   }
 })
 
-annotationRouter.put('/unpublish/:id', async (req: Request, res: Response) => {
+screenshotRouter.put('/unpublish/:id', async (req: Request, res: Response) => {
   const id = Number(req.params.id)
   try {
     const row = await prisma.screenshot.update({
@@ -57,7 +57,7 @@ annotationRouter.put('/unpublish/:id', async (req: Request, res: Response) => {
   }
 })
 
-annotationRouter.get('/analytics', async (_req: Request, res: Response) => {
+screenshotRouter.get('/analytics', async (_req: Request, res: Response) => {
   try {
     const tag = typeof _req.query.tag === 'string'
       ? _req.query.tag
@@ -77,11 +77,11 @@ annotationRouter.get('/analytics', async (_req: Request, res: Response) => {
       { is_published: boolean; label: string | null; count: bigint }[]
     >`
       SELECT
-        (COALESCE(a.published, 0) <> 0)        AS is_published,
-        ann->>'label'                          AS label,
-        COUNT(*)::bigint                       AS count
-      FROM annotations a,
-           jsonb_array_elements(COALESCE(a.payload->'annotations', '[]'::jsonb)) ann
+        (COALESCE(a.published, 0) <> 0) AS is_published,
+        ann->>'label'                   AS label,
+        COUNT(*)::bigint                AS count
+      FROM screenshot a,
+          jsonb_array_elements(COALESCE(a.annotations, '[]'::jsonb)) AS ann
       ${where}
       GROUP BY is_published, ann->>'label'
       ORDER BY is_published DESC, count DESC
@@ -93,7 +93,7 @@ annotationRouter.get('/analytics', async (_req: Request, res: Response) => {
       SELECT
         (COALESCE(published, 0) <> 0)          AS is_published,
         COUNT(DISTINCT url)::bigint            AS url_count
-      FROM annotations a
+      FROM screenshot a
       ${where}
       GROUP BY is_published
     `;
@@ -126,7 +126,7 @@ annotationRouter.get('/analytics', async (_req: Request, res: Response) => {
   }
 });
 
-annotationRouter.post('/', async (req: Request, res: Response) => {
+screenshotRouter.post('/', async (req: Request, res: Response) => {
   try {
     const {
       url,
@@ -161,7 +161,7 @@ annotationRouter.post('/', async (req: Request, res: Response) => {
 })
 
 // this updates only the annotations not the metadata
-annotationRouter.patch('/:id', async (req: Request, res: Response) => {
+screenshotRouter.patch('/:id', async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id)
     const {
@@ -183,7 +183,7 @@ annotationRouter.patch('/:id', async (req: Request, res: Response) => {
   }
 })
 
-annotationRouter.get('/', async (_req: Request, res: Response) => {
+screenshotRouter.get('/', async (_req: Request, res: Response) => {
   const published = _req.query.published as string
   const tag = (_req.query.tag as string | undefined)
   try {
@@ -215,7 +215,7 @@ annotationRouter.get('/', async (_req: Request, res: Response) => {
   }
 });
 
-annotationRouter.get('/:id', async (req: Request, res: Response) => {
+screenshotRouter.get('/:id', async (req: Request, res: Response) => {
   const id = Number(req.params.id)
 
   try {

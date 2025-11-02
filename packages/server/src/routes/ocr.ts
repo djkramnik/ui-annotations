@@ -17,7 +17,7 @@ ocrRouter.get('/:id', async (req: Request, res: Response) => {
       }
     })
     res.status(200).send({
-      screenshot: Array.from(result.screenshot),
+      screenshot: Array.from(result.image_data),
       text: result.text
     })
   } catch(e) {

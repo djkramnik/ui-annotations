@@ -676,7 +676,7 @@ export default function AnnotationPage() {
 
   useEffect(() => {
     if (!isReady) return
-    fetch(`/api/annotation/${query.id}`)
+    fetch(`/api/screenshot/${query.id}`)
       .then((r) => r.json())
       .then(({ data }: { data: Annotations }) => {
         setAnnotations(data)

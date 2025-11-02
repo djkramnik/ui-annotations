@@ -61,7 +61,7 @@ export const waitForEnter = (): Promise<void> => {
 }
 
 export const postAnnotations = (screenshot: ScreenshotRequest) => {
-  return fetch('http://localhost:4000/api/annotation', {
+  return fetch('http://localhost:4000/api/screenshot', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('PAYLOAD 2 EXPORT', payload)
 
     try {
-      fetch('http://localhost:4000/api/annotation', {
+      fetch('http://localhost:4000/api/screenshot', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

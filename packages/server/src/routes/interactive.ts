@@ -127,7 +127,7 @@ interactiveRouter.get('/:id', async (req: Request, res: Response) => {
       }
     })
     res.status(200).send({
-      screenshot: Array.from(result.screenshot),
+      screenshot: Array.from(result.image_data),
       label: result.label
     })
   } catch(e) {
@@ -215,7 +215,7 @@ interactiveRouter.get('/', async (req: Request, res: Response) => {
     res.status(200).send({
       items: items.map(i => ({
         ...i,
-        screenshot: Array.from(i.screenshot)
+        screenshot: Array.from(i.image_data)
       })),
       total,
     })

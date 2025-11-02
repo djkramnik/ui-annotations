@@ -30,13 +30,13 @@ utilRouter.post('/crop', async (req: Request, res: Response) => {
   try {
     // Use a parameterized raw query
     const crops = await prisma.$queryRawUnsafe<
-      Array<{ id: string; ogWidth: number; screenshot: Buffer; aspectRatio: number }>
+      Array<{ id: string; og_width: number; image_data: Buffer; aspect_ratio: number }>
     >(
       `
-      SELECT id, "ogWidth", screenshot, "aspectRatio"
+      SELECT id, og_width, image_data, aspect_ratio
       FROM image_crop
-      WHERE "aspectRatio" BETWEEN $1 AND $2
-        AND ($3 = '*' OR "ogLabel" = $3)
+      WHERE aspect_ratio BETWEEN $1 AND $2
+        AND ($3 = '*' OR og_label = $3)
       ORDER BY RANDOM()
       LIMIT $4
       `,
@@ -49,9 +49,9 @@ utilRouter.post('/crop', async (req: Request, res: Response) => {
     res.status(200).send({
       data: crops.map(c => ({
         id: c.id,
-        ogWidth: c.ogWidth,
-        screenshot: Array.from(c.screenshot),
-        aspectRatio: c.aspectRatio,
+        ogWidth: c.og_width,
+        screenshot: Array.from(c.image_data),
+        aspectRatio: c.aspect_ratio,
       })),
     })
   } catch (e) {

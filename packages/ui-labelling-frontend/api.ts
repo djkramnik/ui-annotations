@@ -119,35 +119,35 @@ export const occludeScreenshot = (id: number, rect: Pick<DOMRect, 'x' | 'y' | 'w
 
 export const getAnalytics = (tag?: string): Promise<{ data: Analytics}> => {
   return (
-    fetch(`/api/annotation/analytics${tag ? `?tag=${tag}` : ''}`)
+    fetch(`/api/screenshot/analytics${tag ? `?tag=${tag}` : ''}`)
       .then(jsonOrThrow)
   )
 }
 
 export const getAnnotations = (tag?: string) => {
   return (
-    fetch(`/api/annotation?published=0${tag ? `&tag=${tag}` : ''}`)
+    fetch(`/api/screenshot?published=0${tag ? `&tag=${tag}` : ''}`)
       .then(jsonOrThrow)
   )
 }
 
 export const getPublishedAnnotations = (tag?: string) => {
   return (
-    fetch(`/api/annotation?published=1${tag ? `&tag=${tag}` : ''}`)
+    fetch(`/api/screenshot?published=1${tag ? `&tag=${tag}` : ''}`)
       .then(jsonOrThrow)
   )
 }
 
 export const getAnnotation = (id: number): Promise<{data: Annotations}> => {
   return (
-    fetch(`/api/annotation/${id}`)
+    fetch(`/api/screenshot/${id}`)
       .then(jsonOrThrow)
   )
 }
 
 export const deleteAnnotation = (id: number) => {
   return (
-    fetch(`/api/annotation/${id}`, { method: 'DELETE' })
+    fetch(`/api/screenshot/${id}`, { method: 'DELETE' })
       .then(jsonOrThrow)
   )
 }
@@ -157,7 +157,7 @@ export const updateAnnotation = (
   payload: Pick<AnnotationPayload, 'annotations'>
 ) => {
   return (
-    fetch(`/api/annotation/${id}`, {
+    fetch(`/api/screenshot/${id}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json'
@@ -169,11 +169,11 @@ export const updateAnnotation = (
 }
 
 export const publishAnnotation = (id: number) => {
-  return fetch(`/api/annotation/publish/${id}`, { method: 'PUT' })
+  return fetch(`/api/screenshot/publish/${id}`, { method: 'PUT' })
     .then(jsonOrThrow)
 }
 
 export const unPublishAnnotation = (id: number) => {
-  return fetch(`/api/annotation/unpublish/${id}`, { method: 'PUT' })
+  return fetch(`/api/screenshot/unpublish/${id}`, { method: 'PUT' })
     .then(jsonOrThrow)
 }

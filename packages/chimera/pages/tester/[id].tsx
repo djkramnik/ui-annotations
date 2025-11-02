@@ -154,7 +154,7 @@ const TextHeuristics = () => {
 
   useEffect(() => {
     if (!isReady) return
-    fetch(`/api/annotation/${query.id}`)
+    fetch(`/api/screenshot/${query.id}`)
       .then((r) => r.json())
       .then(({ data }: { data: Screenshot }) => {
         if (data.tag !== 'service_manual') {

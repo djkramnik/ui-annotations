@@ -5,7 +5,7 @@ chrome.runtime.onMessage.addListener(
     switch (message.type) {
       case 'adhoc_screen':
         try {
-          fetch('http://localhost:4000/api/annotation', {
+          fetch('http://localhost:4000/api/screenshot', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

@@ -44,7 +44,7 @@ export const fetchCrops = async ({
 
 export const fetchScreenshotById = async (id: number): Promise<Screenshot | null> => {
   try {
-    const resp = await fetch(`/api/annotation/${id}`)
+    const resp = await fetch(`/api/screenshot/${id}`)
     if (!resp.ok) {
       console.error('could not fetch annotation with id ', id)
       return null
