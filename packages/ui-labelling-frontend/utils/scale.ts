@@ -1,4 +1,4 @@
-import { Rect } from "./type";
+import { Rect } from "ui-labelling-shared"
 
 export const scaleRect = (og: Rect, scale: [number, number]) => {
   return {
