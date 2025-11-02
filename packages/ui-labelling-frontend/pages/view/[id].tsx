@@ -637,7 +637,7 @@ export default function AnnotationPage() {
     if (!originalAnnotations.current) {
       return
     }
-    fetch(`/api/screenshot/tighten/${query.id}`, {
+    fetch(`/api/util/tighten/${query.id}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

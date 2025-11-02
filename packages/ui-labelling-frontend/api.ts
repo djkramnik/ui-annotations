@@ -106,7 +106,7 @@ export const deleteInteractive = (id: number) => {
 export const occludeScreenshot = (id: number, rect: Pick<DOMRect, 'x' | 'y' | 'width' | 'height'>)
   : Promise<{ updatedScreen: ArrayBuffer }> => {
     return (
-      fetch(`/api/screenshot/${id}`, {
+      fetch(`/api/util/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

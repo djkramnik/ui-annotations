@@ -111,7 +111,7 @@ async function main({
     }) // important.. sort from top to bottom.  need to keep the ordering on this across variants as well
 
     const clipsResp = await fetch(
-      'http://localhost:4000/api/screenshot/clips',
+      'http://localhost:4000/api/util/clips',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

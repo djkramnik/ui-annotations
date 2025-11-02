@@ -2,7 +2,7 @@ import dotenv = require('dotenv')
 import path from 'path'
 import express from 'express'
 import { annotationRouter } from './routes/annotation'
-import { screenshotRouter } from './routes/screenshot'
+import { utilRouter } from './routes/util'
 import { prisma } from './db'
 import { ocrRouter } from './routes/ocr'
 import { interactiveRouter } from './routes/interactive'
@@ -18,7 +18,7 @@ dotenv.config({ path: path.join(__dirname, '.env') })
 
     app.use(express.json({ limit: '10mb' }))
     app.use('/api/annotation', annotationRouter)
-    app.use('/api/screenshot', screenshotRouter)
+    app.use('/api/util', utilRouter)
     app.use('/api/ocr', ocrRouter)
     app.use('/api/interactive', interactiveRouter)
 

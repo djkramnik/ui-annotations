@@ -24,7 +24,7 @@ export const fetchCrops = async ({
   label?: string
 }): Promise<{ screenshot: ArrayBuffer; aspectRatio: number }[]> => {
   try {
-    const resp = await fetch(`/api/screenshot/crop`, {
+    const resp = await fetch(`/api/util/crop`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -59,7 +59,7 @@ export const fetchScreenshotById = async (id: number): Promise<Screenshot | null
 
 export const fetchTighterAnnotations = async (id: number): Promise<TightenResponse[] | null> => {
   try {
-    const resp = await fetch(`/api/screenshot/tighten/${id}`, {
+    const resp = await fetch(`/api/util/tighten/${id}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

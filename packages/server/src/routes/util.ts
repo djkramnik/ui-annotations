@@ -7,7 +7,7 @@ import {
   scaleRect,
   tightenBoundingBoxes,
 } from '../util/screenshot'
-import { AnnotationPayload } from 'ui-labelling-shared'
+import { Annotation } from 'ui-labelling-shared'
 
 type Rect = {
   x: number
@@ -16,9 +16,10 @@ type Rect = {
   height: number
 }
 
-export const screenshotRouter = Router()
+export const utilRouter = Router()
+
 // post
-screenshotRouter.post('/crop', async (req: Request, res: Response) => {
+utilRouter.post('/crop', async (req: Request, res: Response) => {
   const body = req.body as { minRatio: number; maxRatio: number; total?: number; label?: string }
 
   const { minRatio, maxRatio, total, label } = body ?? {}
@@ -60,30 +61,27 @@ screenshotRouter.post('/crop', async (req: Request, res: Response) => {
 })
 
 
-screenshotRouter.post('/tighten/:id', async (req: Request, res: Response) => {
+utilRouter.post('/tighten/:id', async (req: Request, res: Response) => {
   try {
-    const annotationId = Number(req.params.id)
-    const annotation = await prisma.annotation.findFirstOrThrow({
+    const id = Number(req.params.id)
+    const screenshot = await prisma.screenshot.findFirstOrThrow({
       where: {
-        id: annotationId,
+        id
       },
     })
-    const vw = annotation.viewWidth
-    const vh = annotation.viewHeight
 
-    const screenshot = annotation.screenshot
-
-    if (screenshot === null) {
+    if (screenshot === null || !screenshot.image_data) {
       res
         .status(404)
         .send({ message: 'annotation with [id] has no screenshot ' })
       return
     }
 
-    const { annotations } = annotation.payload as unknown as AnnotationPayload
+    const { view_width: vw, view_height: vh, image_data } = screenshot
+    const annotations = screenshot.annotations as Annotation[]
 
     const updatedBoxes = await tightenBoundingBoxes({
-      b64: Buffer.from(screenshot).toString('base64'),
+      b64: Buffer.from(image_data).toString('base64'),
       annotations,
       vw,
       vh,
@@ -111,7 +109,7 @@ screenshotRouter.post('/tighten/:id', async (req: Request, res: Response) => {
   }
 })
 
-screenshotRouter.post('/clips', async (req: Request, res: Response) => {
+utilRouter.post('/clips', async (req: Request, res: Response) => {
   const body = req.body as {
     rects: Rect[]
     fullScreen: string
@@ -171,28 +169,27 @@ screenshotRouter.post('/clips', async (req: Request, res: Response) => {
 
 // put
 
-screenshotRouter.put('/:id', async (req: Request, res: Response) => {
+utilRouter.put('/:id', async (req: Request, res: Response) => {
   const { rect } = req.body as {
     rect: Rect
   }
   try {
-    const annotationId = Number(req.params.id)
-    const annotation = await prisma.annotation.findFirstOrThrow({
+    const id = Number(req.params.id)
+    const screenshot = await prisma.screenshot.findFirstOrThrow({
       where: {
-        id: annotationId,
+        id,
       },
     })
-    const vw = annotation.viewWidth
-    const vh = annotation.viewHeight
-    const ogScreen = annotation.screenshot
-    if (ogScreen === null) {
+    const { view_width: vw, view_height: vh, image_data } = screenshot
+
+    if (image_data === null) {
       res
         .status(404)
         .send({ message: 'annotation with [id] has no screenshot ' })
       return
     }
 
-    const buf = Buffer.from(ogScreen)
+    const buf = Buffer.from(image_data)
     const img = sharp(buf)
     const meta = await img.metadata()
     const imgW = meta.width ?? vw
@@ -227,25 +224,25 @@ screenshotRouter.put('/:id', async (req: Request, res: Response) => {
       ])
       .toBuffer()
 
-    await prisma.annotation.update({
+    await prisma.screenshot.update({
       where: {
-        id: annotationId,
+        id,
       },
       data: {
-        screenshot: newImg,
+        image_data: newImg,
       },
     })
 
     // probably redundant, just being paranoid
-    const newSavedScreen = await prisma.annotation.findFirstOrThrow({
+    const newSavedScreen = await prisma.screenshot.findFirstOrThrow({
       where: {
-        id: annotationId,
+        id,
       },
     })
 
     res
       .status(200)
-      .send({ updatedScreen: Array.from(newSavedScreen.screenshot!) })
+      .send({ updatedScreen: Array.from(newSavedScreen.image_data!) })
   } catch (e) {
     res.status(500).send({ error: String(e) })
   }

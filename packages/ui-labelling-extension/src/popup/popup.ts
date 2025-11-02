@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const { detections, width, height } =
         (await res.json()) as YoloPredictResponse
       console.log('response one', detections.length)
-      const res2 = await fetch('http://localhost:4000/api/screenshot/clips', {
+      const res2 = await fetch('http://localhost:4000/api/util/clips', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
