@@ -76,7 +76,6 @@ export function SingleAnnotation({
 
   const refreshHUD = useCallback(() => {
     const r = rectRef.current
-    console.log('HI', r)
     if (hudStepRef.current) {
       hudStepRef.current.textContent = `${stepRef.current}px`
     }
@@ -205,41 +204,36 @@ export function SingleAnnotation({
       emitChange()
     }
 
-    const resizeEdge = (dw: number, dh: number) => {
-      if (!rectRef.current) return
-      const next = clampRect({
-        ...rectRef.current,
-        width: Math.max(1, rectRef.current.width + dw),
-        height: Math.max(1, rectRef.current.height + dh),
-      })
-      rectRef.current = next
+    const resizeY = (delta: number) => {
+      const rect = rectRef.current
+      const cvs = canvasRef.current
+      if (!rect || !cvs) return
+      const ch = cvs.height / DPR
+
+      const cy = rect.y + rect.height / 2
+      const newH = Math.min(Math.max(rect.height + delta, 1), ch)
+      let newY = cy - newH / 2
+      if (newY < 0) newY = 0
+      if (newY + newH > ch) newY = ch - newH
+
+      rectRef.current = { ...rect, y: newY, height: newH }
       draw()
       emitChange()
     }
 
-    const resizeFromCenter = (d: number) => {
-      if (!rectRef.current) return
-      const step = d
-      const nx = rectRef.current.x - step / 2
-      const ny = rectRef.current.y - step / 2
-      const nw = rectRef.current.width + step
-      const nh = rectRef.current.height + step
+    const resizeX = (delta: number) => {
+      const rect = rectRef.current
+      const cvs = canvasRef.current
+      if (!rect || !cvs) return
+      const cw = cvs.width / DPR
 
-      // keep center same, then clamp
-      let next = clampRect({ x: nx, y: ny, width: Math.max(1, nw), height: Math.max(1, nh) })
+      const cx = rect.x + rect.width / 2
+      const newW = Math.min(Math.max(rect.width + delta, 1), cw)
+      let newX = cx - newW / 2
+      if (newX < 0) newX = 0
+      if (newX + newW > cw) newX = cw - newW
 
-      // If clamping moved it, re-center best-effort within bounds
-      const { cw, ch } = getCanvasSize()
-      const cx = rectRef.current.x + rectRef.current.width / 2
-      const cy = rectRef.current.y + rectRef.current.height / 2
-      next = clampRect({
-        x: Math.max(0, Math.min(cx - next.width / 2, cw - next.width)),
-        y: Math.max(0, Math.min(cy - next.height / 2, ch - next.height)),
-        width: next.width,
-        height: next.height,
-      })
-
-      rectRef.current = next
+      rectRef.current = { ...rect, x: newX, width: newW }
       draw()
       emitChange()
     }
@@ -271,27 +265,19 @@ export function SingleAnnotation({
       switch (e.key) {
         case "i": // taller
           e.preventDefault()
-          resizeEdge(0, s)
+          resizeY(s)
           break
         case "k": // shorter
           e.preventDefault()
-          resizeEdge(0, -s)
+          resizeY(-s)
           break
         case "l": // wider
           e.preventDefault()
-          resizeEdge(s, 0)
+          resizeX(s)
           break
         case "j": // narrower
           e.preventDefault()
-          resizeEdge(-s, 0)
-          break
-        case "w": // grow from center (keep center)
-          e.preventDefault()
-          resizeFromCenter(s)
-          break
-        case "q": // shrink from center (keep center)
-          e.preventDefault()
-          resizeFromCenter(-s)
+          resizeX(-s)
           break
       }
     }
