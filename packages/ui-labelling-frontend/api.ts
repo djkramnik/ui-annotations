@@ -195,6 +195,7 @@ export const getEditableAnnotations = (page: number, tag?: string): Promise<{
   return fetch(`/api/annotation?page=${page}${tag ? `&tag=${tag}` : ''}`).then(jsonOrThrow)
 }
 
+// DYK - this also supports fetching unpublished records when passing &published=false
 export const patchSingleAnnotation = (id: string, body: Pick<Annotation, 'rect' | 'label' | 'text_content'> & { clean?: boolean }) => {
   return fetch(`/api/annotation/${id}`, {
     method: 'PATCH',

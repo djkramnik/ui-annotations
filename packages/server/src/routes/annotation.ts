@@ -7,6 +7,7 @@ export const annotationRouter = Router()
 annotationRouter.get('/', async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
   const pageSize = parseInt(req.query.pageSize as string) || 10;
+  const published = req.query.published as string !== 'false'
   const offset = (page - 1) * pageSize
   const tag = (req.query.tag as string) ?? null
 
@@ -15,41 +16,39 @@ annotationRouter.get('/', async (req: Request, res: Response) => {
       select: { id: true },
       where: {
         clean: { not: true },
-        ...(tag ? {
-          screenshot: {
-            tag,
-            image_data: {
-              not: null
-            }
+        screenshot: {
+          image_data: {
+            not: null
           },
-        } : {
-          screenshot: {
-            image_data: { not: null }
-          }
-        })
+          ...(tag ? {
+            tag
+          }: undefined),
+          ...(published ? {
+            published: 1
+          }: undefined)
+        },
       }
     }),
     prisma.annotation.findMany({
       where: {
         clean: { not: true },
-        ...(tag ? {
-          screenshot: {
-            tag,
-            image_data: {
-              not: null
-            }
+        screenshot: {
+          image_data: {
+            not: null
           },
-        } : {
-          screenshot: {
-            image_data: {
-              not: null
-            }
-          }
-        })
+          ...(tag ? {
+            tag
+          }: undefined),
+          ...(published ? {
+            published: 1
+          }: undefined)
+        },
       },
-      orderBy: {
+      orderBy: [{
+        screenshot_id: 'asc',
+      }, {
         id: 'asc'
-      },
+      }],
       take: pageSize,
       skip: offset,
       include: {
