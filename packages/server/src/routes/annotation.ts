@@ -6,7 +6,7 @@ export const annotationRouter = Router()
 
 annotationRouter.get('/', async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
-  const pageSize = parseInt(req.query.pageSize as string) || 20;
+  const pageSize = parseInt(req.query.pageSize as string) || 10;
   const offset = (page - 1) * pageSize
   const tag = (req.query.tag as string) ?? null
 
@@ -17,6 +17,9 @@ annotationRouter.get('/', async (req: Request, res: Response) => {
         ...(tag ? {
           screenshot: {
             tag
+          },
+          image_data: {
+            not: null
           }
         } : {})
       }
@@ -26,6 +29,9 @@ annotationRouter.get('/', async (req: Request, res: Response) => {
         ...(tag ? {
           screenshot: {
             tag
+          },
+          image_data: {
+            not: null
           }
         } : {})
       },
@@ -33,13 +39,35 @@ annotationRouter.get('/', async (req: Request, res: Response) => {
         id: 'asc'
       },
       take: pageSize,
-      skip: offset
+      skip: offset,
+      include: {
+        screenshot: {
+          select: {
+            image_data: true,
+            id: true,
+            view_height: true,
+            view_width: true,
+          }
+        }
+      }
     })
   ])
 
   res.status(200).send({
     total: total.length,
-    records
+    records: records.map(r => ({
+      ...r,
+      rect: {
+        x: r.x,
+        y: r.y,
+        width: r.width,
+        height: r.height
+      },
+      screenshot: {
+        ...r.screenshot,
+        image_data: Array.from(r.screenshot.image_data!)
+      }
+    }))
   })
 })
 

@@ -176,3 +176,20 @@ export const unPublishAnnotation = (id: number) => {
   return fetch(`/api/screenshot/unpublish/${id}`, { method: 'PUT' })
     .then(jsonOrThrow)
 }
+
+export type AnnotationWithScreen = Annotation & {
+  screenshot: {
+    image_data: ArrayBuffer
+    id: number
+    view_width: number
+    view_height: number
+  }
+}
+
+// todo: rename the other things screenshot
+export const getEditableAnnotations = (page: number, tag?: string): Promise<{
+  total: number
+  records: AnnotationWithScreen[]
+}> => {
+  return fetch(`/api/annotation?page=${page}${tag ? `&tag=${tag}` : ''}`).then(jsonOrThrow)
+}
