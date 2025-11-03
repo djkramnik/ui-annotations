@@ -48,7 +48,7 @@ export default AnnotationEditor
 export function SingleAnnotation({
   annotation,
   padding = 40,
-  onRectChange, // optional callback
+  onRectChange,
 }: {
   annotation: AnnotationWithScreen
   padding?: number
@@ -60,12 +60,12 @@ export function SingleAnnotation({
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
-  // Mutable refs for interaction state
-  const rectRef = useRef<Rect | null>(null)       // rect inside cropped canvas
+  const rectRef = useRef<Rect | null>(null)
   const cropOriginRef = useRef<{ sx: number; sy: number }>({ sx: 0, sy: 0 })
   const imgBitmapRef = useRef<ImageBitmap | null>(null)
   const draggingRef = useRef(false)
   const dragOffsetRef = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 })
+  const stepRef = useRef<number>(2) // <- px size, default 2
 
   const DPR = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
 
@@ -77,12 +77,10 @@ export function SingleAnnotation({
     const ctx = cvs.getContext("2d")
     if (!ctx) return
 
-    ctx.setTransform(DPR, 0, 0, DPR, 0, 0) // draw in CSS pixels
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0)
     ctx.clearRect(0, 0, cvs.width, cvs.height)
-    // Draw the cropped image (already sized to canvas)
     ctx.drawImage(bitmap, 0, 0, cvs.width / DPR, cvs.height / DPR)
 
-    // Neon rectangle
     ctx.save()
     ctx.lineWidth = 3
     ctx.strokeStyle = "#39ff14"
@@ -92,21 +90,23 @@ export function SingleAnnotation({
     ctx.restore()
   }, [DPR])
 
-  // Clamp rect so it stays fully inside the cropped canvas
   const clampRect = useCallback(
     (r: Rect) => {
       const cvs = canvasRef.current
       if (!cvs) return r
       const cw = cvs.width / DPR
       const ch = cvs.height / DPR
-      const x = Math.max(0, Math.min(r.x, cw - r.width))
-      const y = Math.max(0, Math.min(r.y, ch - r.height))
-      return { ...r, x, y }
+      const width = Math.min(r.width, cw)
+      const height = Math.min(r.height, ch)
+      let x = r.x
+      let y = r.y
+      x = Math.max(0, Math.min(x, cw - width))
+      y = Math.max(0, Math.min(y, ch - height))
+      return { x, y, width, height }
     },
     [DPR]
   )
 
-  // Map from rect-in-crop back to full-screenshot coordinates
   const emitChange = useCallback(() => {
     if (!onRectChange || !rectRef.current) return
     const { sx, sy } = cropOriginRef.current
@@ -125,22 +125,19 @@ export function SingleAnnotation({
       const cvs = canvasRef.current
       if (!cvs) return
 
-      // Build the source image
       const blob = dataUrlToBlob(getDataUrl(annotation.screenshot.image_data))
       const bitmap = await createImageBitmap(blob)
       if (cancelled) return
 
-      // Compute crop window
       const { x, y, width, height } = annotation.rect
       const sx = Math.max(0, Math.floor(x - padding))
       const sy = Math.max(0, Math.floor(y - padding))
       const sw = Math.min(bitmap.width - sx, Math.ceil(width + 2 * padding))
       const sh = Math.min(bitmap.height - sy, Math.ceil(height + 2 * padding))
-      cropOriginRef.current = { sx, sy }
-      imgBitmapRef.current = bitmap
 
-      // Prepare a cropped bitmap to draw each frame
-      // (We slice out the crop once so draw() is cheaper)
+      cropOriginRef.current = { sx, sy }
+
+      // Pre-crop for cheap redraws
       const cropCanvas = document.createElement("canvas")
       cropCanvas.width = sw
       cropCanvas.height = sh
@@ -149,16 +146,14 @@ export function SingleAnnotation({
       const croppedBitmap = await createImageBitmap(cropCanvas)
       imgBitmapRef.current = croppedBitmap
 
-      // Set canvas size (CSS vs backing store)
+      // Size canvas with HiDPI backing
       cvs.style.width = `${sw}px`
       cvs.style.height = `${sh}px`
       cvs.width = Math.round(sw * DPR)
       cvs.height = Math.round(sh * DPR)
 
-      // Initialize the draggable rect to the *original bounds inside the crop*.
-      const innerRect: Rect = { x: padding, y: padding, width, height }
-      rectRef.current = clampRect(innerRect)
-
+      // Rect begins at original bounds inside crop (offset by padding)
+      rectRef.current = clampRect({ x: padding, y: padding, width, height })
       draw()
       emitChange()
     }
@@ -169,7 +164,124 @@ export function SingleAnnotation({
     }
   }, [annotation, padding, DPR, clampRect, draw, emitChange])
 
-  // Pointer interaction
+  // ----- Keyboard controls (Meta + key) -----
+  useEffect(() => {
+    const cvs = canvasRef.current
+    if (!cvs) return
+
+    const getCanvasSize = () => {
+      const cw = cvs.width / DPR
+      const ch = cvs.height / DPR
+      return { cw, ch }
+    }
+
+    const move = (dx: number, dy: number) => {
+      if (!rectRef.current) return
+      const next = clampRect({
+        ...rectRef.current,
+        x: rectRef.current.x + dx,
+        y: rectRef.current.y + dy,
+      })
+      rectRef.current = next
+      draw()
+      emitChange()
+    }
+
+    const resizeEdge = (dw: number, dh: number) => {
+      if (!rectRef.current) return
+      const next = clampRect({
+        ...rectRef.current,
+        width: Math.max(1, rectRef.current.width + dw),
+        height: Math.max(1, rectRef.current.height + dh),
+      })
+      rectRef.current = next
+      draw()
+      emitChange()
+    }
+
+    const resizeFromCenter = (d: number) => {
+      if (!rectRef.current) return
+      const step = d
+      const nx = rectRef.current.x - step / 2
+      const ny = rectRef.current.y - step / 2
+      const nw = rectRef.current.width + step
+      const nh = rectRef.current.height + step
+
+      // keep center same, then clamp
+      let next = clampRect({ x: nx, y: ny, width: Math.max(1, nw), height: Math.max(1, nh) })
+
+      // If clamping moved it, re-center best-effort within bounds
+      const { cw, ch } = getCanvasSize()
+      const cx = rectRef.current.x + rectRef.current.width / 2
+      const cy = rectRef.current.y + rectRef.current.height / 2
+      next = clampRect({
+        x: Math.max(0, Math.min(cx - next.width / 2, cw - next.width)),
+        y: Math.max(0, Math.min(cy - next.height / 2, ch - next.height)),
+        width: next.width,
+        height: next.height,
+      })
+
+      rectRef.current = next
+      draw()
+      emitChange()
+    }
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!e.metaKey) return
+
+      // Toggle step: ⌘ + [1..9]
+      if (/^[1-9]$/.test(e.key)) {
+        e.preventDefault()
+        stepRef.current = parseInt(e.key, 10)
+        return
+      }
+
+      // Movement with arrows
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown") {
+        e.preventDefault()
+        const s = stepRef.current
+        if (e.key === "ArrowLeft") move(-s, 0)
+        if (e.key === "ArrowRight") move(s, 0)
+        if (e.key === "ArrowUp") move(0, -s)
+        if (e.key === "ArrowDown") move(0, s)
+        return
+      }
+
+      // Resize edges
+      const s = stepRef.current
+      switch (e.key) {
+        case "i": // taller
+          e.preventDefault()
+          resizeEdge(0, s)
+          break
+        case "k": // shorter
+          e.preventDefault()
+          resizeEdge(0, -s)
+          break
+        case "l": // wider
+          e.preventDefault()
+          resizeEdge(s, 0)
+          break
+        case "j": // narrower
+          e.preventDefault()
+          resizeEdge(-s, 0)
+          break
+        case "w": // grow from center (keep center)
+          e.preventDefault()
+          resizeFromCenter(s)
+          break
+        case "q": // shrink from center (keep center)
+          e.preventDefault()
+          resizeFromCenter(-s)
+          break
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown, { passive: false })
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [DPR, clampRect, draw, emitChange])
+
+  // ----- Pointer dragging -----
   useEffect(() => {
     const cvs = canvasRef.current
     if (!cvs) return
@@ -214,7 +326,6 @@ export function SingleAnnotation({
     cvs.addEventListener("pointermove", onMove)
     cvs.addEventListener("pointerup", onUp)
     cvs.addEventListener("pointercancel", onUp)
-
     return () => {
       cvs.removeEventListener("pointerdown", onDown)
       cvs.removeEventListener("pointermove", onMove)
@@ -223,7 +334,6 @@ export function SingleAnnotation({
     }
   }, [clampRect, draw, emitChange])
 
-  // Paint the border on every render call
   useEffect(() => {
     draw()
   }, [draw])
@@ -233,6 +343,7 @@ export function SingleAnnotation({
       <div style={{ fontFamily: "monospace", fontSize: 12 }}>
         <div>annotation: {annotation.id}</div>
         <div>screenshot: {annotation.screenshot.id}</div>
+        <div>step: {stepRef.current}px (⌘ + 1–9 to set)</div>
       </div>
       <canvas
         ref={canvasRef}
@@ -241,5 +352,4 @@ export function SingleAnnotation({
     </div>
   )
 }
-
 
