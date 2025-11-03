@@ -314,10 +314,10 @@ function getRegularContent({
 
   // must have the same font size and letter spacing across all these bulletpoints,
   // at least within a given region ffs
-  const bp = bulletpoints.find((bp) => bp.textContent)
+  const bp = bulletpoints.find((bp) => bp.text_content)
   const bpFontInfo = bp
-    ? estimateFontAndTrackingBox(bp.rect, bp.textContent!, {
-        lineCount: bp.textContent!.split('\n').length,
+    ? estimateFontAndTrackingBox(bp.rect, bp.text_content!, {
+        lineCount: bp.text_content!.split('\n').length,
       })
     : null
   const bpFs = bpFontInfo
@@ -369,7 +369,7 @@ function getRegularContent({
                     ...(bpFs ?? {}),
                   }}
                 >
-                  {bp.textContent}
+                  {bp.text_content}
                 </ComponentRenderer>
               )
             })}
@@ -429,7 +429,7 @@ function getRegularContent({
                 rect={c.rect}
                 scale={scale}
               >
-                {c.textContent ?? null}
+                {c.text_content ?? null}
               </ComponentRenderer>
             )
           })}
@@ -468,7 +468,7 @@ function getRegularContent({
         rect={c.rect}
         scale={scale}
       >
-        {c.textContent ?? null}
+        {c.text_content ?? null}
       </ComponentRenderer>,
     )
   }
@@ -558,7 +558,7 @@ function getSolitaryHeader({
           rect={header.rect}
           scale={scale}
         >
-          {header.textContent ?? null}
+          {header.text_content ?? null}
         </ComponentRenderer>
       </Flex>
     )
@@ -609,7 +609,7 @@ function getSolitaryHeader({
         rect={header.rect}
         scale={scale}
       >
-        {header.textContent ?? null}
+        {header.text_content ?? null}
       </ComponentRenderer>
     </Flex>
   )

@@ -58,7 +58,7 @@ export const DynamicMuiComponent = ({
       const headingLevel = isText && inferredFontInfo
         ? getHeaderLevel({
             rect,
-            textContent: children,
+            text_content: children,
             pageWidth: page.width,
             fontPx: inferredFontInfo.fontPx
         })

@@ -99,7 +99,7 @@ const NewAnnotationForm = ({
                 id: crypto.randomUUID(),
                 label: select.value,
                 rect: pageState.drawCandidate,
-                ...(currText ? { textContent: currText } : {}),
+                ...(currText ? { text_content: currText } : {}),
               })
           }))
           resetPageState()
@@ -447,7 +447,7 @@ export default function AnnotationPage() {
   )
 
   const handleAnnotationUpdate = useCallback(
-    (newLabel: string, newTextContent: string | null, index: number) => {
+    (newLabel: string, newtext_content: string | null, index: number) => {
       if (pageState.currToggleIndex === null) {
         console.error('SOMETHING WENT VERY WRONG IN HANDLE ANNOTATION UPDATE')
         return
@@ -462,7 +462,7 @@ export default function AnnotationPage() {
                   {
                     ...a,
                     label: newLabel, // holy shit
-                    textContent: newTextContent || undefined,
+                    text_content: newtext_content || undefined,
                   },
                   adjustment,
                 )
@@ -691,7 +691,7 @@ export default function AnnotationPage() {
           return (
             item.id !== og.id ||
             item.label !== og.label ||
-            item.textContent !== og.textContent ||
+            item.text_content !== og.text_content ||
             item.rect.x !== og.rect.x ||
             item.rect.y !== og.rect.y ||
             item.rect.width !== og.rect.width ||

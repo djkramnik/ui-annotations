@@ -71,7 +71,7 @@ export default function ScreenshotAnnotator({
   /* ─── render ─── */
   return (
     <div ref={ref} style={containerStyle}>
-      {annotations.map(({ id, label, rect, textContent }) => {
+      {annotations.map(({ id, label, rect, text_content }) => {
         const fill   = labelToColor(label) ?? 'rgba(255,66,64,0.35)'
         // make an opaque border if the fill is rgba with alpha
         const border = fill.startsWith('rgba')
@@ -110,7 +110,7 @@ export default function ScreenshotAnnotator({
             {
               hideLabel
                 ? null
-                : (isOcr ? textContent : label)
+                : (isOcr ? text_content : label)
             }
           </div>
         )

@@ -171,7 +171,7 @@ export async function getDomTextProposal(page: Page): Promise<TextProposal[]> {
         }
 
         out.push({
-          textContent: data.slice(start, lastEnd),
+          text_content: data.slice(start, lastEnd),
           rect: lastRect,
         });
 
@@ -249,7 +249,7 @@ export async function getDomTextProposal(page: Page): Promise<TextProposal[]> {
 
 
             out.push({
-              textContent: p.textContent,
+              text_content: p.text_content,
               rect: {
                 x: p.rect.x,
                 y: p.rect.y,

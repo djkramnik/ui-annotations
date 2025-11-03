@@ -19,7 +19,7 @@ export function getButton(label: string, primary?: boolean) {
   button.style.cursor = 'pointer'
   button.style.backgroundColor = primary ? 'green' : '#A0C6FC'
   button.style.color = 'white'
-  button.textContent = label
+  button.text_content = label
   return button
 }
 
@@ -159,7 +159,7 @@ export function buildProjectionForm({
   /* ---------- radio group ---------- */
   const fieldset: HTMLFieldSetElement = document.createElement('fieldset')
   const legend: HTMLLegendElement = document.createElement('legend')
-  legend.textContent = 'Projection type'
+  legend.text_content = 'Projection type'
   fieldset.appendChild(legend)
 
   const radioName = 'projectionType'
@@ -192,7 +192,7 @@ export function buildProjectionForm({
   /* ---------- max input ---------- */
   const maxLabel: HTMLLabelElement = document.createElement('label')
   maxLabel.style.display = 'block'
-  maxLabel.textContent = 'max '
+  maxLabel.text_content = 'max '
   const maxInput: HTMLInputElement = document.createElement('input')
   maxInput.name = 'max'
   maxInput.value = '40'
@@ -255,7 +255,7 @@ export function buildProjectionForm({
       case 'cousins':
         const distLabel: HTMLLabelElement = document.createElement('label')
         distLabel.style.display = 'block'
-        distLabel.textContent = 'distance '
+        distLabel.text_content = 'distance '
         const distInput: HTMLInputElement = document.createElement('input')
         distInput.type = 'number'
         distInput.name = 'distance'
@@ -387,7 +387,7 @@ function buildCheckboxInput({
 }) {
   const checkboxInputContainer = document.createElement('div')
   const labelEl = document.createElement('label')
-  labelEl.textContent = label
+  labelEl.text_content = label
   labelEl.setAttribute('htmlFor', name)
   const inputEl = document.createElement('input')
   inputEl.setAttribute('id', name)
@@ -452,7 +452,7 @@ export function buildColorLegend(
       row.appendChild(swatchCell)
 
       const labelCell = document.createElement('td')
-      labelCell.textContent = key
+      labelCell.text_content = key
       labelCell.style.padding = '4px'
       labelCell.style.textAlign = 'center'
       row.appendChild(labelCell)
@@ -510,7 +510,7 @@ export function populateAnnotationList({
 
     const { top, left, width, height } = ann.rect
     const info = document.createElement('span')
-    info.textContent = `${ann.label}, ${Math.round(top)}, ${Math.round(left)}, ${Math.round(width)}, ${Math.round(height)}`
+    info.text_content = `${ann.label}, ${Math.round(top)}, ${Math.round(left)}, ${Math.round(width)}, ${Math.round(height)}`
 
     const btnGroup = document.createElement('div')
     btnGroup.style.display = 'flex'
@@ -518,7 +518,7 @@ export function populateAnnotationList({
 
     const makeBtn = (text: string, action: 'select' | 'remove') => {
       const btn = document.createElement('button')
-      btn.textContent = text
+      btn.text_content = text
       Object.assign(btn.style, {
         padding: '2px 4px',
         fontSize: '11px',

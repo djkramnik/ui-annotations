@@ -85,6 +85,7 @@ annotationRouter.get('/', async (req: Request, res: Response) => {
 
 annotationRouter.patch('/:id', async (req, res) => {
   const id = String(req.params.id)
+  console.log('how agbout here', id)
   if (id.length !== 36) {
     res.status(400).send({
       reason: 'invalid id'
@@ -92,7 +93,7 @@ annotationRouter.patch('/:id', async (req, res) => {
     return
   }
   const body = req.body as {
-    annotation: Pick<Annotation, 'rect' | 'label' | 'textContent'> & { clean?: boolean }
+    annotation: Pick<Annotation, 'rect' | 'label' | 'text_content'> & { clean?: boolean }
   }
   if (!body?.annotation) {
     res.status(400).send({
@@ -102,6 +103,7 @@ annotationRouter.patch('/:id', async (req, res) => {
   }
   const { annotation } = body
   try {
+    console.log('here?', annotation)
     await prisma.annotation.update({
       where: {
         id,
@@ -112,9 +114,43 @@ annotationRouter.patch('/:id', async (req, res) => {
         width: annotation.rect.width,
         height: annotation.rect.height,
         aspect_ratio: Number((annotation.rect.width / annotation.rect.height).toFixed(2)),
-        text_content: annotation.textContent,
-        clean: annotation.clean
+        text_content: annotation.text_content,
+        clean: annotation.clean,
+        label: annotation.label
       }
+    })
+    res.status(200).send({
+      x: annotation.rect.x,
+      y: annotation.rect.y,
+      width: annotation.rect.width,
+      height: annotation.rect.height,
+      aspect_ratio: Number((annotation.rect.width / annotation.rect.height).toFixed(2)),
+      text_content: annotation.text_content,
+      clean: annotation.clean,
+      label: annotation.label
+    })
+  } catch(e) {
+    console.error(e)
+    res.status(500).send({ error: e })
+  }
+})
+
+annotationRouter.delete('/:id', async (req, res) => {
+  const id = String(req.params.id)
+  if (id.length !== 36) {
+    res.status(400).send({
+      reason: 'invalid id'
+    })
+    return
+  }
+  try {
+    await prisma.annotation.delete({
+      where: {
+        id
+      }
+    })
+    res.status(200).send({
+      id
     })
   } catch(e) {
     res.status(500).send({ error: e })

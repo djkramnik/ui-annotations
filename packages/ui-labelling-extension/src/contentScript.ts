@@ -855,7 +855,7 @@ import {
     )!
 
     inner.style.backgroundColor = type === 'success' ? 'limegreen' : 'red'
-    inner.textContent = message
+    inner.text_content = message
 
     inner.style.opacity = '1'
     setTimeout(
@@ -969,7 +969,7 @@ import {
         pointerEvents: 'none',
       })
       const label = document.createElement('div')
-      label.textContent = text ? text : `${conf.toFixed(2)}`
+      label.text_content = text ? text : `${conf.toFixed(2)}`
       Object.assign(label.style, {
         position: 'absolute',
         left: '0',
@@ -1037,7 +1037,7 @@ import {
 
       // label
       const label = document.createElement('div')
-      label.textContent = `${class_names?.[i] ?? ''}`.trim()
+      label.text_content = `${class_names?.[i] ?? ''}`.trim()
       Object.assign(label.style, {
         position: 'absolute',
         left: '0',

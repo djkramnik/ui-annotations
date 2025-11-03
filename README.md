@@ -79,7 +79,7 @@ training
 improvements
 ====
 * need a frontend viewer button to turn all annotations on a given page to uppercase
-* need some script targeting the db to start and end trim textContent
+* need some script targeting the db to start and end trim text_content
 * need something like a select mode in the frontend viewer.  if only to select and delete.
 * a way to draw multiple for a label, and delete multiple by clicking.   I need some refactoring, however mild, to manage keypress listener collisions
 

@@ -50,7 +50,7 @@ async function main() {
         height: a.rect.height,
         aspect_ratio: Number((a.rect.width / a.rect.height).toFixed(2)),
         screenshot_id: s.id,
-        text_content: a.textContent || undefined
+        text_content: a.text_content || undefined
       }))
     )
     console.log('records:', records.length)

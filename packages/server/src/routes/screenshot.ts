@@ -161,7 +161,7 @@ screenshotRouter.post('/', async (req: Request, res: Response) => {
           width: a.rect.width,
           height: a.rect.height,
           aspect_ratio: Number((a.rect.width / a.rect.height).toFixed(2)),
-          text_content: a.textContent || undefined,
+          text_content: a.text_content || undefined,
           screenshot_id: record.id
         }))
       })
@@ -202,7 +202,7 @@ screenshotRouter.patch('/:id', async (req: Request, res: Response) => {
         data: annotations.map(a => ({
           id: a.id,
           label: a.label,
-          text_content: a.textContent,
+          text_content: a.text_content,
           x: a.rect.x,
           y: a.rect.y,
           width: a.rect.width,
@@ -288,7 +288,7 @@ screenshotRouter.get('/:id', async (req: Request, res: Response) => {
           width: a.width,
           height: a.height
         },
-        textContent: a.text_content
+        text_content: a.text_content
       })) as Annotation[]
     }})
   } catch (err) {

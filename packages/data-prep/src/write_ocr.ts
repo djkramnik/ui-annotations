@@ -56,7 +56,7 @@ async function main() {
     }
 
     for (const a of annotations) {
-      if (a.label !== 'textRegion' || !a.textContent) {
+      if (a.label !== 'textRegion' || !a.text_content) {
         continue
       }
       const {
@@ -94,7 +94,7 @@ async function main() {
           rect: a.rect,
           screenshot_id: id,
           image_data: clip,
-          text: a.textContent
+          text: a.text_content
         })
       } catch (e) {
         console.error('wtf (sharp?)', e)

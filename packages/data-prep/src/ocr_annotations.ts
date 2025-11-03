@@ -73,7 +73,7 @@ async function main({
     }
 
     const requiresOcr = annotations.filter(a =>
-      labels.includes(a.label as ServiceManualTextLabel) && (!a.textContent || overwrite)
+      labels.includes(a.label as ServiceManualTextLabel) && (!a.text_content || overwrite)
     )
     if (requiresOcr.length === 0) {
       console.log('skipping screen cause it dont need nothin from nobody: ', screen.id)
@@ -95,7 +95,7 @@ async function main({
 
     let detectionZones: {
       rect: Rect,
-      textContent?: string
+      text_content?: string
     }[] = detections.map((d) => {
       const [x1, y1, x2, y2] = d.box
       return {
@@ -143,15 +143,15 @@ async function main({
     //
     detectionZones = detectionZones.map((d, i) => ({
       ...d,
-      textContent: results[i].text
+      text_content: results[i].text
     }))
     const detectionBoxes = detectionZones.map(d => d.rect)
 
-    console.log('ocr results', detectionZones.map(d => d.textContent))
+    console.log('ocr results', detectionZones.map(d => d.text_content))
 
     const annotationsWithOcr = annotations.map(a => {
       const skip =
-        (a.textContent && !overwrite) || !labels.includes(a.label as ServiceManualTextLabel)
+        (a.text_content && !overwrite) || !labels.includes(a.label as ServiceManualTextLabel)
       if (skip) {
         return a
       }
@@ -164,13 +164,13 @@ async function main({
       const constructedText =
         detectionZones.reduce((acc: string, dz, i) => {
           if (textChunksInAnnotation.includes(i)) {
-            return acc.concat(dz.textContent || '') + '\n' // must add in newlines bruh
+            return acc.concat(dz.text_content || '') + '\n' // must add in newlines bruh
           }
           return acc
         }, '').replace(/\n$/, '') // must replace trailing newline bruh
       return {
         ...a,
-        textContent: constructedText
+        text_content: constructedText
       }
     })
 

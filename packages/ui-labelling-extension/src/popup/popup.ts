@@ -282,7 +282,7 @@ async function getExportPayload(): Promise<ScreenshotRequest> {
       id: a.id,
       label: a.label,
       rect: a.rect,
-      textContent: a.textContent,
+      text_content: a.text_content,
     })),
     image_data: base64Image,
     ...meta,

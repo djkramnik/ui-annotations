@@ -33,7 +33,7 @@ export async function processScreenText(page: Page, link: string) {
       rect: p.rect,
       label: AnnotationLabel.textRegion,
       id: crypto.randomUUID(),
-      textContent: p.textContent,
+      text_content: p.text_content,
     }
   })
   console.log('unprocessed annotation len:', rawAnnotations.length)

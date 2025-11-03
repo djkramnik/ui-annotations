@@ -198,7 +198,7 @@ export function rectInViewport(r: DOMRect) {
 
 export type TextProposal = {
   rect: DOMRect
-  textContent: string
+  text_content: string
 }
 
 /// <reference lib="dom" />
@@ -255,7 +255,7 @@ export function getTextNodeLineFragments(
     }
 
     out.push({
-      textContent: data.slice(start, lastEnd),
+      text_content: data.slice(start, lastEnd),
       rect: lastRect,
     });
 
@@ -509,7 +509,7 @@ export type Annotation = {
   id: string
   label: string
   rect: Rect
-  textContent?: string
+  text_content?: string
 }
 
 export interface Screenshot {
@@ -675,14 +675,14 @@ export async function* postProcessAdjacent(
           rect: { x: left, y: top, width: right - left, height: bottom - top },
           right,
           bottom,
-          textContent: current.textContent + (r.textContent ?? '')
+          text_content: current.text_content + (r.text_content ?? '')
         }
       } else {
         merged.push({
           id: current.id,
           label: current.label,
           rect: { ...current.rect },
-          textContent: current.textContent
+          text_content: current.text_content
         })
         current = r
       }
@@ -693,7 +693,7 @@ export async function* postProcessAdjacent(
         id: current.id,
         label: current.label,
         rect: { ...current.rect },
-        textContent: current.textContent
+        text_content: current.text_content
       })
     }
   }

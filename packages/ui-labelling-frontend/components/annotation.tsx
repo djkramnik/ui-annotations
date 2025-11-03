@@ -14,7 +14,7 @@ export const AnnotationToggler = ({
 }: {
   currIndex: number
   annotations: Annotation[]
-  handleUpdate: (label: string, textContent: string | null, index: number) => void
+  handleUpdate: (label: string, text_content: string | null, index: number) => void
   handleRemove: (index: number) => void
   handlePrev: () => void
   handleNext: () => void
@@ -76,12 +76,12 @@ export const SelectedAnnotation = (
   }: {
     index: number
     annotation: Annotation
-    handleUpdate: (label: string, textContent: string | null, index: number) => void
+    handleUpdate: (label: string, text_content: string | null, index: number) => void
     handleRemove: (index: number) => void
     children?: React.ReactNode
     tag?: string
   }) => {
-    const [currText, setCurrText] = useState<string | null>(annotation?.textContent ?? null)
+    const [currText, setCurrText] = useState<string | null>(annotation?.text_content ?? null)
     const [currLabel, setCurrLabel] = useState<string>(annotation?.label ?? '')
     const labels = useLabels(tag)
 
@@ -90,7 +90,7 @@ export const SelectedAnnotation = (
         return
       }
       setCurrLabel(annotation.label)
-      setCurrText(annotation.textContent ?? null)
+      setCurrText(annotation.text_content ?? null)
     }, [annotation, setCurrLabel, setCurrText])
 
     // this should never happen but it ain't my current fault (its my past self fault)

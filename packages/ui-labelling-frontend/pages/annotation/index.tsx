@@ -8,7 +8,7 @@ import {
   useMemo,
 } from 'react'
 import { annotationLabels, Rect, ServiceManualLabel } from 'ui-labelling-shared'
-import { AnnotationWithScreen, getEditableAnnotations } from '../../api'
+import { AnnotationWithScreen, getEditableAnnotations, patchSingleAnnotation } from '../../api'
 import { dataUrlToBlob, getDataUrl } from '../../utils/b64'
 import { Flex } from '../../components/flex'
 
@@ -26,6 +26,7 @@ const AnnotationEditor = () => {
   const [clean, setClean] = useState<boolean>(false)
   const [text, setText] = useState<string>('')
   const [page, setPage] = useState<number>(-1)
+  const [submitting, setSubmitting] = useState<boolean>(false)
 
   const labels: string[] = useMemo(() => {
     const tag = query.tag ? String(query.tag) : undefined
@@ -48,13 +49,6 @@ const AnnotationEditor = () => {
     [setUpdatedRect],
   )
 
-  const handleSubmit = useCallback(
-    (event: FormEvent) => {
-      event.preventDefault()
-    },
-    [clean, text, label, batchIndex, batchAnnos, updatedRect],
-  )
-
   const handlePrevAnno = useCallback(() => {
     setBatchIndex((bi) => Math.max(0, bi - 1))
   }, [setBatchIndex])
@@ -66,6 +60,43 @@ const AnnotationEditor = () => {
   const handleNextPage = useCallback(() => {
     setPage((p) => p + 1)
   }, [setPage])
+
+  const handleSubmit = useCallback(
+    async (event: FormEvent) => {
+      event.preventDefault()
+      const record = batchAnnos?.[batchIndex]
+      if (!record) {
+        return
+      }
+      if (submitting) {
+        return
+      }
+      try {
+        setSubmitting(true)
+        await patchSingleAnnotation(record.id, {
+          label,
+          text_content: text,
+          clean,
+          rect: updatedRect
+        })
+      } catch(e) {
+        window.alert('failed to save annotation. WHY')
+      } finally {
+        setSubmitting(false)
+      }
+    },
+    [
+      clean,
+      text,
+      label,
+      batchIndex,
+      batchAnnos,
+      updatedRect,
+      handleNextAnno,
+      setSubmitting,
+      submitting
+    ],
+  )
 
   useEffect(() => {
     if (!isReady) {
@@ -111,9 +142,10 @@ const AnnotationEditor = () => {
     if (!record) {
       return
     }
+    console.log('world record', record)
     setLabel(record.label)
     setClean(record.clean)
-    setText(record.textContent || '')
+    setText(record.text_content || '')
   }, [record, setLabel, setClean, setText])
 
   return (
@@ -132,6 +164,7 @@ const AnnotationEditor = () => {
           <SingleAnnotation
             key={batchAnnos[batchIndex].id}
             annotation={batchAnnos[batchIndex]}
+            onRectChange={updateRect}
           />
           <hr />
           <form onSubmit={handleSubmit}>
@@ -157,8 +190,8 @@ const AnnotationEditor = () => {
                   })}
                 </select>
               </label>
-              <textarea rows={10}>{text}</textarea>
-              <button type="submit">submit</button>
+              <textarea rows={10} onChange={e => setText(e.target.value)} value={text} />
+              <button type="submit" disabled={submitting}>submit</button>
             </Flex>
           </form>
         </>
@@ -168,6 +201,12 @@ const AnnotationEditor = () => {
 }
 
 export default AnnotationEditor
+
+function pointIn(p: { x: number; y: number }, r: Rect) {
+  return p.x >= r.x && p.x <= r.x + r.width && p.y >= r.y && p.y <= r.y + r.height
+}
+
+type ResizeHandle = "nw" | "ne" | "se" | "sw"
 
 export function SingleAnnotation({
   annotation,
@@ -187,46 +226,32 @@ export function SingleAnnotation({
   const rectRef = useRef<Rect | null>(null)
   const cropOriginRef = useRef<{ sx: number; sy: number }>({ sx: 0, sy: 0 })
   const imgBitmapRef = useRef<ImageBitmap | null>(null)
-  const draggingRef = useRef(false)
-  const dragOffsetRef = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 })
-  const stepRef = useRef<number>(2) // <- px size, default 2
 
+  const stepRef = useRef<number>(2) // step size (⌘ + 1..9)
+
+  // Drag/resize state
+  const modeRef = useRef<"idle" | "move" | "resize">("idle")
+  const dragOffsetRef = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 })
+  const activeHandleRef = useRef<ResizeHandle | null>(null)
+  const anchorRef = useRef<{ ax: number; ay: number } | null>(null)
+
+  // HUD labels
   const hudStepRef = useRef<HTMLSpanElement | null>(null)
   const hudRectRef = useRef<HTMLSpanElement | null>(null)
 
-  const DPR = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
+  const HANDLE_SIZE = 10 // px
+  const DPR = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
 
   const refreshHUD = useCallback(() => {
     const { sx, sy } = cropOriginRef.current
     const r = rectRef.current
-    if (hudStepRef.current) {
-      hudStepRef.current.textContent = `${stepRef.current}px`
-    }
+    if (hudStepRef.current) hudStepRef.current.textContent = `${stepRef.current}px`
     if (hudRectRef.current && r) {
-      hudRectRef.current.textContent = `x:${sx + r.x} y:${sy + r.y} w:${Math.round(r.width)} h:${Math.round(r.height)}`
+      hudRectRef.current.textContent = `x:${sx + Math.round(r.x)} y:${sy + Math.round(r.y)} w:${Math.round(
+        r.width
+      )} h:${Math.round(r.height)}`
     }
   }, [])
-
-  const draw = useCallback(() => {
-    const cvs = canvasRef.current
-    const rect = rectRef.current
-    const bitmap = imgBitmapRef.current
-    if (!cvs || !rect || !bitmap) return
-    const ctx = cvs.getContext('2d')
-    if (!ctx) return
-
-    ctx.setTransform(DPR, 0, 0, DPR, 0, 0)
-    ctx.clearRect(0, 0, cvs.width, cvs.height)
-    ctx.drawImage(bitmap, 0, 0, cvs.width / DPR, cvs.height / DPR)
-
-    ctx.save()
-    ctx.lineWidth = 1
-    ctx.strokeStyle = '#39ff14'
-    ctx.shadowColor = '#39ff14'
-    ctx.shadowBlur = 8
-    ctx.strokeRect(rect.x, rect.y, rect.width, rect.height)
-    ctx.restore()
-  }, [DPR])
 
   const clampRect = useCallback(
     (r: Rect) => {
@@ -234,38 +259,88 @@ export function SingleAnnotation({
       if (!cvs) return r
       const cw = cvs.width / DPR
       const ch = cvs.height / DPR
-      const width = Math.min(r.width, cw)
-      const height = Math.min(r.height, ch)
+      const width = Math.min(Math.max(r.width, 1), cw)
+      const height = Math.min(Math.max(r.height, 1), ch)
       let x = r.x
       let y = r.y
       x = Math.max(0, Math.min(x, cw - width))
       y = Math.max(0, Math.min(y, ch - height))
       return { x, y, width, height }
     },
-    [DPR],
+    [DPR]
   )
+
+  const getHandleRects = useCallback(
+    (r: Rect): Record<ResizeHandle, Rect> => {
+      const hs = HANDLE_SIZE
+      return {
+        nw: { x: r.x - hs / 2, y: r.y - hs / 2, width: hs, height: hs },
+        ne: { x: r.x + r.width - hs / 2, y: r.y - hs / 2, width: hs, height: hs },
+        se: { x: r.x + r.width - hs / 2, y: r.y + r.height - hs / 2, width: hs, height: hs },
+        sw: { x: r.x - hs / 2, y: r.y + r.height - hs / 2, width: hs, height: hs },
+      }
+    },
+    [HANDLE_SIZE]
+  )
+
+  const hitTestHandle = useCallback(
+    (p: { x: number; y: number }, r: Rect): ResizeHandle | null => {
+      const handles = getHandleRects(r)
+      for (const key of Object.keys(handles) as ResizeHandle[]) {
+        if (pointIn(p, handles[key])) return key
+      }
+      return null
+    },
+    [getHandleRects]
+  )
+
+  const draw = useCallback(() => {
+    const cvs = canvasRef.current
+    const rect = rectRef.current
+    const bitmap = imgBitmapRef.current
+    if (!cvs || !rect || !bitmap) return
+    const ctx = cvs.getContext("2d")
+    if (!ctx) return
+
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0)
+    ctx.clearRect(0, 0, cvs.width, cvs.height)
+    ctx.drawImage(bitmap, 0, 0, cvs.width / DPR, cvs.height / DPR)
+
+    // Neon border
+    ctx.save()
+    ctx.lineWidth = 1
+    ctx.strokeStyle = "#39ff14"
+    ctx.shadowColor = "#39ff14"
+    ctx.shadowBlur = 8
+    ctx.strokeRect(rect.x, rect.y, rect.width, rect.height)
+
+    // Corner handles
+    const handles = getHandleRects(rect)
+    ctx.fillStyle = "#39ff14"
+    ctx.shadowBlur = 0
+    for (const h of Object.values(handles)) {
+      ctx.fillRect(h.x, h.y, h.width, h.height)
+    }
+    ctx.restore()
+
+    refreshHUD()
+  }, [DPR, getHandleRects, refreshHUD])
 
   const emitChange = useCallback(() => {
     if (!rectRef.current) return
-
     const { sx, sy } = cropOriginRef.current
     const r = rectRef.current
     onRectChange?.({
       rectInCrop: { ...r },
-      rectInFullImage: {
-        x: sx + r.x,
-        y: sy + r.y,
-        width: r.width,
-        height: r.height,
-      },
+      rectInFullImage: { x: sx + r.x, y: sy + r.y, width: r.width, height: r.height },
       cropOrigin: { sx, sy },
     })
     refreshHUD()
   }, [onRectChange, refreshHUD])
 
+  // Initialize crop + canvas + rect
   useEffect(() => {
     let cancelled = false
-
     async function run() {
       const cvs = canvasRef.current
       if (!cvs) return
@@ -279,37 +354,34 @@ export function SingleAnnotation({
       const sy = Math.max(0, Math.floor(y - padding))
       const sw = Math.min(bitmap.width - sx, Math.ceil(width + 2 * padding))
       const sh = Math.min(bitmap.height - sy, Math.ceil(height + 2 * padding))
-
       cropOriginRef.current = { sx, sy }
 
-      // Pre-crop for cheap redraws
-      const cropCanvas = document.createElement('canvas')
+      // pre-crop
+      const cropCanvas = document.createElement("canvas")
       cropCanvas.width = sw
       cropCanvas.height = sh
-      const cropCtx = cropCanvas.getContext('2d')!
+      const cropCtx = cropCanvas.getContext("2d")!
       cropCtx.drawImage(bitmap, sx, sy, sw, sh, 0, 0, sw, sh)
       const croppedBitmap = await createImageBitmap(cropCanvas)
       imgBitmapRef.current = croppedBitmap
 
-      // Size canvas with HiDPI backing
+      // canvas sizing (DPR backing)
       cvs.style.width = `${sw}px`
       cvs.style.height = `${sh}px`
       cvs.width = Math.round(sw * DPR)
       cvs.height = Math.round(sh * DPR)
 
-      // Rect begins at original bounds inside crop (offset by padding)
       rectRef.current = clampRect({ x: padding, y: padding, width, height })
       draw()
       emitChange()
     }
-
     run()
     return () => {
       cancelled = true
     }
   }, [annotation, padding, DPR, clampRect, draw, emitChange])
 
-  // ----- Keyboard controls (Meta + key) -----
+  // Keyboard controls (Meta + arrows/i/j/k/l; ⌘+[1..9] sets step)
   useEffect(() => {
     const cvs = canvasRef.current
     if (!cvs) return
@@ -326,18 +398,16 @@ export function SingleAnnotation({
       emitChange()
     }
 
+    // center-preserving resizes for single-axis keys
     const resizeY = (delta: number) => {
       const rect = rectRef.current
-      const cvs = canvasRef.current
-      if (!rect || !cvs) return
+      if (!rect) return
       const ch = cvs.height / DPR
-
       const cy = rect.y + rect.height / 2
       const newH = Math.min(Math.max(rect.height + delta, 1), ch)
       let newY = cy - newH / 2
       if (newY < 0) newY = 0
       if (newY + newH > ch) newY = ch - newH
-
       rectRef.current = { ...rect, y: newY, height: newH }
       draw()
       emitChange()
@@ -345,16 +415,13 @@ export function SingleAnnotation({
 
     const resizeX = (delta: number) => {
       const rect = rectRef.current
-      const cvs = canvasRef.current
-      if (!rect || !cvs) return
+      if (!rect) return
       const cw = cvs.width / DPR
-
       const cx = rect.x + rect.width / 2
       const newW = Math.min(Math.max(rect.width + delta, 1), cw)
       let newX = cx - newW / 2
       if (newX < 0) newX = 0
       if (newX + newW > cw) newX = cw - newW
-
       rectRef.current = { ...rect, x: newX, width: newW }
       draw()
       emitChange()
@@ -363,7 +430,7 @@ export function SingleAnnotation({
     const onKeyDown = (e: KeyboardEvent) => {
       if (!e.metaKey) return
 
-      // Toggle step: ⌘ + [1..9]
+      // step set
       if (/^[1-9]$/.test(e.key)) {
         e.preventDefault()
         stepRef.current = parseInt(e.key, 10)
@@ -371,71 +438,66 @@ export function SingleAnnotation({
         return
       }
 
-      // Movement with arrows
-      if (
-        e.key === 'ArrowLeft' ||
-        e.key === 'ArrowRight' ||
-        e.key === 'ArrowUp' ||
-        e.key === 'ArrowDown'
-      ) {
+      const s = stepRef.current
+
+      // arrows
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown") {
         e.preventDefault()
-        const s = stepRef.current
-        if (e.key === 'ArrowLeft') move(-s, 0)
-        if (e.key === 'ArrowRight') move(s, 0)
-        if (e.key === 'ArrowUp') move(0, -s)
-        if (e.key === 'ArrowDown') move(0, s)
+        if (e.key === "ArrowLeft") move(-s, 0)
+        if (e.key === "ArrowRight") move(s, 0)
+        if (e.key === "ArrowUp") move(0, -s)
+        if (e.key === "ArrowDown") move(0, s)
         return
       }
 
-      // Resize edges
-      const s = stepRef.current
+      // i/k/j/l resizes (center-preserving on that axis)
       switch (e.key) {
-        case 'i': // taller
-          e.preventDefault()
-          resizeY(s)
-          break
-        case 'k': // shorter
-          e.preventDefault()
-          resizeY(-s)
-          break
-        case 'l': // wider
-          e.preventDefault()
-          resizeX(s)
-          break
-        case 'j': // narrower
-          e.preventDefault()
-          resizeX(-s)
-          break
+        case "i": e.preventDefault(); resizeY(+s); break   // taller
+        case "k": e.preventDefault(); resizeY(-s); break   // shorter
+        case "l": e.preventDefault(); resizeX(+s); break   // wider
+        case "j": e.preventDefault(); resizeX(-s); break   // narrower
       }
     }
 
-    window.addEventListener('keydown', onKeyDown, { passive: false })
-    return () => window.removeEventListener('keydown', onKeyDown)
+    window.addEventListener("keydown", onKeyDown, { passive: false })
+    return () => window.removeEventListener("keydown", onKeyDown)
   }, [DPR, clampRect, draw, emitChange, refreshHUD])
 
-  // ----- Pointer dragging -----
+  // Pointer interactions: move + corner-resize + hover cursors
   useEffect(() => {
     const cvs = canvasRef.current
     if (!cvs) return
 
     const toLocal = (e: PointerEvent) => {
       const bb = cvs.getBoundingClientRect()
-      const x = e.clientX - bb.left
-      const y = e.clientY - bb.top
-      return { x, y }
+      return { x: e.clientX - bb.left, y: e.clientY - bb.top }
     }
 
     const onDown = (e: PointerEvent) => {
       if (!rectRef.current) return
       const p = toLocal(e)
       const r = rectRef.current
-      const inside =
-        p.x >= r.x &&
-        p.x <= r.x + r.width &&
-        p.y >= r.y &&
-        p.y <= r.y + r.height
-      if (inside) {
-        draggingRef.current = true
+
+      // handles first
+      const handle = hitTestHandle(p, r)
+      if (handle) {
+        activeHandleRef.current = handle
+        modeRef.current = "resize"
+        // anchor = opposite corner (fixed)
+        let ax = r.x, ay = r.y
+        if (handle === "nw") { ax = r.x + r.width; ay = r.y + r.height }
+        if (handle === "ne") { ax = r.x;            ay = r.y + r.height }
+        if (handle === "se") { ax = r.x;            ay = r.y }
+        if (handle === "sw") { ax = r.x + r.width;  ay = r.y }
+        anchorRef.current = { ax, ay }
+        cvs.setPointerCapture(e.pointerId)
+        e.preventDefault()
+        return
+      }
+
+      // move if inside rect
+      if (pointIn(p, r)) {
+        modeRef.current = "move"
         dragOffsetRef.current = { dx: p.x - r.x, dy: p.y - r.y }
         cvs.setPointerCapture(e.pointerId)
         e.preventDefault()
@@ -443,56 +505,82 @@ export function SingleAnnotation({
     }
 
     const onMove = (e: PointerEvent) => {
-      if (!draggingRef.current || !rectRef.current) return
+      if (!rectRef.current) return
       const p = toLocal(e)
-      const { dx, dy } = dragOffsetRef.current
-      const next = clampRect({ ...rectRef.current, x: p.x - dx, y: p.y - dy })
-      rectRef.current = next
-      draw()
+      const r = rectRef.current
+
+      if (modeRef.current === "resize" && anchorRef.current) {
+        const { ax, ay } = anchorRef.current
+        const cw = cvs.width / DPR, ch = cvs.height / DPR
+
+        // clamp dragged corner to canvas
+        const dx = Math.max(0, Math.min(p.x, cw))
+        const dy = Math.max(0, Math.min(p.y, ch))
+
+        // new rect from anchor to dragged corner
+        let x = Math.min(ax, dx)
+        let y = Math.min(ay, dy)
+        let w = Math.max(1, Math.abs(dx - ax))
+        let h = Math.max(1, Math.abs(dy - ay))
+
+        rectRef.current = clampRect({ x, y, width: w, height: h })
+        draw()
+        return
+      }
+
+      if (modeRef.current === "move") {
+        const { dx, dy } = dragOffsetRef.current
+        rectRef.current = clampRect({ ...r, x: p.x - dx, y: p.y - dy })
+        draw()
+        return
+      }
+
+      // hover cursor when idle
+      const handle = hitTestHandle(p, r)
+      if (handle === "nw" || handle === "se") cvs.style.cursor = "nwse-resize"
+      else if (handle === "ne" || handle === "sw") cvs.style.cursor = "nesw-resize"
+      else if (pointIn(p, r)) cvs.style.cursor = "move"
+      else cvs.style.cursor = "default"
     }
 
     const onUp = (e: PointerEvent) => {
-      if (!draggingRef.current) return
-      draggingRef.current = false
-      cvs.releasePointerCapture(e.pointerId)
-      emitChange()
+      const wasResizing = modeRef.current === "resize"
+      const wasMoving = modeRef.current === "move"
+      modeRef.current = "idle"
+      activeHandleRef.current = null
+      anchorRef.current = null
+      try { cvs.releasePointerCapture(e.pointerId) } catch {}
+      if (wasResizing || wasMoving) emitChange()
     }
 
-    cvs.addEventListener('pointerdown', onDown)
-    cvs.addEventListener('pointermove', onMove)
-    cvs.addEventListener('pointerup', onUp)
-    cvs.addEventListener('pointercancel', onUp)
+    cvs.addEventListener("pointerdown", onDown)
+    cvs.addEventListener("pointermove", onMove)
+    cvs.addEventListener("pointerup", onUp)
+    cvs.addEventListener("pointercancel", onUp)
     return () => {
-      cvs.removeEventListener('pointerdown', onDown)
-      cvs.removeEventListener('pointermove', onMove)
-      cvs.removeEventListener('pointerup', onUp)
-      cvs.removeEventListener('pointercancel', onUp)
+      cvs.removeEventListener("pointerdown", onDown)
+      cvs.removeEventListener("pointermove", onMove)
+      cvs.removeEventListener("pointerup", onUp)
+      cvs.removeEventListener("pointercancel", onUp)
     }
-  }, [clampRect, draw, emitChange])
+  }, [DPR, clampRect, draw, emitChange, hitTestHandle])
 
+  // Keep canvas repainted if something external triggers a render
   useEffect(() => {
     draw()
   }, [draw])
 
   return (
-    <div style={{ display: 'grid', gap: 8 }}>
-      <div style={{ fontFamily: 'monospace', fontSize: 12 }}>
+    <div style={{ display: "grid", gap: 8 }}>
+      <div style={{ fontFamily: "monospace", fontSize: 12 }}>
         <div>annotation: {annotation.id}</div>
         <div>screenshot: {annotation.screenshot.id}</div>
-        <div>
-          step: <span ref={hudStepRef}>2px</span> (⌘ + 1–9)
-        </div>
-        <div>
-          rect: <span ref={hudRectRef}>x:– y:– w:– h:–</span>
-        </div>
+        <div>step: <span ref={hudStepRef}>2px</span> (⌘ + 1–9)</div>
+        <div>rect: <span ref={hudRectRef}>x:– y:– w:– h:–</span></div>
       </div>
       <canvas
         ref={canvasRef}
-        style={{
-          border: '1px solid #333',
-          borderRadius: 8,
-          touchAction: 'none',
-        }}
+        style={{ border: "1px solid #333", borderRadius: 8, touchAction: "none" }}
       />
     </div>
   )

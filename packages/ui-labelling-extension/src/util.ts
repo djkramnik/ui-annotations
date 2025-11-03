@@ -4,7 +4,7 @@ export function hasIntersection(arr1: any[], arr2: any[]) {
 }
 
 export function hasText(el: HTMLElement) {
-  return (el.textContent?.replaceAll(/\s+/g, '') ?? '').length > 0
+  return (el.text_content?.replaceAll(/\s+/g, '') ?? '').length > 0
 }
 
 // does not return self
