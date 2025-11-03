@@ -6,16 +6,18 @@ import { dataUrlToBlob, getDataUrl } from "../../utils/b64"
 
 const AnnotationEditor = () => {
   const [batchAnnos, setBatchAnnos] = useState<null | AnnotationWithScreen[]>(null)
-  const { query } = useRouter()
-  const pageN = Number(String(query.page))
-  const [page, setPage] = useState<number>(Number.isNaN(pageN) ? 1 : pageN)
-  const [tag, setTag] = useState<string | null>(query.tag ? String(query.tag) : null)
+  const { query, isReady } = useRouter()
   const [total, setTotal] = useState<number>(0)
   const [batchIndex, setBatchIndex] = useState<number>(0)
 
   useEffect(() => {
+    if (!isReady) {
+      return
+    }
     let cancelled = false
-    getEditableAnnotations(page)
+    const tag = query.tag ? String(query.tag) : undefined
+    const pageN = Number(String(query.page))
+    getEditableAnnotations(Number.isNaN(pageN) ? 1 : pageN, tag)
       .then(({ total, records }) => {
         if (cancelled) {
           return
@@ -27,7 +29,7 @@ const AnnotationEditor = () => {
     return () => {
       cancelled = true
     }
-  }, [page, tag, setTotal, setBatchAnnos, setBatchIndex])
+  }, [setTotal, setBatchAnnos, setBatchIndex, isReady, query])
 
 
   if (!batchAnnos) {
@@ -67,7 +69,21 @@ export function SingleAnnotation({
   const dragOffsetRef = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 })
   const stepRef = useRef<number>(2) // <- px size, default 2
 
+  const hudStepRef = useRef<HTMLSpanElement | null>(null)
+  const hudRectRef = useRef<HTMLSpanElement | null>(null)
+
   const DPR = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
+
+  const refreshHUD = useCallback(() => {
+    const r = rectRef.current
+    console.log('HI', r)
+    if (hudStepRef.current) {
+      hudStepRef.current.textContent = `${stepRef.current}px`
+    }
+    if (hudRectRef.current && r) {
+      hudRectRef.current.textContent = `x:${Math.round(r.x)} y:${Math.round(r.y)} w:${Math.round(r.width)} h:${Math.round(r.height)}`
+    }
+  }, [])
 
   const draw = useCallback(() => {
     const cvs = canvasRef.current
@@ -82,7 +98,7 @@ export function SingleAnnotation({
     ctx.drawImage(bitmap, 0, 0, cvs.width / DPR, cvs.height / DPR)
 
     ctx.save()
-    ctx.lineWidth = 3
+    ctx.lineWidth = 1
     ctx.strokeStyle = "#39ff14"
     ctx.shadowColor = "#39ff14"
     ctx.shadowBlur = 8
@@ -108,15 +124,17 @@ export function SingleAnnotation({
   )
 
   const emitChange = useCallback(() => {
-    if (!onRectChange || !rectRef.current) return
+    if (!rectRef.current) return
+    console.log('hello')
     const { sx, sy } = cropOriginRef.current
     const r = rectRef.current
-    onRectChange({
+    onRectChange?.({
       rectInCrop: { ...r },
       rectInFullImage: { x: sx + r.x, y: sy + r.y, width: r.width, height: r.height },
       cropOrigin: { sx, sy },
     })
-  }, [onRectChange])
+    refreshHUD()
+  }, [onRectChange, refreshHUD])
 
   useEffect(() => {
     let cancelled = false
@@ -233,6 +251,7 @@ export function SingleAnnotation({
       if (/^[1-9]$/.test(e.key)) {
         e.preventDefault()
         stepRef.current = parseInt(e.key, 10)
+        refreshHUD()
         return
       }
 
@@ -279,7 +298,7 @@ export function SingleAnnotation({
 
     window.addEventListener("keydown", onKeyDown, { passive: false })
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [DPR, clampRect, draw, emitChange])
+  }, [DPR, clampRect, draw, emitChange, refreshHUD])
 
   // ----- Pointer dragging -----
   useEffect(() => {
@@ -343,7 +362,8 @@ export function SingleAnnotation({
       <div style={{ fontFamily: "monospace", fontSize: 12 }}>
         <div>annotation: {annotation.id}</div>
         <div>screenshot: {annotation.screenshot.id}</div>
-        <div>step: {stepRef.current}px (⌘ + 1–9 to set)</div>
+        <div>step: <span ref={hudStepRef}>2px</span> (⌘ + 1–9)</div>
+        <div>rect: <span ref={hudRectRef}>x:– y:– w:– h:–</span></div>
       </div>
       <canvas
         ref={canvasRef}

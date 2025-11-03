@@ -16,24 +16,34 @@ annotationRouter.get('/', async (req: Request, res: Response) => {
       where: {
         ...(tag ? {
           screenshot: {
-            tag
+            tag,
+            image_data: {
+              not: null
+            }
           },
-          image_data: {
-            not: null
+        } : {
+          screenshot: {
+            image_data: { not: null }
           }
-        } : {})
+        })
       }
     }),
     prisma.annotation.findMany({
       where: {
         ...(tag ? {
           screenshot: {
-            tag
+            tag,
+            image_data: {
+              not: null
+            }
           },
-          image_data: {
-            not: null
+        } : {
+          screenshot: {
+            image_data: {
+              not: null
+            }
           }
-        } : {})
+        })
       },
       orderBy: {
         id: 'asc'
