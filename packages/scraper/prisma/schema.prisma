@@ -58,4 +58,26 @@ model screenshot {
   ocr                 ocr[]
   screenshot          screenshot?   @relation("screenshotToscreenshot", fields: [synthetic_parent_id], references: [id], map: "annotations_synthetic_parent_id_fkey")
   other_screenshot    screenshot[]  @relation("screenshotToscreenshot")
+
+  // new back-relation (does not create a column)
+  annotation          annotation[]
+}
+
+model annotation {
+  id             String      @id @default(uuid()) @db.Uuid
+  x              Float
+  y              Float
+  width          Float
+  height         Float
+  aspect_ratio   Float
+  screenshot_id  Int
+  clean          Boolean     @default(false)
+  label String
+  text_content   String?
+
+  // relation
+  screenshot     screenshot  @relation(fields: [screenshot_id], references: [id], map: "annotation_screenshot_id_fkey")
+
+  @@index([screenshot_id])
+  @@map("annotation")
 }
