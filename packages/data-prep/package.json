@@ -7,6 +7,7 @@
     "prep-ocr": "npm run build && node dist/prep_ocr.js",
     "ocr": "npm run build && node dist/write_ocr.js",
     "start": "npm run build && node dist/index.js",
+    "migrate_annos": "npm run build && node dist/migrate_annotations.js",
     "unwrap_annotations": "npm run build && node dist/unwrap_annos.js",
     "ocr_annotations": "npm run build && node dist/ocr_annotations.js",
     "fix_ids": "npm run build && node dist/fix_anno_ids.js",

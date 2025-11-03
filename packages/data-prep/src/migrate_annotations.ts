@@ -36,11 +36,11 @@ async function main() {
   let records: AnnotationRecord[] = []
 
   for(const s of screens) {
-    console.log('updating annotation json for screenshot: ', s.id)
+    console.log('migrating screenshot: ', s.id)
 
     const annotations = s.annotations as unknown as Annotation[]
 
-    records.concat(
+    records = records.concat(
       annotations.map(a => ({
         id: a.id,
         label: a.label,
@@ -53,6 +53,7 @@ async function main() {
         text_content: a.textContent || undefined
       }))
     )
+    console.log('records:', records.length)
   }
 
   await prisma.annotation.createMany({

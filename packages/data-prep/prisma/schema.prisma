@@ -76,7 +76,7 @@ model annotation {
   text_content   String?
 
   // relation
-  screenshot     screenshot  @relation(fields: [screenshot_id], references: [id], map: "annotation_screenshot_id_fkey")
+  screenshot     screenshot  @relation(fields: [screenshot_id], references: [id], map: "annotation_screenshot_id_fkey", onDelete: Cascade)
 
   @@index([screenshot_id])
   @@map("annotation")
