@@ -208,7 +208,7 @@ function pointIn(p: { x: number; y: number }, r: Rect) {
 
 type ResizeHandle = "nw" | "ne" | "se" | "sw"
 
-export function SingleAnnotation({
+function SingleAnnotation({
   annotation,
   padding = 40,
   onRectChange,
@@ -221,13 +221,19 @@ export function SingleAnnotation({
     cropOrigin: { sx: number; sy: number }
   }) => void
 }) {
+  const containerRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
   const rectRef = useRef<Rect | null>(null)
   const cropOriginRef = useRef<{ sx: number; sy: number }>({ sx: 0, sy: 0 })
   const imgBitmapRef = useRef<ImageBitmap | null>(null)
 
-  const stepRef = useRef<number>(2) // step size (⌘ + 1..9)
+  // Intrinsic (unscaled) crop size in pixels
+  const intrinsicRef = useRef<{ w: number; h: number }>({ w: 1, h: 1 })
+  // Current CSS scale factor: cssWidth / intrinsicWidth
+  const scaleRef = useRef<number>(1)
+
+  const stepRef = useRef<number>(2) // step size (⌘+1..9)
 
   // Drag/resize state
   const modeRef = useRef<"idle" | "move" | "resize">("idle")
@@ -239,7 +245,8 @@ export function SingleAnnotation({
   const hudStepRef = useRef<HTMLSpanElement | null>(null)
   const hudRectRef = useRef<HTMLSpanElement | null>(null)
 
-  const HANDLE_SIZE = 10 // px
+  const HANDLE_SIZE_CSS = 10 // handle size in CSS px (stays visually constant)
+
   const DPR = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
 
   const refreshHUD = useCallback(() => {
@@ -253,46 +260,57 @@ export function SingleAnnotation({
     }
   }, [])
 
-  const clampRect = useCallback(
-    (r: Rect) => {
-      const cvs = canvasRef.current
-      if (!cvs) return r
-      const cw = cvs.width / DPR
-      const ch = cvs.height / DPR
-      const width = Math.min(Math.max(r.width, 1), cw)
-      const height = Math.min(Math.max(r.height, 1), ch)
-      let x = r.x
-      let y = r.y
-      x = Math.max(0, Math.min(x, cw - width))
-      y = Math.max(0, Math.min(y, ch - height))
-      return { x, y, width, height }
-    },
-    [DPR]
-  )
+  // Clamp using INTRINSIC dimensions
+  const clampRect = useCallback((r: Rect) => {
+    const { w: cw, h: ch } = intrinsicRef.current
+    const width = Math.min(Math.max(r.width, 1), cw)
+    const height = Math.min(Math.max(r.height, 1), ch)
+    let x = r.x
+    let y = r.y
+    x = Math.max(0, Math.min(x, cw - width))
+    y = Math.max(0, Math.min(y, ch - height))
+    return { x, y, width, height }
+  }, [])
 
-  const getHandleRects = useCallback(
-    (r: Rect): Record<ResizeHandle, Rect> => {
-      const hs = HANDLE_SIZE
-      return {
-        nw: { x: r.x - hs / 2, y: r.y - hs / 2, width: hs, height: hs },
-        ne: { x: r.x + r.width - hs / 2, y: r.y - hs / 2, width: hs, height: hs },
-        se: { x: r.x + r.width - hs / 2, y: r.y + r.height - hs / 2, width: hs, height: hs },
-        sw: { x: r.x - hs / 2, y: r.y + r.height - hs / 2, width: hs, height: hs },
-      }
-    },
-    [HANDLE_SIZE]
-  )
+  // Handle rects in INTRINSIC units (convert from CSS handle size)
+  const getHandleRects = useCallback((r: Rect): Record<ResizeHandle, Rect> => {
+    const hs = HANDLE_SIZE_CSS / (scaleRef.current || 1)
+    return {
+      nw: { x: r.x - hs / 2, y: r.y - hs / 2, width: hs, height: hs },
+      ne: { x: r.x + r.width - hs / 2, y: r.y - hs / 2, width: hs, height: hs },
+      se: { x: r.x + r.width - hs / 2, y: r.y + r.height - hs / 2, width: hs, height: hs },
+      sw: { x: r.x - hs / 2, y: r.y + r.height - hs / 2, width: hs, height: hs },
+    }
+  }, [])
 
   const hitTestHandle = useCallback(
-    (p: { x: number; y: number }, r: Rect): ResizeHandle | null => {
+    (pIntrinsic: { x: number; y: number }, r: Rect): ResizeHandle | null => {
       const handles = getHandleRects(r)
       for (const key of Object.keys(handles) as ResizeHandle[]) {
-        if (pointIn(p, handles[key])) return key
+        if (pointIn(pIntrinsic, handles[key])) return key
       }
       return null
     },
     [getHandleRects]
   )
+
+  // Size the canvas backing store to match container width (<= viewport) while keeping crispness
+  const layoutCanvas = useCallback(() => {
+    const cvs = canvasRef.current
+    const el = containerRef.current
+    if (!cvs || !el) return
+
+    // CSS width set by container; we use 100% width below. Measure actual CSS width:
+    const cssW = Math.max(1, cvs.getBoundingClientRect().width)
+    const { w: intrinsicW, h: intrinsicH } = intrinsicRef.current
+
+    const scale = cssW / intrinsicW
+    scaleRef.current = scale
+
+    // Backing store size (for crisp rendering with DPR & scale)
+    cvs.width = Math.round(intrinsicW * scale * DPR)
+    cvs.height = Math.round(intrinsicH * scale * DPR)
+  }, [DPR])
 
   const draw = useCallback(() => {
     const cvs = canvasRef.current
@@ -302,19 +320,22 @@ export function SingleAnnotation({
     const ctx = cvs.getContext("2d")
     if (!ctx) return
 
-    ctx.setTransform(DPR, 0, 0, DPR, 0, 0)
-    ctx.clearRect(0, 0, cvs.width, cvs.height)
-    ctx.drawImage(bitmap, 0, 0, cvs.width / DPR, cvs.height / DPR)
+    const scale = scaleRef.current
+    const { w: intrinsicW, h: intrinsicH } = intrinsicRef.current
 
-    // Neon border
+    // Draw in INTRINSIC units, scaled by (scale * DPR)
+    ctx.setTransform(DPR * scale, 0, 0, DPR * scale, 0, 0)
+    ctx.clearRect(0, 0, intrinsicW, intrinsicH)
+    ctx.drawImage(bitmap, 0, 0, intrinsicW, intrinsicH)
+
+    // Neon border and handles (units: intrinsic)
     ctx.save()
-    ctx.lineWidth = 1
+    ctx.lineWidth = 1 / scale // keep ~1 CSS px
     ctx.strokeStyle = "#39ff14"
     ctx.shadowColor = "#39ff14"
-    ctx.shadowBlur = 8
+    ctx.shadowBlur = 8 / scale
     ctx.strokeRect(rect.x, rect.y, rect.width, rect.height)
 
-    // Corner handles
     const handles = getHandleRects(rect)
     ctx.fillStyle = "#39ff14"
     ctx.shadowBlur = 0
@@ -338,12 +359,13 @@ export function SingleAnnotation({
     refreshHUD()
   }, [onRectChange, refreshHUD])
 
-  // Initialize crop + canvas + rect
+  // Initialize crop + intrinsic sizes + canvas
   useEffect(() => {
     let cancelled = false
     async function run() {
       const cvs = canvasRef.current
-      if (!cvs) return
+      const el = containerRef.current
+      if (!cvs || !el) return
 
       const blob = dataUrlToBlob(getDataUrl(annotation.screenshot.image_data))
       const bitmap = await createImageBitmap(blob)
@@ -356,7 +378,7 @@ export function SingleAnnotation({
       const sh = Math.min(bitmap.height - sy, Math.ceil(height + 2 * padding))
       cropOriginRef.current = { sx, sy }
 
-      // pre-crop
+      // pre-crop -> intrinsic bitmap
       const cropCanvas = document.createElement("canvas")
       cropCanvas.width = sw
       cropCanvas.height = sh
@@ -365,12 +387,16 @@ export function SingleAnnotation({
       const croppedBitmap = await createImageBitmap(cropCanvas)
       imgBitmapRef.current = croppedBitmap
 
-      // canvas sizing (DPR backing)
-      cvs.style.width = `${sw}px`
-      cvs.style.height = `${sh}px`
-      cvs.width = Math.round(sw * DPR)
-      cvs.height = Math.round(sh * DPR)
+      // Set intrinsic size
+      intrinsicRef.current = { w: sw, h: sh }
 
+      // CSS sizing: make it responsive
+      // container controls width; canvas fills 100% of container, capped to viewport
+      cvs.style.width = "100%"
+      cvs.style.height = "auto"
+
+      // Layout and draw
+      layoutCanvas()
       rectRef.current = clampRect({ x: padding, y: padding, width, height })
       draw()
       emitChange()
@@ -379,56 +405,24 @@ export function SingleAnnotation({
     return () => {
       cancelled = true
     }
-  }, [annotation, padding, DPR, clampRect, draw, emitChange])
+  }, [annotation, padding, clampRect, draw, emitChange, layoutCanvas])
+
+  // Relayout on window resize (responsive width)
+  useEffect(() => {
+    const handler = () => {
+      layoutCanvas()
+      draw()
+    }
+    window.addEventListener("resize", handler)
+    return () => window.removeEventListener("resize", handler)
+  }, [layoutCanvas, draw])
 
   // Keyboard controls (Meta + arrows/i/j/k/l; ⌘+[1..9] sets step)
   useEffect(() => {
-    const cvs = canvasRef.current
-    if (!cvs) return
-
-    const move = (dx: number, dy: number) => {
-      if (!rectRef.current) return
-      const next = clampRect({
-        ...rectRef.current,
-        x: rectRef.current.x + dx,
-        y: rectRef.current.y + dy,
-      })
-      rectRef.current = next
-      draw()
-      emitChange()
-    }
-
-    // center-preserving resizes for single-axis keys
-    const resizeY = (delta: number) => {
-      const rect = rectRef.current
-      if (!rect) return
-      const ch = cvs.height / DPR
-      const cy = rect.y + rect.height / 2
-      const newH = Math.min(Math.max(rect.height + delta, 1), ch)
-      let newY = cy - newH / 2
-      if (newY < 0) newY = 0
-      if (newY + newH > ch) newY = ch - newH
-      rectRef.current = { ...rect, y: newY, height: newH }
-      draw()
-      emitChange()
-    }
-
-    const resizeX = (delta: number) => {
-      const rect = rectRef.current
-      if (!rect) return
-      const cw = cvs.width / DPR
-      const cx = rect.x + rect.width / 2
-      const newW = Math.min(Math.max(rect.width + delta, 1), cw)
-      let newX = cx - newW / 2
-      if (newX < 0) newX = 0
-      if (newX + newW > cw) newX = cw - newW
-      rectRef.current = { ...rect, x: newX, width: newW }
-      draw()
-      emitChange()
-    }
-
     const onKeyDown = (e: KeyboardEvent) => {
       if (!e.metaKey) return
+      const rect = rectRef.current
+      if (!rect) return
 
       // step set
       if (/^[1-9]$/.test(e.key)) {
@@ -440,8 +434,40 @@ export function SingleAnnotation({
 
       const s = stepRef.current
 
+      const move = (dx: number, dy: number) => {
+        const next = clampRect({ ...rectRef.current!, x: rectRef.current!.x + dx, y: rectRef.current!.y + dy })
+        rectRef.current = next
+        draw()
+        emitChange()
+      }
+
+      // center-preserving resizes in INTRINSIC units
+      const resizeY = (delta: number) => {
+        const { h: ch } = intrinsicRef.current
+        const cy = rectRef.current!.y + rectRef.current!.height / 2
+        const newH = Math.min(Math.max(rectRef.current!.height + delta, 1), ch)
+        let newY = cy - newH / 2
+        if (newY < 0) newY = 0
+        if (newY + newH > ch) newY = ch - newH
+        rectRef.current = { ...rectRef.current!, y: newY, height: newH }
+        draw()
+        emitChange()
+      }
+
+      const resizeX = (delta: number) => {
+        const { w: cw } = intrinsicRef.current
+        const cx = rectRef.current!.x + rectRef.current!.width / 2
+        const newW = Math.min(Math.max(rectRef.current!.width + delta, 1), cw)
+        let newX = cx - newW / 2
+        if (newX < 0) newX = 0
+        if (newX + newW > cw) newX = cw - newW
+        rectRef.current = { ...rectRef.current!, x: newX, width: newW }
+        draw()
+        emitChange()
+      }
+
       // arrows
-      if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown") {
+      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
         e.preventDefault()
         if (e.key === "ArrowLeft") move(-s, 0)
         if (e.key === "ArrowRight") move(s, 0)
@@ -450,7 +476,7 @@ export function SingleAnnotation({
         return
       }
 
-      // i/k/j/l resizes (center-preserving on that axis)
+      // i/k/j/l resizes (center-preserving per axis)
       switch (e.key) {
         case "i": e.preventDefault(); resizeY(+s); break   // taller
         case "k": e.preventDefault(); resizeY(-s); break   // shorter
@@ -461,21 +487,24 @@ export function SingleAnnotation({
 
     window.addEventListener("keydown", onKeyDown, { passive: false })
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [DPR, clampRect, draw, emitChange, refreshHUD])
+  }, [clampRect, draw, emitChange, refreshHUD])
 
-  // Pointer interactions: move + corner-resize + hover cursors
+  // Pointer interactions: move + corner-resize + hover cursors (all in INTRINSIC coords)
   useEffect(() => {
     const cvs = canvasRef.current
     if (!cvs) return
 
-    const toLocal = (e: PointerEvent) => {
+    const toLocalIntrinsic = (e: PointerEvent) => {
       const bb = cvs.getBoundingClientRect()
-      return { x: e.clientX - bb.left, y: e.clientY - bb.top }
+      const xCss = e.clientX - bb.left
+      const yCss = e.clientY - bb.top
+      const scale = scaleRef.current || 1
+      return { x: xCss / scale, y: yCss / scale }
     }
 
     const onDown = (e: PointerEvent) => {
       if (!rectRef.current) return
-      const p = toLocal(e)
+      const p = toLocalIntrinsic(e)
       const r = rectRef.current
 
       // handles first
@@ -506,18 +535,18 @@ export function SingleAnnotation({
 
     const onMove = (e: PointerEvent) => {
       if (!rectRef.current) return
-      const p = toLocal(e)
+      const p = toLocalIntrinsic(e)
       const r = rectRef.current
 
       if (modeRef.current === "resize" && anchorRef.current) {
         const { ax, ay } = anchorRef.current
-        const cw = cvs.width / DPR, ch = cvs.height / DPR
+        const { w: cw, h: ch } = intrinsicRef.current
 
-        // clamp dragged corner to canvas
+        // clamp dragged corner to intrinsic canvas
         const dx = Math.max(0, Math.min(p.x, cw))
         const dy = Math.max(0, Math.min(p.y, ch))
 
-        // new rect from anchor to dragged corner
+        // new rect from anchor to dragged corner (intrinsic)
         let x = Math.min(ax, dx)
         let y = Math.min(ay, dy)
         let w = Math.max(1, Math.abs(dx - ax))
@@ -535,7 +564,7 @@ export function SingleAnnotation({
         return
       }
 
-      // hover cursor when idle
+      // hover cursor when idle (use CSS cursors)
       const handle = hitTestHandle(p, r)
       if (handle === "nw" || handle === "se") cvs.style.cursor = "nwse-resize"
       else if (handle === "ne" || handle === "sw") cvs.style.cursor = "nesw-resize"
@@ -563,7 +592,7 @@ export function SingleAnnotation({
       cvs.removeEventListener("pointerup", onUp)
       cvs.removeEventListener("pointercancel", onUp)
     }
-  }, [DPR, clampRect, draw, emitChange, hitTestHandle])
+  }, [clampRect, draw, emitChange, hitTestHandle])
 
   // Keep canvas repainted if something external triggers a render
   useEffect(() => {
@@ -571,7 +600,15 @@ export function SingleAnnotation({
   }, [draw])
 
   return (
-    <div style={{ display: "grid", gap: 8 }}>
+    <div
+      ref={containerRef}
+      style={{
+        display: "grid",
+        gap: 8,
+        width: "100%",
+        maxWidth: "100vw", // cap to viewport width
+      }}
+    >
       <div style={{ fontFamily: "monospace", fontSize: 12 }}>
         <div>annotation: {annotation.id}</div>
         <div>screenshot: {annotation.screenshot.id}</div>
@@ -580,7 +617,13 @@ export function SingleAnnotation({
       </div>
       <canvas
         ref={canvasRef}
-        style={{ border: "1px solid #333", borderRadius: 8, touchAction: "none" }}
+        style={{
+          width: "100%",    // fill container width
+          height: "auto",
+          border: "1px solid #333",
+          borderRadius: 8,
+          touchAction: "none",
+        }}
       />
     </div>
   )
