@@ -81,3 +81,12 @@ model annotation {
   @@index([screenshot_id])
   @@map("annotation")
 }
+
+model tag_label {
+  id Int  @id(map: "annotations_pkey") @default(autoincrement())
+  tag: String?
+  label: String
+  color: String
+}
+
+

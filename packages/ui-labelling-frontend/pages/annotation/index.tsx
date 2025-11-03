@@ -1,48 +1,170 @@
-import { useRouter } from "next/router"
-import { useState, useEffect, useRef, useCallback } from "react"
-import { Rect } from "ui-labelling-shared"
-import { AnnotationWithScreen, getEditableAnnotations } from "../../api"
-import { dataUrlToBlob, getDataUrl } from "../../utils/b64"
+import { useRouter } from 'next/router'
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  FormEvent,
+  useMemo,
+} from 'react'
+import { annotationLabels, Rect, ServiceManualLabel } from 'ui-labelling-shared'
+import { AnnotationWithScreen, getEditableAnnotations } from '../../api'
+import { dataUrlToBlob, getDataUrl } from '../../utils/b64'
+import { Flex } from '../../components/flex'
 
 const AnnotationEditor = () => {
-  const [batchAnnos, setBatchAnnos] = useState<null | AnnotationWithScreen[]>(null)
+  const [batchAnnos, setBatchAnnos] = useState<null | AnnotationWithScreen[]>(
+    null,
+  )
   const { query, isReady } = useRouter()
   const [total, setTotal] = useState<number>(0)
   const [batchIndex, setBatchIndex] = useState<number>(0)
+  const originalRect = useRef<Rect | null>(null)
+  const [updatedRect, setUpdatedRect] = useState<Rect | null>(null)
+  const [label, setLabel] = useState<string | null>(null)
+  const [changes, setChanges] = useState<boolean>(false)
+  const [clean, setClean] = useState<boolean>(false)
+  const [text, setText] = useState<string>('')
+  const [page, setPage] = useState<number>(-1)
+
+  const labels: string[] = useMemo(() => {
+    const tag = query.tag ? String(query.tag) : undefined
+    switch (tag) {
+      case 'service_manual':
+        return Object.values(ServiceManualLabel)
+      case 'interactive':
+        return ['interactive']
+      case 'textregion':
+        return ['textregion']
+      default:
+        return Object.values(annotationLabels)
+    }
+  }, [query])
+
+  const updateRect = useCallback(
+    ({ rectInFullImage }: { rectInFullImage: Rect }) => {
+      setUpdatedRect(rectInFullImage)
+    },
+    [setUpdatedRect],
+  )
+
+  const handleSubmit = useCallback(
+    (event: FormEvent) => {
+      event.preventDefault()
+    },
+    [clean, text, label, batchIndex, batchAnnos, updatedRect],
+  )
+
+  const handlePrevAnno = useCallback(() => {
+    setBatchIndex((bi) => Math.max(0, bi - 1))
+  }, [setBatchIndex])
+
+  const handleNextAnno = useCallback(() => {
+    setBatchIndex((bi) => bi + 1)
+  }, [setBatchIndex])
+
+  const handleNextPage = useCallback(() => {
+    setPage((p) => p + 1)
+  }, [setPage])
 
   useEffect(() => {
     if (!isReady) {
       return
     }
+    if (page === -1) {
+      return
+    }
     let cancelled = false
     const tag = query.tag ? String(query.tag) : undefined
-    const pageN = Number(String(query.page))
-    getEditableAnnotations(Number.isNaN(pageN) ? 1 : pageN, tag)
-      .then(({ total, records }) => {
-        if (cancelled) {
-          return
-        }
-        setTotal(total)
-        setBatchAnnos(records)
-        setBatchIndex(0)
-      })
+    getEditableAnnotations(page, tag).then(({ total, records }) => {
+      if (cancelled) {
+        return
+      }
+      setTotal(total)
+      setBatchAnnos(records)
+      setBatchIndex(0)
+      if (records.length) {
+        originalRect.current = records[0].rect
+      }
+    })
     return () => {
       cancelled = true
     }
-  }, [setTotal, setBatchAnnos, setBatchIndex, isReady, query])
+  }, [
+    setTotal,
+    setBatchAnnos,
+    setBatchIndex,
+    isReady,
+    query,
+    page,
+  ])
 
+  // set the page state on first load based on potential query
+  useEffect(() => {
+    const pageN = query.page ? Number(String(query.page)) : 1
+    setPage(Number.isNaN(pageN) ? 1 : pageN)
+  }, [query, setPage])
 
-  if (!batchAnnos) {
-    return null
-  }
+  const record = batchAnnos?.[batchIndex]
+
+  useEffect(() => {
+    if (!record) {
+      return
+    }
+    setLabel(record.label)
+    setClean(record.clean)
+    setText(record.textContent || '')
+  }, [record, setLabel, setClean, setText])
 
   return (
-    <SingleAnnotation
-      key={batchAnnos[batchIndex].id}
-      annotation={batchAnnos[batchIndex]}
-    />
+    <Flex dir="column" gap="12px">
+      <Flex gap="4px" aic>
+        <button onClick={handlePrevAnno}>prev anno</button>
+        <button onClick={handleNextAnno}>next anno</button>
+        <button onClick={handleNextPage}>next page</button>
+      </Flex>
+      <Flex gap="4px" aic>
+        <p>Page: {page}</p>
+        <p>Index: {batchIndex}</p>
+      </Flex>
+      {record ? (
+        <>
+          <SingleAnnotation
+            key={batchAnnos[batchIndex].id}
+            annotation={batchAnnos[batchIndex]}
+          />
+          <hr />
+          <form onSubmit={handleSubmit}>
+            <Flex dir="column" gap="8px" style={{ width: '600px' }}>
+              <label htmlFor="annotation-clean">
+                clean:
+                <input
+                  id="annotation-clean"
+                  type="checkbox"
+                  checked={clean}
+                  onChange={(e) => setClean(e.target.checked)}
+                />
+              </label>
+              <label htmlFor="annotation-label">
+                Annotation Label:
+                <select
+                  id="annotation-label"
+                  value={label}
+                  onChange={(e) => setLabel(e.target.value)}
+                >
+                  {labels.map((l) => {
+                    return <option value={l}>{l}</option>
+                  })}
+                </select>
+              </label>
+              <textarea rows={10}>{text}</textarea>
+              <button type="submit">submit</button>
+            </Flex>
+          </form>
+        </>
+      ) : null}
+    </Flex>
   )
-
 }
 
 export default AnnotationEditor
@@ -72,15 +194,16 @@ export function SingleAnnotation({
   const hudStepRef = useRef<HTMLSpanElement | null>(null)
   const hudRectRef = useRef<HTMLSpanElement | null>(null)
 
-  const DPR = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
+  const DPR = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
 
   const refreshHUD = useCallback(() => {
+    const { sx, sy } = cropOriginRef.current
     const r = rectRef.current
     if (hudStepRef.current) {
       hudStepRef.current.textContent = `${stepRef.current}px`
     }
     if (hudRectRef.current && r) {
-      hudRectRef.current.textContent = `x:${Math.round(r.x)} y:${Math.round(r.y)} w:${Math.round(r.width)} h:${Math.round(r.height)}`
+      hudRectRef.current.textContent = `x:${sx + r.x} y:${sy + r.y} w:${Math.round(r.width)} h:${Math.round(r.height)}`
     }
   }, [])
 
@@ -89,7 +212,7 @@ export function SingleAnnotation({
     const rect = rectRef.current
     const bitmap = imgBitmapRef.current
     if (!cvs || !rect || !bitmap) return
-    const ctx = cvs.getContext("2d")
+    const ctx = cvs.getContext('2d')
     if (!ctx) return
 
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0)
@@ -98,8 +221,8 @@ export function SingleAnnotation({
 
     ctx.save()
     ctx.lineWidth = 1
-    ctx.strokeStyle = "#39ff14"
-    ctx.shadowColor = "#39ff14"
+    ctx.strokeStyle = '#39ff14'
+    ctx.shadowColor = '#39ff14'
     ctx.shadowBlur = 8
     ctx.strokeRect(rect.x, rect.y, rect.width, rect.height)
     ctx.restore()
@@ -119,17 +242,22 @@ export function SingleAnnotation({
       y = Math.max(0, Math.min(y, ch - height))
       return { x, y, width, height }
     },
-    [DPR]
+    [DPR],
   )
 
   const emitChange = useCallback(() => {
     if (!rectRef.current) return
-    console.log('hello')
+
     const { sx, sy } = cropOriginRef.current
     const r = rectRef.current
     onRectChange?.({
       rectInCrop: { ...r },
-      rectInFullImage: { x: sx + r.x, y: sy + r.y, width: r.width, height: r.height },
+      rectInFullImage: {
+        x: sx + r.x,
+        y: sy + r.y,
+        width: r.width,
+        height: r.height,
+      },
       cropOrigin: { sx, sy },
     })
     refreshHUD()
@@ -155,10 +283,10 @@ export function SingleAnnotation({
       cropOriginRef.current = { sx, sy }
 
       // Pre-crop for cheap redraws
-      const cropCanvas = document.createElement("canvas")
+      const cropCanvas = document.createElement('canvas')
       cropCanvas.width = sw
       cropCanvas.height = sh
-      const cropCtx = cropCanvas.getContext("2d")!
+      const cropCtx = cropCanvas.getContext('2d')!
       cropCtx.drawImage(bitmap, sx, sy, sw, sh, 0, 0, sw, sh)
       const croppedBitmap = await createImageBitmap(cropCanvas)
       imgBitmapRef.current = croppedBitmap
@@ -185,12 +313,6 @@ export function SingleAnnotation({
   useEffect(() => {
     const cvs = canvasRef.current
     if (!cvs) return
-
-    const getCanvasSize = () => {
-      const cw = cvs.width / DPR
-      const ch = cvs.height / DPR
-      return { cw, ch }
-    }
 
     const move = (dx: number, dy: number) => {
       if (!rectRef.current) return
@@ -250,40 +372,45 @@ export function SingleAnnotation({
       }
 
       // Movement with arrows
-      if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown") {
+      if (
+        e.key === 'ArrowLeft' ||
+        e.key === 'ArrowRight' ||
+        e.key === 'ArrowUp' ||
+        e.key === 'ArrowDown'
+      ) {
         e.preventDefault()
         const s = stepRef.current
-        if (e.key === "ArrowLeft") move(-s, 0)
-        if (e.key === "ArrowRight") move(s, 0)
-        if (e.key === "ArrowUp") move(0, -s)
-        if (e.key === "ArrowDown") move(0, s)
+        if (e.key === 'ArrowLeft') move(-s, 0)
+        if (e.key === 'ArrowRight') move(s, 0)
+        if (e.key === 'ArrowUp') move(0, -s)
+        if (e.key === 'ArrowDown') move(0, s)
         return
       }
 
       // Resize edges
       const s = stepRef.current
       switch (e.key) {
-        case "i": // taller
+        case 'i': // taller
           e.preventDefault()
           resizeY(s)
           break
-        case "k": // shorter
+        case 'k': // shorter
           e.preventDefault()
           resizeY(-s)
           break
-        case "l": // wider
+        case 'l': // wider
           e.preventDefault()
           resizeX(s)
           break
-        case "j": // narrower
+        case 'j': // narrower
           e.preventDefault()
           resizeX(-s)
           break
       }
     }
 
-    window.addEventListener("keydown", onKeyDown, { passive: false })
-    return () => window.removeEventListener("keydown", onKeyDown)
+    window.addEventListener('keydown', onKeyDown, { passive: false })
+    return () => window.removeEventListener('keydown', onKeyDown)
   }, [DPR, clampRect, draw, emitChange, refreshHUD])
 
   // ----- Pointer dragging -----
@@ -302,7 +429,11 @@ export function SingleAnnotation({
       if (!rectRef.current) return
       const p = toLocal(e)
       const r = rectRef.current
-      const inside = p.x >= r.x && p.x <= r.x + r.width && p.y >= r.y && p.y <= r.y + r.height
+      const inside =
+        p.x >= r.x &&
+        p.x <= r.x + r.width &&
+        p.y >= r.y &&
+        p.y <= r.y + r.height
       if (inside) {
         draggingRef.current = true
         dragOffsetRef.current = { dx: p.x - r.x, dy: p.y - r.y }
@@ -327,15 +458,15 @@ export function SingleAnnotation({
       emitChange()
     }
 
-    cvs.addEventListener("pointerdown", onDown)
-    cvs.addEventListener("pointermove", onMove)
-    cvs.addEventListener("pointerup", onUp)
-    cvs.addEventListener("pointercancel", onUp)
+    cvs.addEventListener('pointerdown', onDown)
+    cvs.addEventListener('pointermove', onMove)
+    cvs.addEventListener('pointerup', onUp)
+    cvs.addEventListener('pointercancel', onUp)
     return () => {
-      cvs.removeEventListener("pointerdown", onDown)
-      cvs.removeEventListener("pointermove", onMove)
-      cvs.removeEventListener("pointerup", onUp)
-      cvs.removeEventListener("pointercancel", onUp)
+      cvs.removeEventListener('pointerdown', onDown)
+      cvs.removeEventListener('pointermove', onMove)
+      cvs.removeEventListener('pointerup', onUp)
+      cvs.removeEventListener('pointercancel', onUp)
     }
   }, [clampRect, draw, emitChange])
 
@@ -344,18 +475,25 @@ export function SingleAnnotation({
   }, [draw])
 
   return (
-    <div style={{ display: "grid", gap: 8 }}>
-      <div style={{ fontFamily: "monospace", fontSize: 12 }}>
+    <div style={{ display: 'grid', gap: 8 }}>
+      <div style={{ fontFamily: 'monospace', fontSize: 12 }}>
         <div>annotation: {annotation.id}</div>
         <div>screenshot: {annotation.screenshot.id}</div>
-        <div>step: <span ref={hudStepRef}>2px</span> (⌘ + 1–9)</div>
-        <div>rect: <span ref={hudRectRef}>x:– y:– w:– h:–</span></div>
+        <div>
+          step: <span ref={hudStepRef}>2px</span> (⌘ + 1–9)
+        </div>
+        <div>
+          rect: <span ref={hudRectRef}>x:– y:– w:– h:–</span>
+        </div>
       </div>
       <canvas
         ref={canvasRef}
-        style={{ border: "1px solid #333", borderRadius: 8, touchAction: "none" }}
+        style={{
+          border: '1px solid #333',
+          borderRadius: 8,
+          touchAction: 'none',
+        }}
       />
     </div>
   )
 }
-

@@ -14,6 +14,7 @@ annotationRouter.get('/', async (req: Request, res: Response) => {
     prisma.annotation.findMany({
       select: { id: true },
       where: {
+        clean: { not: true },
         ...(tag ? {
           screenshot: {
             tag,
@@ -30,6 +31,7 @@ annotationRouter.get('/', async (req: Request, res: Response) => {
     }),
     prisma.annotation.findMany({
       where: {
+        clean: { not: true },
         ...(tag ? {
           screenshot: {
             tag,

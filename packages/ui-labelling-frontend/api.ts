@@ -184,6 +184,7 @@ export type AnnotationWithScreen = Annotation & {
     view_width: number
     view_height: number
   }
+  clean?: boolean
 }
 
 // todo: rename the other things screenshot
