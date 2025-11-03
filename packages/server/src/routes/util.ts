@@ -78,7 +78,22 @@ utilRouter.post('/tighten/:id', async (req: Request, res: Response) => {
     }
 
     const { view_width: vw, view_height: vh, image_data } = screenshot
-    const annotations = screenshot.annotations as Annotation[]
+    const annotations = (
+      await prisma.annotation.findMany({
+        where: {
+          screenshot_id: id
+        }
+      })
+    ).map(a => ({
+      id: a.id,
+      label: a.label,
+      rect: {
+        x: a.x,
+        y: a.y,
+        width: a.width,
+        height: a.height
+      }
+    }))
 
     const updatedBoxes = await tightenBoundingBoxes({
       b64: Buffer.from(image_data).toString('base64'),
@@ -168,7 +183,7 @@ utilRouter.post('/clips', async (req: Request, res: Response) => {
 })
 
 // put
-
+// this is for OCCLUSION of an existing screenshot.  It is named terribly and one day I'll be brave enough to change it
 utilRouter.put('/:id', async (req: Request, res: Response) => {
   const { rect } = req.body as {
     rect: Rect
