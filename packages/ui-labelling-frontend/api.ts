@@ -207,3 +207,12 @@ export const patchSingleAnnotation = (id: string, body: Pick<Annotation, 'rect' 
     })
   }).then(jsonOrThrow)
 }
+
+export const deleteSingleAnnotation = (id: string) => {
+    return fetch(`/api/annotation/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }).then(jsonOrThrow)
+}

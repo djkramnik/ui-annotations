@@ -8,7 +8,7 @@ import {
   useMemo,
 } from 'react'
 import { annotationLabels, Rect, ServiceManualLabel } from 'ui-labelling-shared'
-import { AnnotationWithScreen, getEditableAnnotations, patchSingleAnnotation } from '../../api'
+import { AnnotationWithScreen, deleteInteractive, deleteSingleAnnotation, getEditableAnnotations, patchSingleAnnotation } from '../../api'
 import { dataUrlToBlob, getDataUrl } from '../../utils/b64'
 import { Flex } from '../../components/flex'
 
@@ -23,7 +23,7 @@ const AnnotationEditor = () => {
   const [updatedRect, setUpdatedRect] = useState<Rect | null>(null)
   const [label, setLabel] = useState<string | null>(null)
   const [changes, setChanges] = useState<boolean>(false)
-  const [clean, setClean] = useState<boolean>(false)
+  const [clean, setClean] = useState<boolean>(true)
   const [text, setText] = useState<string>('')
   const [page, setPage] = useState<number>(-1)
   const [submitting, setSubmitting] = useState<boolean>(false)
@@ -79,6 +79,7 @@ const AnnotationEditor = () => {
           clean,
           rect: updatedRect
         })
+        handleNextAnno()
       } catch(e) {
         window.alert('failed to save annotation. WHY')
       } finally {
@@ -130,6 +131,19 @@ const AnnotationEditor = () => {
     page,
   ])
 
+  const handleDelete = useCallback(async () => {
+    const record = batchAnnos?.[batchIndex]
+    if (!record) {
+      return
+    }
+    const choice = window.confirm('you sure about this bruh')
+    if (!choice) {
+      return
+    }
+    await deleteSingleAnnotation(record.id)
+    handleNextAnno()
+  }, [handleNextAnno, batchAnnos, batchIndex])
+
   // set the page state on first load based on potential query
   useEffect(() => {
     const pageN = query.page ? Number(String(query.page)) : 1
@@ -142,9 +156,8 @@ const AnnotationEditor = () => {
     if (!record) {
       return
     }
-    console.log('world record', record)
     setLabel(record.label)
-    setClean(record.clean)
+    // setClean(record.clean)
     setText(record.text_content || '')
   }, [record, setLabel, setClean, setText])
 
@@ -156,6 +169,7 @@ const AnnotationEditor = () => {
         <button onClick={handleNextPage}>next page</button>
       </Flex>
       <Flex gap="4px" aic>
+        <p>Total: {total}</p>
         <p>Page: {page}</p>
         <p>Index: {batchIndex}</p>
       </Flex>
@@ -168,7 +182,7 @@ const AnnotationEditor = () => {
           />
           <hr />
           <form onSubmit={handleSubmit}>
-            <Flex dir="column" gap="8px" style={{ width: '600px' }}>
+            <Flex dir="column" gap="8px" style={{ width: '100vw' }}>
               <label htmlFor="annotation-clean">
                 clean:
                 <input
@@ -190,8 +204,13 @@ const AnnotationEditor = () => {
                   })}
                 </select>
               </label>
-              <textarea rows={10} onChange={e => setText(e.target.value)} value={text} />
-              <button type="submit" disabled={submitting}>submit</button>
+              <textarea style={{ width: '90%'}} rows={10} onChange={e => setText(e.target.value)} value={text} />
+              <Flex gap="4px" aic>
+                <button type="submit" style={{width: 'fit-content'}} disabled={submitting}>submit</button>
+                <button type="button" style={{ width: 'fit-content'}} onClick={handleDelete}>
+                  delete
+                </button>
+              </Flex>
             </Flex>
           </form>
         </>
@@ -337,7 +356,7 @@ function SingleAnnotation({
     ctx.strokeRect(rect.x, rect.y, rect.width, rect.height)
 
     const handles = getHandleRects(rect)
-    ctx.fillStyle = "#39ff14"
+    ctx.fillStyle = `rgba(57, 255, 20, 0.4)`
     ctx.shadowBlur = 0
     for (const h of Object.values(handles)) {
       ctx.fillRect(h.x, h.y, h.width, h.height)
