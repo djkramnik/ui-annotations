@@ -510,16 +510,17 @@ export type Annotation = {
   label: string
   rect: Rect
   text_content?: string
+  clean?: boolean
 }
 
 export interface Screenshot {
   url: string
   annotations: Annotation[]
-  image_data: ArrayBuffer
+  image_data: number[]
   scroll_y: number
   view_height: number
   view_width: number
-  date: string
+  date: Date
   id: number
   published: | 0 | 1
   tag?: string

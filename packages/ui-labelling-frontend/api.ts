@@ -137,9 +137,13 @@ export const getPublishedAnnotations = (tag?: string) => {
   )
 }
 
-export const getAnnotation = (id: number): Promise<{data: Screenshot}> => {
+export const getAnnotation = (id: number): Promise<{
+  data: Screenshot
+  next: number | null
+  prev: number | null
+}> => {
   return (
-    fetch(`/api/screenshot/${id}`)
+    fetch(`/api/screenshot/sequence/${id}`)
       .then(jsonOrThrow)
   )
 }

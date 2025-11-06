@@ -146,6 +146,8 @@ export default function AnnotationPage() {
   )
   const [changed, setChanged] = useState<boolean>(false)
   const [disabled, setDisabled] = useState<boolean>(false)
+  const [nextId, setNextId] = useState<number | null>(null)
+  const [prevId, setPrevId] = useState<number | null>(null)
   const { query, push, isReady } = useRouter()
 
   const NavButtons = useCallback(() => {
@@ -160,19 +162,33 @@ export default function AnnotationPage() {
         </button>
         <button
           id="prev-btn"
-          onClick={() => push('/view/' + (Number(String(query.id)) - 1) + (tag ? `?tag=${tag}` : ''))}
+          disabled={prevId === null}
+          onClick={
+            prevId === null
+              ? undefined
+              : (
+                () => push('/view/' + (prevId) + (tag ? `?tag=${tag}` : ''))
+              )
+          }
         >
           Prev
         </button>
         <button
           id="next-btn"
-          onClick={() => push('/view/' + (Number(query.id) + 1) + (tag ? `?tag=${tag}` : ''))}
+          disabled={nextId === null}
+          onClick={
+            nextId === null
+              ? undefined
+              : (
+                () => push('/view/' + (nextId) + (tag ? `?tag=${tag}` : ''))
+              )
+          }
         >
           Next
         </button>
       </div>
     )
-  }, [push, query])
+  }, [push, query, nextId, prevId])
 
   const [updatedScreen, setUpdatedScreen] = useState<string | null>(null)
   const [annotations, setAnnotations] = useState<Screenshot | null>(null)
@@ -666,14 +682,24 @@ export default function AnnotationPage() {
 
   useEffect(() => {
     if (!isReady) return
-    fetch(`/api/screenshot/${query.id}`)
+    fetch(`/api/screenshot/sequence/${query.id}`)
       .then((r) => r.json())
-      .then(({ data }: { data: Screenshot }) => {
+      .then(({
+        data,
+        next,
+        prev
+      }: {
+        data: Screenshot
+        next: number | null
+        prev: number | null
+      }) => {
         setAnnotations(data)
         originalAnnotations.current = data.annotations
+        setNextId(next ?? null)
+        setPrevId(prev ?? null)
       })
       .catch(console.error)
-  }, [isReady, query.id])
+  }, [isReady, query.id, setNextId, setPrevId])
 
   // whenever annotations changes, monitor for difference from original
   // to keep track of whether there are unsaved changes.
@@ -744,7 +770,7 @@ export default function AnnotationPage() {
           <Flex aic gap="12px">
             <strong>{url.slice(0, 50)}</strong>
             <p>
-              <strong>Date:</strong> <SimpleDate date={date} />
+              <strong>Date:</strong> <SimpleDate date={String(date)} />
             </p>
             <p>Scroll: {scrollY}</p>
             <p>

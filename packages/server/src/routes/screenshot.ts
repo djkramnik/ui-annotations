@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express'
 import { prisma } from '../db'
-import { Annotation, AnnotationLabel, ScreenshotRequest } from 'ui-labelling-shared'
+import { Annotation, AnnotationLabel, Screenshot, ScreenshotRequest } from 'ui-labelling-shared'
 import { Prisma } from '@prisma/client'
 
 export const screenshotRouter = Router()
@@ -138,7 +138,8 @@ screenshotRouter.patch('/:id', async (req: Request, res: Response) => {
           width: a.rect.width,
           height: a.rect.height,
           aspect_ratio: Number((a.rect.width / a.rect.height).toFixed(2)),
-          screenshot_id: id
+          screenshot_id: id,
+          clean: a.clean
         }))
       })
 
@@ -267,6 +268,9 @@ screenshotRouter.get('/sequence/:id', async (req: Request, res: Response) => {
     const target = await prisma.screenshot.findFirstOrThrow({
       where: {
         id
+      },
+      include: {
+        annotation: true
       }
     })
     // return the actual record plus the next and prev records
@@ -306,11 +310,29 @@ screenshotRouter.get('/sequence/:id', async (req: Request, res: Response) => {
 
     ])
 
-    return {
+    const { annotations, annotation, ...rest } = target
+
+    res.status(200).send({
       next: next?.id ?? null,
       prev: prev?.id ?? null,
-      target
-    }
+      data: {
+      ...rest,
+      image_data: Array.from(target.image_data!),
+      annotations: annotation.map(a => ({
+        id: a.id,
+        label: a.label,
+        rect: {
+          x: a.x,
+          y: a.y,
+          width: a.width,
+          height: a.height
+        },
+        text_content: a.text_content,
+        clean: a.clean
+      })) as Annotation[]
+    }} as { data: Screenshot; next: number | null; prev: number | null }
+
+  )
   } catch (e) {
     res.status(500)
       .send({ error: e})
