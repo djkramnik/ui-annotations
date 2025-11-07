@@ -7,10 +7,12 @@ import { PreviewSchema } from "../../util/generator"
 
 export const GeneratedPreview = ({
   preview,
-  iter
+  iter,
+  debug
 }: {
   preview: PreviewSchema
   iter: number
+  debug?: boolean
 }) => {
   const theme = useMemo(() => {
     return randomMuiTheme()
@@ -22,8 +24,11 @@ export const GeneratedPreview = ({
       <div>
         <hr />
         <GridRenderer key={iter} data={preview}
-          showDebugBorders
+          showDebugBorders={debug}
           ComponentRenderer={DynamicMuiComponent}
+          style={ !debug ?  {
+            border: 'none'
+          }: undefined}
         />
       </div>
     </ThemeProvider>

@@ -69,8 +69,11 @@ export const DynamicMuiComponent = ({
 
       return (
         <Typography
+          id={`label_${label}`}
           variant={headingLevel}
           sx={{
+            width: 'fit-content',
+            height: 'fit-content',
             ...fontStyling ?? {},
             ...sx,
           }}
@@ -85,6 +88,7 @@ export const DynamicMuiComponent = ({
       }
       return (
         <Typography
+          id={`label_${label}`}
           component="p"
           sx={{
             ...fontStyling ?? {},
@@ -100,6 +104,7 @@ export const DynamicMuiComponent = ({
         : false
       return (
         <ListItem
+          id={`label_${label}`}
           sx={{
             ...(
               numbered

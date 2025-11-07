@@ -197,6 +197,7 @@ export function GridRenderer({
 
   return (
     <div
+      id="synth-container"
       ref={containerRef}
       className={className}
       style={containerStyle}

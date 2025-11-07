@@ -11,7 +11,6 @@ import { Flex } from '../../components/generator/flex'
 import { xyCut } from 'infer-layout'
 import { assignAnnotations, bboxToRect, mergeColsFlat, PreviewSchema } from '../../util/generator'
 import { GeneratedPreview } from '../../components/generator/preview'
-import next from 'next'
 
 const GenerateFromExample = () => {
   const { query, isReady } = useRouter()
@@ -22,6 +21,7 @@ const GenerateFromExample = () => {
   const [previewIter, setPreviewIter] = useState<number>(0)
   const [nextId, setNextId] = useState<number | null>(null)
   const [prevId, setPrevId] = useState<number | null>(null)
+  const [debug, setDebug] = useState<boolean>(false)
 
   const fetchScreen = useCallback(async (id: number) => {
     const screenshotResp = await fetchScreenshotById(id)
@@ -65,10 +65,11 @@ const GenerateFromExample = () => {
     [annoId, fetchScreen],
   )
 
-  const generate = useCallback((preview: PreviewSchema) => {
+  const generate = useCallback((preview: PreviewSchema, debug?: boolean) => {
     setPreview(preview)
     setPreviewIter(i => i + 1)
-  }, [setPreviewIter, setPreview])
+    setDebug(debug === true)
+  }, [setPreviewIter, setPreview, setDebug])
 
   return (
     <Container sx={{ maxWidth: '96vw !important'}}>
@@ -112,7 +113,7 @@ const GenerateFromExample = () => {
         preview
           ? (
             <div key={previewIter}>
-              <GeneratedPreview preview={preview} iter={previewIter} />
+              <GeneratedPreview preview={preview} iter={previewIter} debug={debug}/>
             </div>
           )
           : null
@@ -145,9 +146,10 @@ function GenSyntheticForm({
 }: {
   screenshot: Screenshot
   id: number
-  onSubmit: (schema: PreviewSchema) => any
+  onSubmit: (schema: PreviewSchema, debug?: boolean) => any
 }) {
-  const [tighten, setTighten] = useState<boolean>(true)
+  const [tighten, setTighten] = useState<boolean>(false)
+  const [debug, setDebug] = useState<boolean>(false)
   const [designPref, setDesignPref] = useState<'mui' | 'ant'>('mui')
   const [schemaConfirmed, setSchemaConfirmed] = useState<boolean>(false)
 
@@ -242,16 +244,26 @@ function GenSyntheticForm({
         layout,
         designPref,
         contentBounds: bboxToRect(root.region)
-      })
+      }, debug)
       setSchemaConfirmed(true)
     },
-    [designPref, tighten, screenshot, setSchemaConfirmed, id],
+    [designPref, tighten, screenshot, setSchemaConfirmed, id, debug],
   )
 
   return (
     <div>
       <form onSubmit={handleSubmit}>
         <Flex col gap="8px">
+          <div>
+            <label key="debug">
+              <input
+                type="checkbox"
+                checked={debug}
+                onChange={(e) => setDebug(e.target.checked)}
+              />
+              Debug?
+            </label>
+          </div>
           <div>
             <label key="tighten">
               <input

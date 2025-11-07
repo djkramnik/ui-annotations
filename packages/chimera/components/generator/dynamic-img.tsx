@@ -44,6 +44,7 @@ export const DynamicPlaceholderImg = ({
 
   return (
     <div
+      id={`label_${label}`}
       style={{
         width: `${width}%`,
         aspectRatio: `${Math.floor(rect.width)} / ${Math.floor(rect.height)}`,
