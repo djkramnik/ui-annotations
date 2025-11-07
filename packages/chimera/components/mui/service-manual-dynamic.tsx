@@ -95,10 +95,19 @@ export const DynamicMuiComponent = ({
         </Typography>
       )
     case ServiceManualLabel.bulletpoint:
+      const numbered = typeof children === 'string'
+        ? /^(?:\s*\d+\.|\(\d+\))/.test(children)
+        : false
       return (
         <ListItem
           sx={{
-            display: 'list-item',
+            ...(
+              numbered
+                ? undefined
+                : {
+                  display: 'list-item'
+                }
+            ),
             padding: 0,
             ...fontStyling ?? {},
             ...sx,

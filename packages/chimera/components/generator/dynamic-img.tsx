@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { fetchCrops } from '../../util/api'
 import { getDataUrl } from '../../util/b64'
 import { Rect } from 'ui-labelling-shared'
@@ -36,12 +36,18 @@ export const DynamicPlaceholderImg = ({
     return () => { cancelled = true }
   }, [setDataUrl, rect])
 
+  const randomBorder = useMemo(() => {
+    return Math.random() > 0.5
+      ? `1px solid currentColor`
+      : 'none'
+  }, [])
+
   return (
     <div
       style={{
         width: `${width}%`,
         aspectRatio: `${Math.floor(rect.width)} / ${Math.floor(rect.height)}`,
-        border: `1px solid currentColor`,
+        border: randomBorder,
         backgroundRepeat: 'no-repeat',
         backgroundSize: 'cover',
         ...(
