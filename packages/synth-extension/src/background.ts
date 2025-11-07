@@ -1,3 +1,4 @@
+import { ScreenshotRequest } from "ui-labelling-shared";
 import type { Msg } from "./types";
 
 chrome.runtime.onMessage.addListener((msg: Msg, sender, sendResponse) => {
@@ -14,6 +15,24 @@ chrome.runtime.onMessage.addListener((msg: Msg, sender, sendResponse) => {
         sendResponse({ ok: true, dataUrl });
       }
     });
-    return true; // keep channel open for async reply
+    return true;
+  }
+
+  if (msg?.type === "POST_SCREENSHOT") {
+    (async () => {
+      try {
+        const payload: ScreenshotRequest = msg.payload;
+        const res = await fetch("http://localhost:4000/api/screenshot", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        sendResponse({ ok: true });
+      } catch (e: any) {
+        sendResponse({ ok: false, error: e?.message || String(e) });
+      }
+    })();
+    return true; // keep channel open for async sendResponse
   }
 });
