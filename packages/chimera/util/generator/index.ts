@@ -377,9 +377,6 @@ export function roughlyCenteredInRegion({
 }): boolean {
   const leftSpace = component.x - container.x
   const rightSpace = (container.x + container.width) - (component.x + component.width)
-  console.log('left', leftSpace)
-  console.log('right', rightSpace)
-  console.log('thresh', container.width, container.width * tol)
   if (leftSpace < 0 || rightSpace < 0) {
     console.error('component cannot be centered because it is not bound')
     return false

@@ -43,6 +43,9 @@ export const DynamicMuiComponent = ({
       return <Avatar sx={sx}>{children}</Avatar>
     case ServiceManualLabel.diagram:
     case ServiceManualLabel.image:
+    case ServiceManualLabel.logo:
+    case ServiceManualLabel.icon:
+    case ServiceManualLabel.icon_warn:
       const frac = Math.min(rect.width, container.width) / container.width
       return (
         <DynamicPlaceholderImg
@@ -51,6 +54,7 @@ export const DynamicMuiComponent = ({
           rect={rect}
         />
       )
+    case ServiceManualLabel.section_number:
     case ServiceManualLabel.heading:
       if (!children) {
         return null
@@ -88,7 +92,7 @@ export const DynamicMuiComponent = ({
             ...sx,
           }}
         >
-          {children}
+          <MultiLine>{children}</MultiLine>
         </Typography>
       )
     case ServiceManualLabel.bulletpoint:
@@ -113,6 +117,8 @@ function getFsInflation(label: ServiceManualLabel) {
   switch(label) {
     case ServiceManualLabel.heading:
       return 5
+    case ServiceManualLabel.section_number:
+      return 10
     default:
       return 0
   }

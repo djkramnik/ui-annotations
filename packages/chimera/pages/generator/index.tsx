@@ -1,7 +1,7 @@
 // specify an id, perhaps get a small preview of the screenshot,
 // run infer-layout (with or without tighten)
 // generate data for the preview (which then gets saved in local storage)
-
+import { useRouter } from 'next/router'
 import { Box, Container } from '@mui/material'
 import { FormEvent, useCallback, useState } from 'react'
 import { Screenshot, ServiceManualLabel } from 'ui-labelling-shared'
@@ -11,13 +11,44 @@ import { Flex } from '../../components/generator/flex'
 import { xyCut } from 'infer-layout'
 import { assignAnnotations, bboxToRect, mergeColsFlat, PreviewSchema } from '../../util/generator'
 import { GeneratedPreview } from '../../components/generator/preview'
+import next from 'next'
 
 const GenerateFromExample = () => {
+  const { query, isReady } = useRouter()
   const [annoId, setAnnoId] = useState<string>('2460')
   const [queryId, setQueryId] = useState<number | null>(null)
   const [screenshot, setScreenshot] = useState<Screenshot | null>(null)
   const [preview, setPreview] = useState<PreviewSchema | null>(null)
   const [previewIter, setPreviewIter] = useState<number>(0)
+  const [nextId, setNextId] = useState<number | null>(null)
+  const [prevId, setPrevId] = useState<number | null>(null)
+
+  const fetchScreen = useCallback(async (id: number) => {
+    const screenshotResp = await fetchScreenshotById(id)
+    if (!screenshotResp) {
+      window.alert('fetch screenshot failed')
+      return
+    }
+    const { data, next, prev } = screenshotResp
+    setScreenshot(data)
+    setQueryId(id)
+    setNextId(next ?? null)
+    setPrevId(prev ?? null)
+  }, [setScreenshot, setQueryId, setNextId, setPrevId])
+
+  const handleNext = useCallback(() => {
+    if (nextId === null) {
+      return
+    }
+    fetchScreen(nextId)
+  }, [query, isReady, nextId, fetchScreen])
+
+  const handlePrev = useCallback(() => {
+    if (prevId === null) {
+      return
+    }
+    fetchScreen(prevId)
+  }, [query, isReady, prevId, fetchScreen])
 
   const handleSubmit = useCallback(
     async (event: FormEvent) => {
@@ -29,16 +60,9 @@ const GenerateFromExample = () => {
       if (Number.isNaN(id)) {
         return
       }
-      const screenshot = await fetchScreenshotById(id)
-      if (!screenshot) {
-        window.alert('fetch screenshot failed')
-        return
-      }
-      setScreenshot(screenshot)
-      setQueryId(id)
-      console.log('screenshot', screenshot)
+      fetchScreen(id)
     },
-    [annoId, setScreenshot, setQueryId],
+    [annoId, fetchScreen],
   )
 
   const generate = useCallback((preview: PreviewSchema) => {
@@ -65,7 +89,11 @@ const GenerateFromExample = () => {
               onChange={(e) => setAnnoId(e.target.value)}
             />
           </div>
-          <button type="submit">Submit</button>
+          <Flex aic gap="4px" style={{ margin: '12px 0'}}>
+            <button type="submit">Submit</button>
+            <button type="button" disabled={prevId === null} onClick={handlePrev}>Prev</button>
+            <button type="button" disabled={nextId === null} onClick={handleNext}>Next</button>
+          </Flex>
         </form>
       </Box>
       <hr />
@@ -101,7 +129,8 @@ const ignoreForLayout: ServiceManualLabel[] = [
   ServiceManualLabel.column,
   ServiceManualLabel.diagram_number,
   ServiceManualLabel.text_unit,
-  ServiceManualLabel.page_frame
+  ServiceManualLabel.page_frame,
+  ServiceManualLabel.image_id
 ]
 const ignoreForGen: ServiceManualLabel[] = [
   ServiceManualLabel.row,

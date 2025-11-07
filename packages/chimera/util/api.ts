@@ -42,15 +42,22 @@ export const fetchCrops = async ({
   }
 }
 
-export const fetchScreenshotById = async (id: number): Promise<Screenshot | null> => {
+export const fetchScreenshotById = async (id: number): Promise<{
+  data: Screenshot
+  next: number | null
+  prev: number | null
+ } | null> => {
   try {
-    const resp = await fetch(`/api/screenshot/${id}`)
+    const resp = await fetch(`/api/screenshot/sequence/${id}`)
     if (!resp.ok) {
       console.error('could not fetch annotation with id ', id)
       return null
     }
-    const { data } = (await resp.json()) as { data: Screenshot }
-    return data
+    return resp.json() as Promise<{
+      data: Screenshot
+      next: number | null
+      prev: number | null
+    }>
   } catch(e) {
     console.error(e)
     return null

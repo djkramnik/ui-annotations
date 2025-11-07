@@ -12,7 +12,7 @@ const _labelArg = process.argv[3]
 
 const labels: string[] = typeof _labelArg === 'string'
   ? _labelArg.split(',')
-  : ['diagram', 'image']
+  : ['image', 'diagram']
 
 main(tag, labels)
 
@@ -38,36 +38,41 @@ async function main(tag: string, labels: string[]) {
   console.log('writing image crops for tag: ', tag, ' labels: ', labels.join(','))
   const prisma = new PrismaClient()
 
-  // find annotations that are not linked to any existing interactive record
-  // this uses separate queries unoptimally but that is fine for now
-  const convertedScreens = new Set(
-    (
-      await prisma.image_crop.findMany({
-        where: {
-          screenshot_id: {
-            not: null,
-          },
-        },
-      })
-    ).map((a) => a.screenshot_id),
-  ) as Set<number>
 
-  console.log('converted screens length', convertedScreens.size)
-  const unconvertedScreens = await prisma.screenshot.findMany({
+  const screens = await prisma.screenshot.findMany({
     where: {
-      id: {
-        notIn: Array.from(convertedScreens),
-      },
       tag,
     },
+    include: {
+      annotation: true
+    }
   })
-  console.log('unconverted annos length', unconvertedScreens.length)
+  // prevent dups
+  const existingAnnoIds = (await prisma.image_crop.findMany({
+    select: {
+      true_id: true
+    }
+  })).reduce((acc, item) => {
+    if (!item.true_id) {
+      return acc
+    }
+    return acc.concat(item.true_id)
+  }, [] as string[])
 
   let crops: ImageCropRecord[] = []
 
   let badAnnotationIds = []
-  for (const screen of unconvertedScreens) {
-    const annotations = screen.annotations as Annotation[]
+  for (const screen of screens) {
+    const annotations = screen.annotation
+      .map(a => ({
+        ...a,
+        rect: {
+          x: a.x,
+          y: a.y,
+          width: a.width,
+          height: a.height
+        }
+      })) as Annotation[]
     if (!Array.isArray(annotations) || !screen.image_data) {
       console.log('skipping screen because empty annotations: ', screen.id)
       continue
@@ -81,6 +86,9 @@ async function main(tag: string, labels: string[]) {
     for (const a of annotations) {
       if (a.id?.length !== 36) {
         badAnnotationIds.push(a.id ?? 'none')
+        continue
+      }
+      if (existingAnnoIds.includes(a.id)) {
         continue
       }
       if (!labels.includes(a.label)) {

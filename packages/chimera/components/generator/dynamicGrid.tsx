@@ -155,7 +155,6 @@ export function GridRenderer({
         scale: gridWidth / data.screenshot.view_width
       })
 
-  console.log('scale', container.scale)
   const containerStyle: React.CSSProperties = {
     display: 'grid',
     gridTemplateColumns,
@@ -166,7 +165,7 @@ export function GridRenderer({
     border: '1px solid currentColor',
     ...style,
   }
-  console.log('how many regions?', items.length)
+
   return (
     <div className={className} style={containerStyle}>
       {items.map((it, index) => (
@@ -482,7 +481,6 @@ function getRegularContent({
     flow === 'row'
       ? {
           wrap: true,
-          jcsb: true,
           aic: true,
         }
       : {
