@@ -13,9 +13,9 @@ import {
   withinRect,
 } from '../../util/generator'
 import { Flex } from './flex'
-import { useMemo } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { List, SxProps, Theme, useTheme } from '@mui/material'
-import { DraggableFreeform } from './draggable'
+import { ResizableDraggable } from './draggable'
 
 type GridItem = {
   id: number
@@ -141,20 +141,24 @@ function buildGrid({
 }
 
 
+type Selection = { region: number; compId: string } | null
+
 export function GridRenderer({
   data,
   style,
   className,
   showDebugBorders = false,
   ComponentRenderer,
-  maxWidth = 1400
+  maxWidth = 1400,
 }: GridRendererProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [selection, setSelection] = useState<Selection>(null)
+
   const gridWidth = Math.min(maxWidth, data.screenshot.view_width)
-  const { gridTemplateColumns, gridTemplateRows, items, container }
-    = buildGrid({
-        input: data,
-        scale: gridWidth / data.screenshot.view_width
-      })
+  const { gridTemplateColumns, gridTemplateRows, items, container } = buildGrid({
+    input: data,
+    scale: gridWidth / data.screenshot.view_width,
+  })
 
   const containerStyle: React.CSSProperties = {
     display: 'grid',
@@ -164,28 +168,47 @@ export function GridRenderer({
     height: 'auto',
     boxSizing: 'border-box',
     border: '1px solid currentColor',
+    position: 'relative',
     ...style,
   }
 
+  // Click blank areas of the overall canvas to clear selection
+  const clearAll = () => setSelection(null)
+
   return (
-    <div className={className} style={containerStyle}>
-      {items.map((it, index) => (
+    <div
+      ref={containerRef}
+      className={className}
+      style={containerStyle}
+      onPointerDown={(e) => {
+        // only clear when the grid container is the direct target (blank space)
+        if (e.currentTarget === e.target) clearAll()
+      }}
+    >
+      {items.map((it) => (
         <div
           key={it.id}
           id={String(it.id)}
           style={{
             gridColumn: `${it.colStart} / ${it.colEnd}`,
             gridRow: `${it.rowStart} / ${it.rowEnd}`,
-            ...(showDebugBorders
-              ? { outline: '1px dashed rgba(0,0,0,0.3)' }
-              : null),
+            ...(showDebugBorders ? { outline: '1px dashed rgba(0,0,0,0.3)' } : null),
+            position: 'relative',
+          }}
+          // clicking empty space inside a region clears selection
+          onPointerDown={(e) => {
+            if (e.currentTarget === e.target) clearAll()
           }}
         >
           <DynamicRegion
-            data={data}
             id={it.id}
+            data={data}
             ComponentRenderer={ComponentRenderer}
             scale={container.scale}
+            // NEW: selection props
+            selected={selection}
+            onSelect={(compId) => setSelection({ region: it.id, compId })}
+            onClear={() => clearAll()}
           />
         </div>
       ))}
@@ -193,90 +216,7 @@ export function GridRenderer({
   )
 }
 
-function DynamicRegion({
-  id,
-  data,
-  ComponentRenderer,
-  scale,
-}: {
-  id: number
-  scale: number
-} & Pick<GridRendererProps, 'ComponentRenderer' | 'data'>) {
-  const theme = useTheme()
-  const region = data.layout[id]
-
-  const page = {
-    width: data.screenshot.view_width,
-    height: data.screenshot.view_height,
-  }
-  if (!region) {
-    console.error('cannot find region definition from id', id)
-    return null
-  }
-  const componentCount = data.screenshot.annotations.filter((a) => {
-    return region.components.includes(a.id)
-  }).length
-
-  const onlyChild =
-    componentCount !== 1 ? null : data.screenshot.annotations[0].label
-
-  const flow: 'row' | 'col' = useMemo(() => {
-    const components = data.screenshot.annotations.filter((a) => {
-      return region.components.includes(a.id)
-    })
-    return getRegionLayoutDirection(components.map((c) => c.rect))
-  }, [data])
-
-  const hasPageContext = data.screenshot.annotations.some(
-    (a) =>
-      region.components.includes(a.id) &&
-      a.label === ServiceManualLabel.page_context,
-  )
-
-  const content: React.ReactNode = useMemo(() => {
-    const estimatedPadding = estimateRegionPad(id, data)
-    if (onlyChild === ServiceManualLabel.heading) {
-      const onlyHeader = data.screenshot.annotations.find((a) => {
-        return (
-          region.components.includes(a.id) &&
-          a.label === ServiceManualLabel.heading
-        )
-      })
-      if (onlyHeader) {
-        return getSolitaryHeader({
-          region: region.rect,
-          scale,
-          header: onlyHeader,
-          ComponentRenderer,
-          page,
-        })
-      }
-    }
-    return getRegularContent({
-      data,
-      region,
-      id,
-      scale,
-      page,
-      ComponentRenderer,
-    })
-  }, [
-    flow,
-    data,
-    id,
-    ComponentRenderer,
-    page,
-    scale,
-    hasPageContext,
-    onlyChild,
-    componentCount,
-    theme
-  ])
-
-  return content
-}
-
-// helper: scale an annotation rect relative to its region
+// Convert page rect → region-local px (scaled)
 function toLocalAbsRect(component: Rect, region: Rect, scale: number) {
   const left = (component.x - region.x) * scale
   const top = (component.y - region.y) * scale
@@ -285,22 +225,22 @@ function toLocalAbsRect(component: Rect, region: Rect, scale: number) {
   return { left, top, width, height }
 }
 
-function RegionCanvas({
-  region,
-  scale,
+export function RegionCanvas({
+  regionPx,
+  onClearSelection,
   children,
+  style,
 }: {
-  region: Rect
-  scale: number
+  regionPx: { width: number; height: number }
+  onClearSelection?: () => void
   children: React.ReactNode
+  style?: React.CSSProperties
 }) {
   return (
     <div
-      style={{
-        position: 'relative',
-        width: Math.max(1, Math.round(region.width * scale)),
-        height: Math.max(1, Math.round(region.height * scale)),
-        // Optional: pad to taste
+      style={{ position: 'relative', width: regionPx.width, height: regionPx.height, ...style }}
+      onPointerDown={(e) => {
+        if (e.currentTarget === e.target) onClearSelection?.()
       }}
     >
       {children}
@@ -308,78 +248,240 @@ function RegionCanvas({
   )
 }
 
-function getRegularContent({
-  data,
+export function RegularRegionContent({
+  regionId,
   region,
+  annotations,
   scale,
-  ComponentRenderer,
-  id,
   page,
+  ComponentRenderer,
+  selected,
+  onSelect,
+  onClear,
 }: {
-  region: (typeof data)['layout'][0]
+  regionId: number
+  region: { rect: Rect; components: string[] }
+  annotations: Annotation[]
   scale: number
-  id: number
   page: { width: number; height: number }
-} & Pick<GridRendererProps, 'ComponentRenderer' | 'data'>) {
-  const components = data.screenshot.annotations
-    .filter((a) => region.components.includes(a.id))
-    .sort((a, b) => a.rect.y - b.rect.y || a.rect.x - b.rect.x)
+  ComponentRenderer: ({
+    label,
+    children,
+    rect,
+    page,
+    sx,
+    container,
+    scale,
+  }: {
+    label: ServiceManualLabel
+    children?: React.ReactNode
+    rect: Rect
+    page: { width: number; height: number }
+    sx?: SxProps<Theme>
+    container: Rect
+    scale: number
+  }) => React.ReactNode
+  selected: { region: number; compId: string } | null
+  onSelect: (compId: string) => void
+  onClear: () => void
+}) {
+  const components = useMemo(
+    () =>
+      annotations
+        .filter((a) => region.components.includes(a.id))
+        .sort((a, b) => a.rect.y - b.rect.y || a.rect.x - b.rect.x),
+    [annotations, region.components]
+  )
+
+  const regionPx = useMemo(
+    () => ({
+      width: Math.round(region.rect.width * scale),
+      height: Math.round(region.rect.height * scale),
+    }),
+    [region.rect.width, region.rect.height, scale]
+  )
 
   return (
-    <RegionCanvas region={region.rect} scale={scale}>
+    <RegionCanvas regionPx={regionPx} onClearSelection={onClear}>
       {components.map((c) => {
         const abs = toLocalAbsRect(c.rect, region.rect, scale)
+        const isSelected = !!selected && selected.region === regionId && selected.compId === c.id
         return (
-          <DraggableFreeform key={c.id} initial={abs}>
+          <ResizableDraggable
+            key={c.id}
+            id={c.id}
+            initial={abs}
+            selected={isSelected}
+            onSelect={onSelect}
+            regionSize={regionPx}
+          >
             <ComponentRenderer
               page={page}
               container={region.rect}
-              sx={{ /* no position here; Draggable handles it */ }}
+              sx={{}}
               label={c.label as ServiceManualLabel}
               rect={c.rect}
               scale={scale}
             >
               {c.text_content ?? null}
             </ComponentRenderer>
-          </DraggableFreeform>
+          </ResizableDraggable>
         )
       })}
     </RegionCanvas>
   )
 }
 
-function getSolitaryHeader({
+export function SolitaryHeaderRegionContent({
+  regionId,
   header,
   region,
   scale,
   page,
   ComponentRenderer,
+  selected,
+  onSelect,
+  onClear,
 }: {
+  regionId: number
+  header: Annotation
   region: Rect
   scale: number
-  header: Annotation
   page: { width: number; height: number }
-  ComponentRenderer: GridRendererProps['ComponentRenderer']
+  ComponentRenderer: ({
+    label,
+    children,
+    rect,
+    page,
+    sx,
+    container,
+    scale,
+  }: {
+    label: ServiceManualLabel
+    children?: React.ReactNode
+    rect: Rect
+    page: { width: number; height: number }
+    sx?: SxProps<Theme>
+    container: Rect
+    scale: number
+  }) => React.ReactNode
+  selected: { region: number; compId: string } | null
+  onSelect: (compId: string) => void
+  onClear: () => void
 }) {
-  // Start the header at its measured box; user can drag afterward.
-  const abs = toLocalAbsRect(header.rect, region, scale)
+  const regionPx = useMemo(
+    () => ({ width: Math.round(region.width * scale), height: Math.round(region.height * scale) }),
+    [region.width, region.height, scale]
+  )
+  const abs = useMemo(() => toLocalAbsRect(header.rect, region, scale), [header.rect, region, scale])
+  const isSelected = !!selected && selected.region === regionId && selected.compId === header.id
 
   return (
-    <RegionCanvas region={region} scale={scale}>
-      <DraggableFreeform initial={abs}>
+    <RegionCanvas regionPx={regionPx} onClearSelection={onClear}>
+      <ResizableDraggable
+        id={header.id}
+        initial={abs}
+        selected={isSelected}
+        onSelect={onSelect}
+        regionSize={regionPx}
+      >
         <ComponentRenderer
           page={page}
           container={region}
           sx={{}}
-          key={header.id}
           label={header.label as ServiceManualLabel}
           rect={header.rect}
           scale={scale}
         >
           {header.text_content ?? null}
         </ComponentRenderer>
-      </DraggableFreeform>
+      </ResizableDraggable>
     </RegionCanvas>
   )
 }
 
+export function DynamicRegion({
+  id,
+  data,
+  ComponentRenderer,
+  scale,
+  selected,
+  onSelect,
+  onClear,
+}: {
+  id: number
+  scale: number
+  data: {
+    layout: Array<{ rect: Rect; components: string[] }>
+    screenshot: { view_width: number; view_height: number; annotations: Annotation[] }
+  }
+  ComponentRenderer: ({
+    label,
+    children,
+    rect,
+    page,
+    sx,
+    container,
+    scale,
+  }: {
+    label: ServiceManualLabel
+    children?: React.ReactNode
+    rect: Rect
+    page: { width: number; height: number }
+    sx?: SxProps<Theme>
+    container: Rect
+    scale: number
+  }) => React.ReactNode
+  // NEW (from GridRenderer)
+  selected: { region: number; compId: string } | null
+  onSelect: (compId: string) => void
+  onClear: () => void
+}) {
+  const region = data.layout[id]
+  if (!region) return null
+
+  const page = useMemo(
+    () => ({ width: data.screenshot.view_width, height: data.screenshot.view_height }),
+    [data.screenshot.view_width, data.screenshot.view_height]
+  )
+
+  const componentsInRegion = useMemo(
+    () =>
+      data.screenshot.annotations
+        .filter((a) => region.components.includes(a.id))
+        .sort((a, b) => a.rect.y - b.rect.y || a.rect.x - b.rect.x),
+    [data.screenshot.annotations, region.components]
+  )
+
+  const solitaryHeader =
+    componentsInRegion.length === 1 &&
+    (componentsInRegion[0].label as ServiceManualLabel) === 'heading'
+      ? componentsInRegion[0]
+      : null
+
+  return solitaryHeader ? (
+    <SolitaryHeaderRegionContent
+      regionId={id}
+      header={solitaryHeader}
+      region={region.rect}
+      scale={scale}
+      page={page}
+      ComponentRenderer={ComponentRenderer}
+      selected={selected}
+      onSelect={onSelect}
+      onClear={onClear}
+    />
+  ) : (
+    <RegularRegionContent
+      regionId={id}
+      region={region}
+      annotations={data.screenshot.annotations}
+      scale={scale}
+      page={page}
+      ComponentRenderer={ComponentRenderer}
+      selected={selected}
+      onSelect={onSelect}
+      onClear={onClear}
+    />
+  )
+}
