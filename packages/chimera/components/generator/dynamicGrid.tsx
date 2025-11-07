@@ -15,6 +15,7 @@ import {
 import { Flex } from './flex'
 import { useMemo } from 'react'
 import { List, SxProps, Theme, useTheme } from '@mui/material'
+import { DraggableFreeform } from './draggable'
 
 type GridItem = {
   id: number
@@ -244,14 +245,10 @@ function DynamicRegion({
       if (onlyHeader) {
         return getSolitaryHeader({
           region: region.rect,
-          id,
           scale,
           header: onlyHeader,
           ComponentRenderer,
           page,
-          flow,
-          estimatedPadding,
-          theme,
         })
       }
     }
@@ -262,9 +259,6 @@ function DynamicRegion({
       scale,
       page,
       ComponentRenderer,
-      hasPageContext,
-      flow,
-      estimatedPadding,
     })
   }, [
     flow,
@@ -282,6 +276,38 @@ function DynamicRegion({
   return content
 }
 
+// helper: scale an annotation rect relative to its region
+function toLocalAbsRect(component: Rect, region: Rect, scale: number) {
+  const left = (component.x - region.x) * scale
+  const top = (component.y - region.y) * scale
+  const width = component.width * scale
+  const height = component.height * scale
+  return { left, top, width, height }
+}
+
+function RegionCanvas({
+  region,
+  scale,
+  children,
+}: {
+  region: Rect
+  scale: number
+  children: React.ReactNode
+}) {
+  return (
+    <div
+      style={{
+        position: 'relative',
+        width: Math.max(1, Math.round(region.width * scale)),
+        height: Math.max(1, Math.round(region.height * scale)),
+        // Optional: pad to taste
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
 function getRegularContent({
   data,
   region,
@@ -289,268 +315,62 @@ function getRegularContent({
   ComponentRenderer,
   id,
   page,
-  hasPageContext,
-  flow,
-  estimatedPadding,
 }: {
   region: (typeof data)['layout'][0]
   scale: number
   id: number
   page: { width: number; height: number }
-  hasPageContext?: boolean
-  flow: 'row' | 'col'
-  estimatedPadding: { top: number; left: number }
 } & Pick<GridRendererProps, 'ComponentRenderer' | 'data'>) {
   const components = data.screenshot.annotations
-    .filter((a) => {
-      return region.components.includes(a.id)
-    })
+    .filter((a) => region.components.includes(a.id))
     .sort((a, b) => a.rect.y - b.rect.y || a.rect.x - b.rect.x)
 
-  const bulletpoints = components.filter(
-    (c) => c.label === ServiceManualLabel.bulletpoint,
-  )
-
-  // must have the same font size and letter spacing across all these bulletpoints,
-  // at least within a given region ffs
-  const bp = bulletpoints.find((bp) => bp.text_content)
-  const bpFontInfo = bp
-    ? estimateFontAndTrackingBox(bp.rect, bp.text_content!, {
-        lineCount: bp.text_content!.split('\n').length,
-      })
-    : null
-  const bpFs = bpFontInfo
-    ? {
-        fontSize: `${bpFontInfo.fontPx * scale}px`,
-        letterSpacing: `${bpFontInfo.letterSpacingPx * scale}px`,
-      }
-    : null
-
-  let sortedElems: React.ReactNode[] = []
-
-  // evil shit going down
-
-  const sansContext = components.filter(
-    (c) => c.label !== ServiceManualLabel.page_context,
-  )
-  const pageCtxChildIds: string[] = hasPageContext
-    ? withinRect(
-        components.find((c) => c.label === ServiceManualLabel.page_context)!
-          .rect,
-        sansContext.map((c) => c.rect),
-      ).map((idx) => sansContext[idx].id)
-    : []
-
-  let firstBulletpoint: boolean = false
-
-  for (const c of components) {
-    // hack for bulletpoints
-    // we assume within a given region that there is only one actual list
-    // and once we encounter a bulletpoint we mark that as the start of the list
-    // and put all the bulletpoints under it
-
-    if (c.label === ServiceManualLabel.bulletpoint) {
-      if (!firstBulletpoint) {
-        firstBulletpoint = true
-        sortedElems.push(
-          <List sx={{ listStyleType: 'disc', pl: 4 }}>
-            {bulletpoints.map((bp) => {
-              return (
-                <ComponentRenderer
-                  scale={scale}
-                  container={data.layout[id].rect}
-                  rect={bp.rect}
-                  page={page}
-                  label={ServiceManualLabel.bulletpoint}
-                  key={bp.id}
-                  sx={{
-                    padding: 0,
-                    ...(bpFs ?? {}),
-                  }}
-                >
-                  {bp.text_content}
-                </ComponentRenderer>
-              )
-            })}
-          </List>,
-        )
-      }
-      continue // except for the first bulletpoint where we do everything, skip
-    }
-
-    if (pageCtxChildIds.includes(c.id)) {
-      continue // these will be handled once when we get to the page_context component
-    }
-
-    if (c.label === ServiceManualLabel.page_context) {
-      const pageCtxChildren = pageCtxChildIds.map(
-        (id) => components.find((c) => c.id === id)!,
-      )
-
-      const positions = getAbsoluteXPositioning({
-        region: region.rect,
-        components: pageCtxChildren.map((c) => c.rect),
-        scale,
-      })
-
-      const tallestH =
-        Math.max(...pageCtxChildren.map((c) => c.rect.height)) * scale
-      sortedElems.push(
-        /** make as tall as tallest element of pageCtxChildren */
-        <div
-          style={{
-            position: 'relative',
-            height: `${tallestH}px`,
-            width: '100%',
-            margin: `${tallestH / 2}px 0`,
-          }}
-        >
-          {pageCtxChildren.map((c, idx) => {
-            const perhapsBold =
-              c.label === ServiceManualLabel.heading && Math.random() > 0.7
-            return (
-              <ComponentRenderer
-                page={page}
-                container={data.layout[id].rect}
-                sx={{
-                  position: 'absolute',
-                  left: positions.find((p) => p.id === idx)!.left + 'px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  ...(perhapsBold
-                    ? {
-                        fontWeight: 'bold !important',
-                      }
-                    : undefined),
-                }}
-                key={c.id}
-                label={c.label as ServiceManualLabel}
-                rect={c.rect}
-                scale={scale}
-              >
-                {c.text_content ?? null}
-              </ComponentRenderer>
-            )
-          })}
-        </div>,
-      )
-      continue
-    }
-
-    const maybeBold =
-      c.label === ServiceManualLabel.heading && Math.random() > 0.7
-
-    const cr = data.layout[id].rect
-    const absPos = c.label === ServiceManualLabel.diagram_number
-      ? {
-        position: 'absolute',
-        top: `${(c.rect.y - cr.y) * scale}px`,
-        left: `${(c.rect.x - cr.x) * scale}px`,
-        zIndex: 1
-      }
-      : null
-
-    sortedElems.push(
-      <ComponentRenderer
-        page={page}
-        container={data.layout[id].rect}
-        sx={{
-          ...(absPos ?? {}),
-          ...(maybeBold
-            ? {
-                fontWeight: 'bold !important',
-              }
-            : undefined),
-        }}
-        key={c.id}
-        label={c.label as ServiceManualLabel}
-        rect={c.rect}
-        scale={scale}
-      >
-        {c.text_content ?? null}
-      </ComponentRenderer>,
-    )
-  }
-
-  const padStyle = {
-    paddingLeft: `${Math.floor(estimatedPadding.left * scale)}px`,
-    paddingTop: `${Math.floor(estimatedPadding.top * scale)}px`,
-  }
-
-  const flexProps =
-    flow === 'row'
-      ? {
-          wrap: true,
-          aic: true,
-        }
-      : {
-          col: true,
-        }
-
   return (
-    <Flex
-      {...flexProps}
-      style={{
-        position: 'relative', // important because we will sometimes abs pos children
-        gap: '4px',
-      }}
-    >
-      {sortedElems}
-    </Flex>
+    <RegionCanvas region={region.rect} scale={scale}>
+      {components.map((c) => {
+        const abs = toLocalAbsRect(c.rect, region.rect, scale)
+        return (
+          <DraggableFreeform key={c.id} initial={abs}>
+            <ComponentRenderer
+              page={page}
+              container={region.rect}
+              sx={{ /* no position here; Draggable handles it */ }}
+              label={c.label as ServiceManualLabel}
+              rect={c.rect}
+              scale={scale}
+            >
+              {c.text_content ?? null}
+            </ComponentRenderer>
+          </DraggableFreeform>
+        )
+      })}
+    </RegionCanvas>
   )
 }
 
-// wtf is this
 function getSolitaryHeader({
   header,
   region,
-  id,
   scale,
   page,
   ComponentRenderer,
-  estimatedPadding,
-  flow,
-  theme
 }: {
   region: Rect
-  id: number
   scale: number
   header: Annotation
   page: { width: number; height: number }
   ComponentRenderer: GridRendererProps['ComponentRenderer']
-  estimatedPadding: { top: number; left: number }
-  flow: 'row' | 'col'
-  theme: Theme
 }) {
+  // Start the header at its measured box; user can drag afterward.
+  const abs = toLocalAbsRect(header.rect, region, scale)
 
-  if (id === 0) {
-    const roughlyCentered = roughlyCenteredInRegion({
-      container: region,
-      component: header.rect,
-      tol: 0.15
-    })
-    const maybeBold = Math.random() > 0.2
-    const maybeColouredBg = Math.random() > 0.8
-    return (
-      <Flex
-        aic
-        jcc={roughlyCentered}
-        style={{
-
-        }}
-      >
+  return (
+    <RegionCanvas region={region} scale={scale}>
+      <DraggableFreeform initial={abs}>
         <ComponentRenderer
           page={page}
           container={region}
-          sx={{
-            backgroundColor: maybeColouredBg
-              ? theme.palette.primary.main: 'initial',
-            ...(maybeBold
-              ? {
-                  fontWeight: 'bold !important',
-                }
-              : undefined),
-          }}
+          sx={{}}
           key={header.id}
           label={header.label as ServiceManualLabel}
           rect={header.rect}
@@ -558,57 +378,8 @@ function getSolitaryHeader({
         >
           {header.text_content ?? null}
         </ComponentRenderer>
-      </Flex>
-    )
-  }
-
-  const maybeCentered = ServiceManualLabel.heading ? Math.random() > 0.5 : false
-
-  const padStyle = {
-    paddingLeft: `${Math.floor(estimatedPadding.left * scale)}px`,
-    paddingTop: `${Math.floor(estimatedPadding.top * scale)}px`,
-  }
-
-  const flexProps =
-    flow === 'row'
-      ? {
-          wrap: true,
-          jcsb: true,
-          aic: true,
-        }
-      : {
-          col: true,
-        }
-
-  // the further down the page you get the less likely to be bold
-  const maybeBold = Math.random() > Math.min(0.95, id / 10 + 0.1)
-  return (
-    <Flex
-      {...flexProps}
-      style={{
-        position: 'relative', // important because we will sometimes abs pos children
-        ...padStyle,
-        gap: '4px',
-        ...(maybeCentered ? { justifyContent: 'center ' } : undefined),
-      }}
-    >
-      <ComponentRenderer
-        page={page}
-        container={region}
-        sx={{
-          ...(maybeBold
-            ? {
-                fontWeight: 'bold !important',
-              }
-            : undefined),
-        }}
-        key={header.id}
-        label={header.label as ServiceManualLabel}
-        rect={header.rect}
-        scale={scale}
-      >
-        {header.text_content ?? null}
-      </ComponentRenderer>
-    </Flex>
+      </DraggableFreeform>
+    </RegionCanvas>
   )
 }
+
