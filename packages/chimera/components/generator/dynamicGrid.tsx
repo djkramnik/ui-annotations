@@ -13,8 +13,8 @@ import {
   withinRect,
 } from '../../util/generator'
 import { Flex } from './flex'
-import { useMemo, useRef, useState } from 'react'
-import { List, SxProps, Theme, useTheme } from '@mui/material'
+import { useMemo, useRef, useState, useCallback } from 'react'
+import { SxProps, Theme } from '@mui/material'
 import { ResizableDraggable } from './draggable'
 
 type GridItem = {
@@ -101,7 +101,6 @@ function buildGrid({
       .map((e, i) => Math.max(0, Math.round((edges[i + 1] - e) * scale)) + 'px')
       .join(' ')
 
-  // new: content-flexible rows
   const toRowTracks = (edges: number[]) =>
     edges
       .slice(0, -1)
@@ -140,7 +139,6 @@ function buildGrid({
   }
 }
 
-
 type Selection = { region: number; compId: string } | null
 
 export function GridRenderer({
@@ -151,7 +149,8 @@ export function GridRenderer({
   ComponentRenderer,
   maxWidth = 1400,
 }: GridRendererProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
+  // Track deletions locally (non-destructive to source data)
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
   const [selection, setSelection] = useState<Selection>(null)
 
   const gridWidth = Math.min(maxWidth, data.screenshot.view_width)
@@ -159,6 +158,8 @@ export function GridRenderer({
     input: data,
     scale: gridWidth / data.screenshot.view_width,
   })
+
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const containerStyle: React.CSSProperties = {
     display: 'grid',
@@ -172,8 +173,27 @@ export function GridRenderer({
     ...style,
   }
 
-  // Click blank areas of the overall canvas to clear selection
   const clearAll = () => setSelection(null)
+
+  const deleteSelected = useCallback(() => {
+    if (!selection) return
+    setDeletedIds((prev) => {
+      const next = new Set(prev)
+      next.add(selection.compId)
+      return next
+    })
+    setSelection(null)
+  }, [selection])
+
+  // Keyboard support for Delete/Backspace
+  const onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (selection) {
+        e.preventDefault()
+        deleteSelected()
+      }
+    }
+  }
 
   return (
     <div
@@ -181,9 +201,10 @@ export function GridRenderer({
       className={className}
       style={containerStyle}
       onPointerDown={(e) => {
-        // only clear when the grid container is the direct target (blank space)
         if (e.currentTarget === e.target) clearAll()
       }}
+      tabIndex={0}
+      onKeyDown={onKeyDown}
     >
       {items.map((it) => (
         <div
@@ -195,7 +216,6 @@ export function GridRenderer({
             ...(showDebugBorders ? { outline: '1px dashed rgba(0,0,0,0.3)' } : null),
             position: 'relative',
           }}
-          // clicking empty space inside a region clears selection
           onPointerDown={(e) => {
             if (e.currentTarget === e.target) clearAll()
           }}
@@ -205,10 +225,14 @@ export function GridRenderer({
             data={data}
             ComponentRenderer={ComponentRenderer}
             scale={container.scale}
-            // NEW: selection props
             selected={selection}
             onSelect={(compId) => setSelection({ region: it.id, compId })}
             onClear={() => clearAll()}
+            deletedIds={deletedIds}                 // NEW
+            onDeleteId={(id) => {                   // NEW
+              setDeletedIds((prev) => new Set(prev).add(id))
+              setSelection(null)
+            }}
           />
         </div>
       ))}
@@ -258,6 +282,8 @@ export function RegularRegionContent({
   selected,
   onSelect,
   onClear,
+  deletedIds,           // NEW
+  onDeleteId,           // NEW
 }: {
   regionId: number
   region: { rect: Rect; components: string[] }
@@ -284,13 +310,16 @@ export function RegularRegionContent({
   selected: { region: number; compId: string } | null
   onSelect: (compId: string) => void
   onClear: () => void
+  deletedIds: Set<string>
+  onDeleteId: (id: string) => void
 }) {
+  // filter by region and not-deleted
   const components = useMemo(
     () =>
       annotations
-        .filter((a) => region.components.includes(a.id))
+        .filter((a) => region.components.includes(a.id) && !deletedIds.has(a.id))
         .sort((a, b) => a.rect.y - b.rect.y || a.rect.x - b.rect.x),
-    [annotations, region.components]
+    [annotations, region.components, deletedIds]
   )
 
   const regionPx = useMemo(
@@ -301,11 +330,21 @@ export function RegularRegionContent({
     [region.rect.width, region.rect.height, scale]
   )
 
+  // z-index scheme: smaller area → higher zBase
+  const zBaseMap = useMemo(() => {
+    const pairs = components.map((c) => ({ id: c.id, area: c.rect.width * c.rect.height }))
+    pairs.sort((a, b) => a.area - b.area) // ascending: smallest first
+    // give smallest the highest base z
+    const baseStart = 100 // region-local base to avoid ties across regions
+    return new Map(pairs.map((p, idx, arr) => [p.id, baseStart + (arr.length - idx)]))
+  }, [components])
+
   return (
     <RegionCanvas regionPx={regionPx} onClearSelection={onClear}>
       {components.map((c) => {
         const abs = toLocalAbsRect(c.rect, region.rect, scale)
         const isSelected = !!selected && selected.region === regionId && selected.compId === c.id
+        const zBase = zBaseMap.get(c.id) ?? 0
         return (
           <ResizableDraggable
             key={c.id}
@@ -313,7 +352,9 @@ export function RegularRegionContent({
             initial={abs}
             selected={isSelected}
             onSelect={onSelect}
+            onDelete={onDeleteId}
             regionSize={regionPx}
+            zBase={zBase}
           >
             <ComponentRenderer
               page={page}
@@ -342,6 +383,8 @@ export function SolitaryHeaderRegionContent({
   selected,
   onSelect,
   onClear,
+  deletedIds,         // NEW
+  onDeleteId,         // NEW
 }: {
   regionId: number
   header: Annotation
@@ -368,13 +411,20 @@ export function SolitaryHeaderRegionContent({
   selected: { region: number; compId: string } | null
   onSelect: (compId: string) => void
   onClear: () => void
+  deletedIds: Set<string>
+  onDeleteId: (id: string) => void
 }) {
+  if (deletedIds.has(header.id)) return null
+
   const regionPx = useMemo(
     () => ({ width: Math.round(region.width * scale), height: Math.round(region.height * scale) }),
     [region.width, region.height, scale]
   )
   const abs = useMemo(() => toLocalAbsRect(header.rect, region, scale), [header.rect, region, scale])
   const isSelected = !!selected && selected.region === regionId && selected.compId === header.id
+
+  // single header: still give it a base z
+  const zBase = 100 + 1
 
   return (
     <RegionCanvas regionPx={regionPx} onClearSelection={onClear}>
@@ -383,7 +433,9 @@ export function SolitaryHeaderRegionContent({
         initial={abs}
         selected={isSelected}
         onSelect={onSelect}
+        onDelete={onDeleteId}
         regionSize={regionPx}
+        zBase={zBase}
       >
         <ComponentRenderer
           page={page}
@@ -408,6 +460,8 @@ export function DynamicRegion({
   selected,
   onSelect,
   onClear,
+  deletedIds,             // NEW
+  onDeleteId,             // NEW
 }: {
   id: number
   scale: number
@@ -432,10 +486,11 @@ export function DynamicRegion({
     container: Rect
     scale: number
   }) => React.ReactNode
-  // NEW (from GridRenderer)
   selected: { region: number; compId: string } | null
   onSelect: (compId: string) => void
   onClear: () => void
+  deletedIds: Set<string>
+  onDeleteId: (id: string) => void
 }) {
   const region = data.layout[id]
   if (!region) return null
@@ -470,6 +525,8 @@ export function DynamicRegion({
       selected={selected}
       onSelect={onSelect}
       onClear={onClear}
+      deletedIds={deletedIds}
+      onDeleteId={onDeleteId}
     />
   ) : (
     <RegularRegionContent
@@ -482,6 +539,8 @@ export function DynamicRegion({
       selected={selected}
       onSelect={onSelect}
       onClear={onClear}
+      deletedIds={deletedIds}
+      onDeleteId={onDeleteId}
     />
   )
 }

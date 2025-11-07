@@ -1,4 +1,3 @@
-// ResizableDraggable.tsx
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 export type AbsRect = { left: number; top: number; width: number; height: number }
@@ -29,7 +28,9 @@ export function ResizableDraggable({
   onChange,
   selected,
   onSelect,
+  onDelete,          // NEW
   regionSize,
+  zBase = 0,         // NEW: base stacking (smaller items get higher base)
   children,
 }: {
   id: string
@@ -37,7 +38,9 @@ export function ResizableDraggable({
   onChange?: (next: AbsRect) => void
   selected: boolean
   onSelect: (id: string) => void
+  onDelete?: (id: string) => void
   regionSize: { width: number; height: number } // canvas size (px)
+  zBase?: number
   children: React.ReactNode
 }) {
   const [rect, setRect] = useState<AbsRect>(initial)
@@ -46,6 +49,19 @@ export function ResizableDraggable({
   const grab = useRef({ dx: 0, dy: 0 })
   const startRect = useRef<AbsRect>(initial)
   const keepAspect = useRef(false)
+
+  // keep in sync if parent changes initial (e.g., external edits)
+  useEffect(() => {
+    setRect((r) => {
+      if (
+        r.left !== initial.left ||
+        r.top !== initial.top ||
+        r.width !== initial.width ||
+        r.height !== initial.height
+      ) return initial
+      return r
+    })
+  }, [initial.left, initial.top, initial.width, initial.height])
 
   // update external when rect changes
   useEffect(() => { onChange?.(rect) }, [rect])
@@ -89,37 +105,20 @@ export function ResizableDraggable({
 
   const onHandleMove: React.PointerEventHandler<HTMLDivElement> = (e) => {
     if (!resizing) return
-    const dx = e.clientX - (startRect.current.left + startRect.current.width)
-    const dy = e.clientY - (startRect.current.top + startRect.current.height)
-    const { clientX, clientY } = e
+    const { clientX: mx, clientY: my } = e
 
     setRect(() => {
       const s = startRect.current
       let left = s.left, top = s.top, width = s.width, height = s.height
 
-      const x = clientX - grab.current.dx // not used; we’ll compute deltas vs start rect
-      const y = clientY - grab.current.dy
-
-      const mx = clientX
-      const my = clientY
-
-      // Convert pointer to local deltas relative to start edges
-      const deltaX = mx - (s.left + s.width)
-      const deltaY = my - (s.top + s.height)
-
-      const deltaXLeft = mx - s.left
-      const deltaYTop = my - s.top
-
       const applyAspect = (w: number, h: number, which: Handle) => {
         if (!keepAspect.current) return [w, h] as const
         const aspect = s.width / s.height || 1
         if (which === 'n' || which === 's') {
-          // vertical drag → adjust width to preserve aspect
           w = Math.max(MIN_W, h * aspect)
         } else if (which === 'e' || which === 'w') {
           h = Math.max(MIN_H, w / aspect)
         } else {
-          // corner: use larger of |dw|, |dh| to scale consistently
           const byW = Math.abs(w - s.width) >= Math.abs(h - s.height)
           if (byW) h = Math.max(MIN_H, w / aspect)
           else w = Math.max(MIN_W, h * aspect)
@@ -193,8 +192,9 @@ export function ResizableDraggable({
     setResizing(null)
   }
 
-  // Keep wrapper on top when active
-  const z = selected || dragging || resizing ? 10 : 1
+  // Stack: smaller items get higher base z; active on top of that
+  const activeBoost = (selected || dragging || resizing) ? 10_000 : 0
+  const z = zBase + activeBoost
 
   return (
     <>
@@ -223,6 +223,33 @@ export function ResizableDraggable({
       {/* resize handles (only when selected) */}
       {selected && (
         <>
+          {/* Delete chip (top-right of rect) */}
+          <div
+            onPointerDown={(e) => { e.stopPropagation(); onSelect(id) }}
+            style={{
+              position: 'absolute',
+              left: rect.left + rect.width - 18,
+              top: rect.top - 18,
+              width: 18,
+              height: 18,
+              borderRadius: 9,
+              background: '#ef5350',
+              color: 'white',
+              fontSize: 12,
+              lineHeight: '18px',
+              textAlign: 'center',
+              fontWeight: 700,
+              zIndex: z + 2,
+              boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+              cursor: 'pointer',
+              userSelect: 'none',
+            }}
+            title="Delete (Del/Backspace)"
+            onClick={(e) => { e.stopPropagation(); onDelete?.(id) }}
+          >
+            ×
+          </div>
+
           {(['nw','n','ne','e','se','s','sw','w'] as Handle[]).map((h) => {
             const { style } = handleStyle(h, rect)
             return (
@@ -254,10 +281,8 @@ export function ResizableDraggable({
 
 function clampToRegion(r: AbsRect, region: { width: number; height: number }): AbsRect {
   let { left, top, width, height } = r
-  // clamp size first
   width = Math.max(MIN_W, Math.min(width, region.width))
   height = Math.max(MIN_H, Math.min(height, region.height))
-  // clamp position so box stays inside
   left = Math.min(Math.max(0, left), region.width - width)
   top = Math.min(Math.max(0, top), region.height - height)
   return { left, top, width, height }
@@ -268,7 +293,6 @@ function handleStyle(h: Handle, r: AbsRect) {
   const half = HANDLE_SIZE / 2
   const right = r.left + r.width
   const bottom = r.top + r.height
-  // convert to local absolute positions:
   switch (h) {
     case 'nw': s.left = r.left - half; s.top = r.top - half; break
     case 'n':  s.left = r.left + r.width/2 - half; s.top = r.top - half; break
@@ -279,8 +303,5 @@ function handleStyle(h: Handle, r: AbsRect) {
     case 'sw': s.left = r.left - half; s.top = bottom - half; break
     case 'w':  s.left = r.left - half; s.top = r.top + r.height/2 - half; break
   }
-  // since these handles are siblings, we actually place them
-  // using absolute coords relative to the region (not the item),
-  // so caller renders them in the same stacking context.
   return { style: s }
 }
