@@ -1,17 +1,34 @@
 {
-  "manifest_version": 3,
   "name": "Synth Exporter",
   "version": "1.0.0",
-  "description": "Stitch-capture #synth-container and export label_* annotations.",
-  "permissions": ["activeTab", "tabs", "scripting"],
-  "host_permissions": ["http://localhost:4000/*", "<all_urls>"],
-  "background": { "service_worker": "background.js" },
-  "action": { "default_popup": "popup.html", "default_title": "Synth Export" },
+  "manifest_version": 3,
+  "description": "Screenshot and export a synthetic UI doc",
+  "action": {
+    "default_popup": "popup/index.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "run_at": "document_idle"
+      "js": ["content.js"]
     }
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "permissions": [
+    "activeTab",
+    "storage",
+    "downloads",
+    "tabs"
   ]
 }

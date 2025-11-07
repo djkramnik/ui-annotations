@@ -8,6 +8,7 @@
     "dev:ui": "npm run -w ui-labelling-frontend dev",
     "build:shared": "npm run -w ui-labelling-shared build",
     "build:infer-layout": "npm run -w infer-layout build",
+    "build:synth-extension": "npm run build:shared && npm run -w synth-extension build",
     "build:extension": "npm run build:shared && npm run -w ui-labelling-extension build",
     "watch:extension": "npm run -w ui-labelling-extension dev",
     "build:server": "npm run -w ui-labelling-server build",
