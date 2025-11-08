@@ -216,6 +216,20 @@ async function runExport(): Promise<void> {
     const container = document.querySelector<HTMLElement>("#synth-container");
     if (!container) { console.warn("No #synth-container found, noop."); return; }
 
+    const parentTag = container.getAttribute('data-parent-tag')
+    const parentId = container.getAttribute('data-parent-id')
+
+    if (parentId === null) {
+      console.warn('no parent id found.  opting to sit this one out')
+      return
+    }
+    const parentIdN = Number(String(parentId))
+
+    if (Number.isNaN(parentIdN)) {
+      console.warn('no parent id found.  opting to sit this one out')
+      return
+    }
+
     // Stitch image (PNG) — independent of annotation units
     const { base64, containerCssRect } = await stitchElementPNG(container, limiter);
 
@@ -232,7 +246,8 @@ async function runExport(): Promise<void> {
         width: Math.round(containerCssRect.width),
         height: Math.round(containerCssRect.height),
       },
-      tag: "synthetic",
+      tag: parentTag ?? "synthetic",
+      synthetic_parent_id: parentIdN!
     };
 
     // POST via background to avoid CORS

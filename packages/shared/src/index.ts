@@ -496,6 +496,7 @@ export interface ScreenshotRequest {
     height: number
   }
   tag?: string
+  synthetic_parent_id?: number
 }
 
 export type Rect = {
