@@ -62,7 +62,8 @@ screenshotRouter.post('/', async (req: Request, res: Response) => {
       date,
       image_data,
       window,
-      tag
+      tag,
+      synthetic_parent_id
     } = req.body as ScreenshotRequest;
 
     const id = await prisma.$transaction(async ($tx) => {
@@ -78,6 +79,7 @@ screenshotRouter.post('/', async (req: Request, res: Response) => {
           image_data: image_data
             ? Buffer.from(image_data, 'base64')
             : undefined,
+          synthetic_parent_id
         },
         select: { id: true },
       });
