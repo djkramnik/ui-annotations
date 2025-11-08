@@ -40,7 +40,18 @@ export const DynamicMuiComponent = ({
 
   switch (label) {
     case ServiceManualLabel.diagram_number:
-      return <Avatar sx={sx}>{children}</Avatar>
+      return (
+        <Avatar
+          id="label_diagram_number"
+          sx={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            ...sx
+          }}>
+          {children}
+        </Avatar>
+      )
     case ServiceManualLabel.diagram:
     case ServiceManualLabel.image:
     case ServiceManualLabel.logo:
