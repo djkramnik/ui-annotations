@@ -1,11 +1,11 @@
 import type { Msg } from "./types";
 import type { Annotation, Rect, ScreenshotRequest } from 'ui-labelling-shared'
 
-/** Utility: wait helpers */
-const nextFrame = () => new Promise<void>(r => requestAnimationFrame(() => r()));
+/** Small utils */
+const raf = () => new Promise<void>(r => requestAnimationFrame(() => r()));
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
-/** --- Rate limit handling for captureVisibleTab --- */
+/** Quota-safe capture with light backoff */
 const MAX_CALLS_PER_SEC = 2;
 const MIN_INTERVAL_MS = Math.ceil(1000 / MAX_CALLS_PER_SEC);
 const QUOTA_ERR = "This request exceeds the MAX_CAPTURE_VISIBLE_TAB_CALLS_PER_SECOND quota.";
@@ -23,20 +23,15 @@ class RateLimiter {
   }
 }
 
-const limiter = new RateLimiter(MIN_INTERVAL_MS);
-
-async function captureVisibleThrottled(): Promise<string> {
+async function captureVisibleThrottled(limiter: RateLimiter): Promise<string> {
   await limiter.wait();
-  let attempt = 0;
   let delay = MIN_INTERVAL_MS;
   while (true) {
     try {
       const dataUrl: string = await new Promise((resolve, reject) => {
         chrome.runtime.sendMessage({ type: "CAPTURE_VISIBLE_TAB" } as Msg, (res: any) => {
-          if (chrome.runtime.lastError)
-            return reject(new Error(chrome.runtime.lastError.message));
-          if (!res?.ok || !res?.dataUrl)
-            return reject(new Error(res?.error || "capture failed"));
+          if (chrome.runtime.lastError) return reject(new Error(chrome.runtime.lastError.message));
+          if (!res?.ok || !res?.dataUrl) return reject(new Error(res?.error || "capture failed"));
           resolve(res.dataUrl as string);
         });
       });
@@ -44,7 +39,6 @@ async function captureVisibleThrottled(): Promise<string> {
     } catch (e: any) {
       const msg = String(e?.message || e);
       if (msg.includes(QUOTA_ERR)) {
-        attempt++;
         const jitter = Math.floor(Math.random() * 80);
         await sleep(Math.min(1500, delay + jitter));
         delay = Math.min(1500, Math.floor(delay * 1.6) + 50);
@@ -55,7 +49,6 @@ async function captureVisibleThrottled(): Promise<string> {
   }
 }
 
-/** Helpers */
 function dataUrlToImage(dataUrl: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -75,27 +68,26 @@ function overlap(a: AbsRect, b: AbsRect): AbsRect | null {
   return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
 }
 
-/** Scroll-and-stitch screenshot of element */
-async function stitchElementPNG(el: HTMLElement): Promise<{
-  base64: string;
-  dpr: number;
-  compAbs: AbsRect;
-  cssSize: { w: number; h: number };
+/**
+ * Scroll-and-stitch the container into a PNG.
+ * Canvas is sized in **CSS pixels** (no DPR) to match container width/height.
+ * We resample each captured tile into that CSS-px canvas.
+ */
+async function stitchElementPNG(el: HTMLElement, limiter: RateLimiter): Promise<{
+  base64: string;                 // PNG base64 (no prefix)
+  containerCssRect: DOMRect;      // CSS px
+  originalScroll: { x: number; y: number };
 }> {
-  const dpr = window.devicePixelRatio || 1;
-  const r = el.getBoundingClientRect();
-  const compAbs: AbsRect = {
-    x: r.left + window.scrollX,
-    y: r.top + window.scrollY,
-    w: r.width,
-    h: r.height,
-  };
-  const cssSize = { w: r.width, h: r.height };
+  const originalScroll = { x: window.scrollX, y: window.scrollY };
+
+  // Measure container and page viewport in CSS px
+  const r0 = el.getBoundingClientRect();
+  const compAbs: AbsRect = { x: r0.left + originalScroll.x, y: r0.top + originalScroll.y, w: r0.width, h: r0.height };
 
   const vpW = document.documentElement.clientWidth;
   const vpH = document.documentElement.clientHeight;
 
-  // Reduce tile count to minimize quota hits
+  // Tile steps (95% stride to keep a small overlap)
   const stepX = Math.max(1, Math.floor(vpW * 0.95));
   const stepY = Math.max(1, Math.floor(vpH * 0.95));
 
@@ -110,7 +102,6 @@ async function stitchElementPNG(el: HTMLElement): Promise<{
       if (end >= compAbs.x + compAbs.w) break;
     }
   }
-
   if (yStops.length === 0) {
     for (let y = compAbs.y; y < compAbs.y + compAbs.h; y += stepY) {
       const end = Math.min(y + vpH, compAbs.y + compAbs.h);
@@ -120,74 +111,89 @@ async function stitchElementPNG(el: HTMLElement): Promise<{
     }
   }
 
-  const outW = Math.round(compAbs.w * dpr);
-  const outH = Math.round(compAbs.h * dpr);
+  // Disable smooth scroll during capture to avoid drift
+  const prevSB = document.documentElement.style.scrollBehavior;
+  document.documentElement.style.scrollBehavior = "auto";
+
+  // Canvas in **CSS pixel units** (bitmap pixels = CSS px)
   const canvas = document.createElement("canvas");
-  canvas.width = outW;
-  canvas.height = outH;
+  canvas.width = Math.round(compAbs.w);
+  canvas.height = Math.round(compAbs.h);
   const ctx = canvas.getContext("2d")!;
+  let tilesDrawn = 0;
 
-  for (const sy of yStops) {
-    for (const sx of xStops) {
-      window.scrollTo({ left: sx, top: sy, behavior: "instant" as ScrollBehavior });
-      await nextFrame();
+  try {
+    for (let yi = 0; yi < yStops.length; yi++) {
+      for (let xi = 0; xi < xStops.length; xi++) {
+        const sy = yStops[yi], sx = xStops[xi];
+        window.scrollTo({ left: sx, top: sy });
+        await raf();
 
-      const dataUrl = await captureVisibleThrottled();
-      const img = await dataUrlToImage(dataUrl);
+        const dataUrl = await captureVisibleThrottled(limiter);
+        const img = await dataUrlToImage(dataUrl);
 
-      const vpRect: AbsRect = { x: window.scrollX, y: window.scrollY, w: vpW, h: vpH };
-      const over = overlap(vpRect, compAbs);
-      if (!over) continue;
+        // Compute this tile's capture scale (image px per CSS px) for correct sampling
+        const tileScaleX = img.naturalWidth / vpW;
+        const tileScaleY = img.naturalHeight / vpH;
 
-      const srcX = (over.x - vpRect.x) * dpr;
-      const srcY = (over.y - vpRect.y) * dpr;
-      const srcW = over.w * dpr;
-      const srcH = over.h * dpr;
+        const vpRect: AbsRect = { x: window.scrollX, y: window.scrollY, w: vpW, h: vpH };
+        const over = overlap(vpRect, compAbs);
+        if (!over) continue;
 
-      const dstX = (over.x - compAbs.x) * dpr;
-      const dstY = (over.y - compAbs.y) * dpr;
+        // Source in image pixels
+        const srcX = (over.x - vpRect.x) * tileScaleX;
+        const srcY = (over.y - vpRect.y) * tileScaleY;
+        const srcW = over.w * tileScaleX;
+        const srcH = over.h * tileScaleY;
 
-      ctx.drawImage(
-        img,
-        srcX,
-        srcY,
-        srcW,
-        srcH,
-        Math.round(dstX),
-        Math.round(dstY),
-        Math.round(srcW),
-        Math.round(srcH)
-      );
+        // Destination in canvas pixels (which we are treating as CSS px)
+        const dstX = (over.x - compAbs.x);
+        const dstY = (over.y - compAbs.y);
+        const dstW = over.w;
+        const dstH = over.h;
+
+        ctx.drawImage(
+          img,
+          Math.round(srcX), Math.round(srcY), Math.round(srcW), Math.round(srcH),
+          Math.round(dstX), Math.round(dstY), Math.round(dstW), Math.round(dstH)
+        );
+        tilesDrawn++;
+      }
     }
+  } finally {
+    // Restore scroll and behavior, let layout settle
+    document.documentElement.style.scrollBehavior = prevSB;
+    window.scrollTo({ left: originalScroll.x, top: originalScroll.y });
+    await raf(); await raf();
   }
 
-  const data = canvas.toDataURL("image/png");
-  const base64 = data.split(",")[1];
-  return { base64, dpr, compAbs, cssSize };
+  if (!tilesDrawn) throw new Error("No tiles drawn — component never intersected viewport during capture.");
+
+  const base64 = canvas.toDataURL("image/png").split(",")[1];
+  return { base64, containerCssRect: el.getBoundingClientRect(), originalScroll };
 }
 
-/** Build annotations from id^="label_" children */
-function buildAnnotations(container: HTMLElement, dpr: number, compAbs: AbsRect): Annotation[] {
+/** Build annotations in **pure CSS pixels** relative to the container (no DPR or scale) */
+function buildAnnotations(container: HTMLElement): Annotation[] {
+  const c = container.getBoundingClientRect();
   const nodes = container.querySelectorAll<HTMLElement>('[id^="label_"]');
   const anns: Annotation[] = [];
 
   nodes.forEach((el) => {
-    const rr = el.getBoundingClientRect();
-    const abs = { x: rr.left + window.scrollX, y: rr.top + window.scrollY };
-    const relX = (abs.x - compAbs.x) * dpr;
-    const relY = (abs.y - compAbs.y) * dpr;
-    const w = rr.width * dpr;
-    const h = rr.height * dpr;
+    const r = el.getBoundingClientRect();
+    const relX = r.left - c.left;
+    const relY = r.top - c.top;
     const text = el.innerText?.trim() || undefined;
+    const [prefix, ...rest] = el.id.split('_')
 
     anns.push({
       id: crypto.randomUUID(),
-      label: el.id || "label",
+      label: rest.join('_'),
       rect: {
         x: Math.round(relX),
         y: Math.round(relY),
-        width: Math.round(w),
-        height: Math.round(h),
+        width: Math.round(r.width),
+        height: Math.round(r.height),
       } as Rect,
       text_content: text,
       clean: false,
@@ -197,43 +203,56 @@ function buildAnnotations(container: HTMLElement, dpr: number, compAbs: AbsRect)
   return anns;
 }
 
-/** Main export flow */
+/** Main */
+let exporting = false;
+
 async function runExport(): Promise<void> {
-  const container = document.querySelector<HTMLElement>("#synth-container");
-  if (!container) {
-    console.warn("No #synth-container found, noop.");
-    return;
-  }
+  if (exporting) return;
+  exporting = true;
 
-  const { base64, dpr, compAbs, cssSize } = await stitchElementPNG(container);
-  const annotations = buildAnnotations(container, dpr, compAbs);
+  const limiter = new RateLimiter(MIN_INTERVAL_MS);
 
-  const payload: ScreenshotRequest = {
-    annotations,
-    image_data: base64,
-    url: location.href,
-    date: new Date().toLocaleString("en-US", { timeZone: "America/New_York" }),
-    window: {
-      scrollY: 0,
-      width: Math.round(cssSize.w),
-      height: Math.round(cssSize.h),
-    },
-    tag: "synthetic",
-  };
-  console.log('synth export payload', payload)
+  try {
+    const container = document.querySelector<HTMLElement>("#synth-container");
+    if (!container) { console.warn("No #synth-container found, noop."); return; }
 
-  return new Promise<void>((resolve, reject) => {
-    chrome.runtime.sendMessage({ type: "POST_SCREENSHOT", payload }, (res: any) => {
-      if (chrome.runtime.lastError) return reject(chrome.runtime.lastError.message);
-      if (!res?.ok) return reject(res?.error || "POST failed");
-      resolve();
+    // Stitch image (PNG) — independent of annotation units
+    const { base64, containerCssRect } = await stitchElementPNG(container, limiter);
+
+    // Annotations strictly in CSS px relative to container
+    const annotations = buildAnnotations(container);
+
+    const payload: ScreenshotRequest = {
+      annotations,
+      image_data: base64,
+      url: location.href,
+      date: new Date().toLocaleString("en-US", { timeZone: "America/New_York" }),
+      window: {
+        scrollY: 0,
+        width: Math.round(containerCssRect.width),
+        height: Math.round(containerCssRect.height),
+      },
+      tag: "synthetic",
+    };
+
+    // POST via background to avoid CORS
+    await new Promise<void>((resolve, reject) => {
+      chrome.runtime.sendMessage({ type: "POST_SCREENSHOT", payload } as Msg, (res: any) => {
+        if (chrome.runtime.lastError) return reject(chrome.runtime.lastError.message);
+        if (!res?.ok) return reject(res?.error || "POST failed");
+        resolve();
+      });
     });
-  }).then(() => {
-    console.log("✅ ScreenshotRequest sent:", payload);
-  })
+
+    console.log("✅ ScreenshotRequest sent.", { anns: annotations.length, w: payload.window.width, h: payload.window.height });
+  } catch (e) {
+    console.error("Export failed:", e);
+  } finally {
+    exporting = false;
+  }
 }
 
-/** Message listener */
+/** Listen from popup */
 chrome.runtime.onMessage.addListener((msg: Msg) => {
   if (msg?.type === "START_EXPORT") {
     runExport().catch((err) => console.error("Export failed:", err));
