@@ -4,15 +4,8 @@ import {
   ServiceManualLabel,
 } from 'ui-labelling-shared'
 import {
-  estimateFontAndTrackingBox,
-  estimateRegionPad,
-  getAbsoluteXPositioning,
-  getRegionLayoutDirection,
   PreviewSchema,
-  roughlyCenteredInRegion,
-  withinRect,
 } from '../../util/generator'
-import { Flex } from './flex'
 import { useMemo, useRef, useState, useCallback } from 'react'
 import { SxProps, Theme } from '@mui/material'
 import { ResizableDraggable } from './draggable'
@@ -26,6 +19,8 @@ type GridItem = {
 }
 
 type GridRendererProps = {
+  parentId: number
+  parentTag?: string
   data: PreviewSchema
   style?: React.CSSProperties
   className?: string
@@ -142,6 +137,8 @@ function buildGrid({
 type Selection = { region: number; compId: string } | null
 
 export function GridRenderer({
+  parentId,
+  parentTag,
   data,
   style,
   className,
@@ -195,8 +192,16 @@ export function GridRenderer({
     }
   }
 
+  const tagAttr = parentTag
+    ? {
+      'data-parent-tag': parentTag
+    }
+    : {}
+
   return (
     <div
+      {...tagAttr}
+      data-parent-id={parentId}
       id="synth-container"
       ref={containerRef}
       className={className}
@@ -273,7 +278,7 @@ export function RegionCanvas({
   )
 }
 
-export function RegularRegionContent({
+export function RegionContent({
   regionId,
   region,
   annotations,
@@ -374,85 +379,6 @@ export function RegularRegionContent({
   )
 }
 
-export function SolitaryHeaderRegionContent({
-  regionId,
-  header,
-  region,
-  scale,
-  page,
-  ComponentRenderer,
-  selected,
-  onSelect,
-  onClear,
-  deletedIds,         // NEW
-  onDeleteId,         // NEW
-}: {
-  regionId: number
-  header: Annotation
-  region: Rect
-  scale: number
-  page: { width: number; height: number }
-  ComponentRenderer: ({
-    label,
-    children,
-    rect,
-    page,
-    sx,
-    container,
-    scale,
-  }: {
-    label: ServiceManualLabel
-    children?: React.ReactNode
-    rect: Rect
-    page: { width: number; height: number }
-    sx?: SxProps<Theme>
-    container: Rect
-    scale: number
-  }) => React.ReactNode
-  selected: { region: number; compId: string } | null
-  onSelect: (compId: string) => void
-  onClear: () => void
-  deletedIds: Set<string>
-  onDeleteId: (id: string) => void
-}) {
-  if (deletedIds.has(header.id)) return null
-
-  const regionPx = useMemo(
-    () => ({ width: Math.round(region.width * scale), height: Math.round(region.height * scale) }),
-    [region.width, region.height, scale]
-  )
-  const abs = useMemo(() => toLocalAbsRect(header.rect, region, scale), [header.rect, region, scale])
-  const isSelected = !!selected && selected.region === regionId && selected.compId === header.id
-
-  // single header: still give it a base z
-  const zBase = 100 + 1
-
-  return (
-    <RegionCanvas regionPx={regionPx} onClearSelection={onClear}>
-      <ResizableDraggable
-        id={header.id}
-        initial={abs}
-        selected={isSelected}
-        onSelect={onSelect}
-        onDelete={onDeleteId}
-        regionSize={regionPx}
-        zBase={zBase}
-      >
-        <ComponentRenderer
-          page={page}
-          container={region}
-          sx={{}}
-          label={header.label as ServiceManualLabel}
-          rect={header.rect}
-          scale={scale}
-        >
-          {header.text_content ?? null}
-        </ComponentRenderer>
-      </ResizableDraggable>
-    </RegionCanvas>
-  )
-}
-
 export function DynamicRegion({
   id,
   data,
@@ -494,43 +420,17 @@ export function DynamicRegion({
   onDeleteId: (id: string) => void
 }) {
   const region = data.layout[id]
-  if (!region) return null
-
   const page = useMemo(
     () => ({ width: data.screenshot.view_width, height: data.screenshot.view_height }),
     [data.screenshot.view_width, data.screenshot.view_height]
   )
 
-  const componentsInRegion = useMemo(
-    () =>
-      data.screenshot.annotations
-        .filter((a) => region.components.includes(a.id))
-        .sort((a, b) => a.rect.y - b.rect.y || a.rect.x - b.rect.x),
-    [data.screenshot.annotations, region.components]
-  )
+  if (!region) {
+    return null
+  }
 
-  const solitaryHeader =
-    componentsInRegion.length === 1 &&
-    (componentsInRegion[0].label as ServiceManualLabel) === 'heading'
-      ? componentsInRegion[0]
-      : null
-
-  return solitaryHeader ? (
-    <SolitaryHeaderRegionContent
-      regionId={id}
-      header={solitaryHeader}
-      region={region.rect}
-      scale={scale}
-      page={page}
-      ComponentRenderer={ComponentRenderer}
-      selected={selected}
-      onSelect={onSelect}
-      onClear={onClear}
-      deletedIds={deletedIds}
-      onDeleteId={onDeleteId}
-    />
-  ) : (
-    <RegularRegionContent
+  return (
+    <RegionContent
       regionId={id}
       region={region}
       annotations={data.screenshot.annotations}

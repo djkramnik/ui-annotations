@@ -6,10 +6,14 @@ import { useMemo } from "react"
 import { PreviewSchema } from "../../util/generator"
 
 export const GeneratedPreview = ({
+  parentId,
+  parentTag,
   preview,
   iter,
   debug
 }: {
+  parentId: number
+  parentTag?: string
   preview: PreviewSchema
   iter: number
   debug?: boolean
@@ -23,7 +27,10 @@ export const GeneratedPreview = ({
       <CssBaseline />
       <div>
         <hr />
-        <GridRenderer key={iter} data={preview}
+        <GridRenderer
+          parentId={parentId}
+          parentTag={parentTag}
+          key={iter} data={preview}
           showDebugBorders={debug}
           ComponentRenderer={DynamicMuiComponent}
           style={ !debug ?  {

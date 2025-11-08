@@ -110,10 +110,16 @@ const GenerateFromExample = () => {
         </>
       ) : null}
       {
-        preview
+        preview && screenshot
           ? (
             <div key={previewIter}>
-              <GeneratedPreview preview={preview} iter={previewIter} debug={debug}/>
+              <GeneratedPreview
+                parentId={screenshot.id}
+                parentTag={screenshot.tag}
+                preview={preview}
+                iter={previewIter}
+                debug={debug}
+                />
             </div>
           )
           : null
