@@ -1,5 +1,5 @@
 import { ThemeProvider, CssBaseline } from "@mui/material"
-import { GridRenderer } from "../../components/generator/dynamicGrid"
+import { GridRenderer } from "./dynamic-grid"
 import { DynamicMuiComponent } from "../../components/mui/service-manual-dynamic"
 import { randomMuiTheme } from "../../components/mui/theme"
 import { useMemo } from "react"
