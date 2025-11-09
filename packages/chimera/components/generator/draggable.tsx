@@ -1,13 +1,12 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 export type AbsRect = { left: number; top: number; width: number; height: number }
-type Handle =
-  | 'n' | 's' | 'e' | 'w'
-  | 'ne' | 'nw' | 'se' | 'sw'
+type Handle = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw'
 
 const HANDLE_SIZE = 10
 const MIN_W = 8
 const MIN_H = 8
+const DRAG_SLOP = 4 // px movement before we commit to a drag
 
 function cursorFor(handle: Handle) {
   switch (handle) {
@@ -22,16 +21,25 @@ function cursorFor(handle: Handle) {
   }
 }
 
+/** Convert a pointer event's client coords to the REGION-LOCAL coords. */
+function localMouse(e: React.PointerEvent<HTMLElement>) {
+  const parent = (e.currentTarget.parentElement as HTMLElement) ?? (e.currentTarget as HTMLElement)
+  const r = parent.getBoundingClientRect()
+  return { x: e.clientX - r.left, y: e.clientY - r.top }
+}
+
 export function ResizableDraggable({
   id,
   initial,
   onChange,
   selected,
   onSelect,
-  onDelete,          // NEW
+  onDelete,
   regionSize,
-  zBase = 0,         // NEW: base stacking (smaller items get higher base)
+  zBase = 0,
   children,
+  editing = false,
+  onRequestEdit, // NEW: fired on double-click
 }: {
   id: string
   initial: AbsRect
@@ -39,63 +47,87 @@ export function ResizableDraggable({
   selected: boolean
   onSelect: (id: string) => void
   onDelete?: (id: string) => void
-  regionSize: { width: number; height: number } // canvas size (px)
+  regionSize: { width: number; height: number }
   zBase?: number
   children: React.ReactNode
+  editing?: boolean
+  onRequestEdit?: (id: string) => void
 }) {
   const [rect, setRect] = useState<AbsRect>(initial)
   const [dragging, setDragging] = useState(false)
   const [resizing, setResizing] = useState<Handle | null>(null)
+
+  // "maybe dragging" state until we pass slop
+  const pointerDownRef = useRef(false)
+  const startPt = useRef({ x: 0, y: 0 })
   const grab = useRef({ dx: 0, dy: 0 })
+
   const startRect = useRef<AbsRect>(initial)
   const keepAspect = useRef(false)
 
-  // keep in sync if parent changes initial (e.g., external edits)
   useEffect(() => {
     setRect((r) => {
-      if (
-        r.left !== initial.left ||
-        r.top !== initial.top ||
-        r.width !== initial.width ||
-        r.height !== initial.height
-      ) return initial
+      if (r.left !== initial.left || r.top !== initial.top || r.width !== initial.width || r.height !== initial.height) {
+        return initial
+      }
       return r
     })
   }, [initial.left, initial.top, initial.width, initial.height])
 
-  // update external when rect changes
-  useEffect(() => { onChange?.(rect) }, [rect])
+  useEffect(() => { onChange?.(rect) }, [rect, onChange])
 
-  // click select
+  // DRAG w/ slop
   const onPointerDownWrapper: React.PointerEventHandler<HTMLDivElement> = (e) => {
-    if ((e.target as HTMLElement).dataset.handle) return // let handle handler run
+    if (editing) return
+    if ((e.target as HTMLElement).dataset.handle) return
     if (e.button !== 0) return
     e.stopPropagation()
     onSelect(id)
-    setResizing(null)
-    setDragging(true)
-    grab.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top }
+
+    const { x, y } = localMouse(e)
+    startPt.current = { x, y }
+    grab.current = { dx: x - rect.left, dy: y - rect.top }
+    pointerDownRef.current = true
+    // we *don't* set dragging yet; wait for slop
     ;(e.currentTarget as Element).setPointerCapture(e.pointerId)
   }
 
   const onPointerMoveWrapper: React.PointerEventHandler<HTMLDivElement> = (e) => {
-    if (resizing) return // handled elsewhere
+    if (editing) return
+    if (resizing) return
+
+    const { x, y } = localMouse(e)
+
+    // promote to dragging only after slop
+    if (!dragging && pointerDownRef.current) {
+      const dx = x - startPt.current.x
+      const dy = y - startPt.current.y
+      if (Math.hypot(dx, dy) >= DRAG_SLOP) {
+        setDragging(true)
+      } else {
+        return
+      }
+    }
+
     if (!dragging) return
-    const left = e.clientX - grab.current.dx
-    const top = e.clientY - grab.current.dy
+    const left = x - grab.current.dx
+    const top = y - grab.current.dy
     setRect((r) => clampToRegion({ ...r, left, top }, regionSize))
   }
 
   const onPointerUpWrapper: React.PointerEventHandler<HTMLDivElement> = () => {
+    pointerDownRef.current = false
     setDragging(false)
   }
 
-  // handles
+  // RESIZE
   const onHandleDown = (h: Handle) =>
     (e: React.PointerEvent<HTMLDivElement>) => {
+      if (editing) return
       if (e.button !== 0) return
       e.stopPropagation()
       onSelect(id)
+      pointerDownRef.current = false
       setDragging(false)
       setResizing(h)
       keepAspect.current = e.shiftKey
@@ -104,8 +136,9 @@ export function ResizableDraggable({
     }
 
   const onHandleMove: React.PointerEventHandler<HTMLDivElement> = (e) => {
+    if (editing) return
     if (!resizing) return
-    const { clientX: mx, clientY: my } = e
+    const { x: mx, y: my } = localMouse(e)
 
     setRect(() => {
       const s = startRect.current
@@ -192,6 +225,14 @@ export function ResizableDraggable({
     setResizing(null)
   }
 
+  // Double-click to request edit mode
+  const onDoubleClickWrapper: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    if (editing) return
+    if (resizing || dragging) return
+    e.stopPropagation()
+    onRequestEdit?.(id)
+  }
+
   // Stack: smaller items get higher base z; active on top of that
   const activeBoost = (selected || dragging || resizing) ? 10_000 : 0
   const z = zBase + activeBoost
@@ -203,6 +244,7 @@ export function ResizableDraggable({
         onPointerDown={onPointerDownWrapper}
         onPointerMove={onPointerMoveWrapper}
         onPointerUp={onPointerUpWrapper}
+        onDoubleClick={onDoubleClickWrapper}
         style={{
           position: 'absolute',
           left: rect.left,
@@ -213,17 +255,17 @@ export function ResizableDraggable({
           zIndex: z,
           outline: selected ? '2px solid #1976d2' : undefined,
           boxShadow: (dragging || resizing) ? '0 8px 24px rgba(0,0,0,0.15)' : undefined,
-          userSelect: (dragging || resizing) ? 'none' : 'auto',
+          userSelect: (dragging || resizing || editing) ? 'none' : 'auto',
           background: 'transparent',
         }}
       >
         {children}
       </div>
 
-      {/* resize handles (only when selected) */}
-      {selected && (
+      {/* resize handles (only when selected and not editing) */}
+      {selected && !editing && (
         <>
-          {/* Delete chip (top-right of rect) */}
+          {/* Delete chip */}
           <div
             onPointerDown={(e) => { e.stopPropagation(); onSelect(id) }}
             style={{

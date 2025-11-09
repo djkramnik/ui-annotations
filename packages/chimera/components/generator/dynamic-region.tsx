@@ -1,8 +1,8 @@
 import { SxProps, Theme } from "@mui/material";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Annotation, Rect, ServiceManualLabel } from "ui-labelling-shared";
 import { ResizableDraggable } from "./draggable";
-
+import { EditableText } from "./editable-text";
 
 export function DynamicRegion({
   id,
@@ -114,8 +114,8 @@ function RegionContent({
   selected,
   onSelect,
   onClear,
-  deletedIds,           // NEW
-  onDeleteId,           // NEW
+  deletedIds,
+  onDeleteId,
 }: {
   regionId: number
   region: { rect: Rect; components: string[] }
@@ -145,7 +145,6 @@ function RegionContent({
   deletedIds: Set<string>
   onDeleteId: (id: string) => void
 }) {
-  // filter by region and not-deleted
   const components = useMemo(
     () =>
       annotations
@@ -162,14 +161,15 @@ function RegionContent({
     [region.rect.width, region.rect.height, scale]
   )
 
-  // z-index scheme: smaller area → higher zBase
   const zBaseMap = useMemo(() => {
     const pairs = components.map((c) => ({ id: c.id, area: c.rect.width * c.rect.height }))
-    pairs.sort((a, b) => a.area - b.area) // ascending: smallest first
-    // give smallest the highest base z
-    const baseStart = 100 // region-local base to avoid ties across regions
+    pairs.sort((a, b) => a.area - b.area)
+    const baseStart = 100
     return new Map(pairs.map((p, idx, arr) => [p.id, baseStart + (arr.length - idx)]))
   }, [components])
+
+  // Which component is in text-edit mode
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   return (
     <RegionCanvas regionPx={regionPx} onClearSelection={onClear}>
@@ -177,6 +177,8 @@ function RegionContent({
         const abs = toLocalAbsRect(c.rect, region.rect, scale)
         const isSelected = !!selected && selected.region === regionId && selected.compId === c.id
         const zBase = zBaseMap.get(c.id) ?? 0
+        const isEditing = editingId === c.id
+
         return (
           <ResizableDraggable
             key={c.id}
@@ -187,6 +189,8 @@ function RegionContent({
             onDelete={onDeleteId}
             regionSize={regionPx}
             zBase={zBase}
+            editing={isEditing}
+            onRequestEdit={() => setEditingId(c.id)} // fired on double-click
           >
             <ComponentRenderer
               page={page}
@@ -196,7 +200,35 @@ function RegionContent({
               rect={c.rect}
               scale={scale}
             >
-              {c.text_content ?? null}
+              {/* Your text child (e.g., EditableText) should NOT handle double-click itself now.
+                  It just renders and reports changes. */}
+              <div
+                contentEditable={isEditing}
+                suppressContentEditableWarning
+                style={{ outline: 'none', whiteSpace: 'pre-wrap' }}
+                onBlur={(e) => {
+                  c.text_content = (e.currentTarget.textContent ?? '').trimEnd()
+                  if (editingId === c.id) setEditingId(null)
+                }}
+                onKeyDown={(e) => {
+                  if (!isEditing) return
+                  e.stopPropagation()
+                  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); (e.currentTarget as HTMLDivElement).blur() }
+                  if (e.key === 'Escape') { e.preventDefault(); (e.currentTarget as HTMLDivElement).blur() }
+                }}
+                onPointerDown={(e) => {
+                  // while editing, keep pointer events from bubbling to drag layer
+                  if (isEditing) e.stopPropagation()
+                }}
+                onPaste={(e) => {
+                  if (!isEditing) return
+                  e.preventDefault()
+                  const t = e.clipboardData.getData('text/plain')
+                  document.execCommand('insertText', false, t)
+                }}
+              >
+                {c.text_content ?? ''}
+              </div>
             </ComponentRenderer>
           </ResizableDraggable>
         )
