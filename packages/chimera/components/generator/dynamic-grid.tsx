@@ -1,50 +1,6 @@
-import {
-  Annotation,
-  Rect,
-  ServiceManualLabel,
-} from 'ui-labelling-shared'
-import {
-  PreviewSchema,
-} from '../../util/generator'
-import { useMemo, useRef, useState, useCallback } from 'react'
-import { SxProps, Theme } from '@mui/material'
-import { ResizableDraggable } from './draggable'
+import { useRef, useState, useCallback } from 'react'
 import { DynamicRegion } from './dynamic-region'
-
-type GridItem = {
-  id: number
-  colStart: number
-  colEnd: number
-  rowStart: number
-  rowEnd: number
-}
-
-type GridRendererProps = {
-  parentId: number
-  parentTag?: string
-  data: PreviewSchema
-  style?: React.CSSProperties
-  className?: string
-  showDebugBorders?: boolean
-  maxWidth?: number
-  ComponentRenderer: ({
-    label,
-    children,
-    rect,
-    page,
-    sx,
-    container,
-    scale,
-  }: {
-    label: ServiceManualLabel
-    children?: React.ReactNode
-    rect: Rect
-    page: { width: number; height: number }
-    sx?: SxProps<Theme>
-    container: Rect
-    scale: number
-  }) => React.ReactNode
-}
+import { GridItem, GridRendererProps, PreviewSchema } from '../../util/generator/types'
 
 function buildGrid({
   input,

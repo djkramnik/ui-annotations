@@ -1,15 +1,6 @@
 import { LayoutTree, XyNode } from "infer-layout";
 import { Annotation, Rect, Screenshot } from "ui-labelling-shared";
-
-export type PreviewSchema = {
-  screenshot: Screenshot
-  designPref: 'mui' | 'ant'
-  layout: Array<{
-    rect: Rect
-    components: string[]
-  }>
-  contentBounds: Rect
-}
+import { PreviewSchema } from "./types";
 
 // just return a flattened array of annotations
 export const unpackLayoutTree = (layoutTree: LayoutTree): Annotation[] => {

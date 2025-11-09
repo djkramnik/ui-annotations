@@ -7,8 +7,9 @@ import {
 import { Avatar, ListItem, Typography } from '@mui/material'
 import { MultiLine } from '../generator/multi-line'
 import { DynamicPlaceholderImg } from '../generator/dynamic-img'
+import { ComponentRendererType } from '../../util/generator/types'
 
-export const DynamicMuiComponent = ({
+export const DynamicMuiComponent: ComponentRendererType = ({
   label,
   children,
   rect,
@@ -16,6 +17,7 @@ export const DynamicMuiComponent = ({
   sx,
   container,
   scale,
+  textContent,
 }: {
   label: ServiceManualLabel
   children?: React.ReactNode
@@ -24,16 +26,16 @@ export const DynamicMuiComponent = ({
   container: Rect
   sx?: SxProps<Theme>
   scale: number
+  textContent?: string | null
 }) => {
-  const isText = typeof children === 'string'
-  const inferredFontInfo = isText
-    ? estimateFontAndTrackingBox(rect, children, {
-        lineCount: children.split('\n').length,
+  const inferredFontInfo = textContent
+    ? estimateFontAndTrackingBox(rect, textContent, {
+        lineCount: textContent.split('\n').length,
       })
     : null
   const fontStyling = inferredFontInfo
     ? {
-        fontSize: `${(inferredFontInfo.fontPx * scale) + getFsInflation(label)}px`,
+        fontSize: `${inferredFontInfo.fontPx * scale + getFsInflation(label)}px`,
         letterSpacing: `${inferredFontInfo.letterSpacingPx * scale}px`,
       }
     : null
@@ -47,8 +49,9 @@ export const DynamicMuiComponent = ({
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            ...sx
-          }}>
+            ...sx,
+          }}
+        >
           {children}
         </Avatar>
       )
@@ -57,26 +60,21 @@ export const DynamicMuiComponent = ({
     case ServiceManualLabel.logo:
     case ServiceManualLabel.icon:
     case ServiceManualLabel.icon_warn:
-      return (
-        <DynamicPlaceholderImg
-          label={label}
-          width={100}
-          rect={rect}
-        />
-      )
+      return <DynamicPlaceholderImg label={label} width={100} rect={rect} />
     case ServiceManualLabel.section_number:
     case ServiceManualLabel.heading:
-      if (!children) {
+      if (!textContent) {
         return null
       }
-      const headingLevel = isText && inferredFontInfo
-        ? getHeaderLevel({
-            rect,
-            text_content: children,
-            pageWidth: page.width,
-            fontPx: inferredFontInfo.fontPx
-        })
-        : 'h3'
+      const headingLevel =
+        textContent && inferredFontInfo
+          ? getHeaderLevel({
+              rect,
+              text_content: textContent,
+              pageWidth: page.width,
+              fontPx: inferredFontInfo.fontPx,
+            })
+          : 'h3'
 
       return (
         <Typography
@@ -85,7 +83,7 @@ export const DynamicMuiComponent = ({
           sx={{
             width: 'fit-content',
             height: 'fit-content',
-            ...fontStyling ?? {},
+            ...(fontStyling ?? {}),
             ...sx,
           }}
         >
@@ -94,7 +92,7 @@ export const DynamicMuiComponent = ({
       )
     case ServiceManualLabel.text_block:
     case ServiceManualLabel.page_num:
-      if (!children) {
+      if (!textContent) {
         return null
       }
       return (
@@ -102,7 +100,7 @@ export const DynamicMuiComponent = ({
           id={`label_${label}`}
           component="p"
           sx={{
-            ...fontStyling ?? {},
+            ...(fontStyling ?? {}),
             ...sx,
           }}
         >
@@ -110,22 +108,22 @@ export const DynamicMuiComponent = ({
         </Typography>
       )
     case ServiceManualLabel.bulletpoint:
-      const numbered = typeof children === 'string'
-        ? /^(?:\s*\d+\.|\(\d+\))/.test(children)
-        : false
+      const numbered =
+        typeof textContent === 'string'
+          ? /^(?:\s*\d+\.|\(\d+\))/.test(textContent)
+          : false
+
       return (
         <ListItem
           id={`label_${label}`}
           sx={{
-            ...(
-              numbered
-                ? undefined
-                : {
-                  display: 'list-item'
-                }
-            ),
+            ...(numbered
+              ? undefined
+              : {
+                  display: 'list-item',
+                }),
             padding: 0,
-            ...fontStyling ?? {},
+            ...(fontStyling ?? {}),
             ...sx,
           }}
         >
@@ -138,7 +136,7 @@ export const DynamicMuiComponent = ({
 }
 
 function getFsInflation(label: ServiceManualLabel) {
-  switch(label) {
+  switch (label) {
     case ServiceManualLabel.heading:
       return 5
     case ServiceManualLabel.section_number:

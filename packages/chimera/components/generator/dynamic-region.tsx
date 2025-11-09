@@ -2,7 +2,7 @@ import { SxProps, Theme } from "@mui/material";
 import { useMemo, useState } from "react";
 import { Annotation, Rect, ServiceManualLabel } from "ui-labelling-shared";
 import { ResizableDraggable } from "./draggable";
-import { EditableText } from "./editable-text";
+import { ComponentRendererType } from "../../util/generator/types";
 
 export function DynamicRegion({
   id,
@@ -21,23 +21,7 @@ export function DynamicRegion({
     layout: Array<{ rect: Rect; components: string[] }>
     screenshot: { view_width: number; view_height: number; annotations: Annotation[] }
   }
-  ComponentRenderer: ({
-    label,
-    children,
-    rect,
-    page,
-    sx,
-    container,
-    scale,
-  }: {
-    label: ServiceManualLabel
-    children?: React.ReactNode
-    rect: Rect
-    page: { width: number; height: number }
-    sx?: SxProps<Theme>
-    container: Rect
-    scale: number
-  }) => React.ReactNode
+  ComponentRenderer: ComponentRendererType
   selected: { region: number; compId: string } | null
   onSelect: (compId: string) => void
   onClear: () => void
@@ -122,23 +106,7 @@ function RegionContent({
   annotations: Annotation[]
   scale: number
   page: { width: number; height: number }
-  ComponentRenderer: ({
-    label,
-    children,
-    rect,
-    page,
-    sx,
-    container,
-    scale,
-  }: {
-    label: ServiceManualLabel
-    children?: React.ReactNode
-    rect: Rect
-    page: { width: number; height: number }
-    sx?: SxProps<Theme>
-    container: Rect
-    scale: number
-  }) => React.ReactNode
+  ComponentRenderer: ComponentRendererType
   selected: { region: number; compId: string } | null
   onSelect: (compId: string) => void
   onClear: () => void
@@ -199,6 +167,7 @@ function RegionContent({
               label={c.label as ServiceManualLabel}
               rect={c.rect}
               scale={scale}
+              textContent={c.text_content ?? null}
             >
               {/* Your text child (e.g., EditableText) should NOT handle double-click itself now.
                   It just renders and reports changes. */}
