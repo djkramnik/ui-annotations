@@ -15,12 +15,15 @@ import { AntSlider } from "../../components/ant/slider";
 import { AntAvatar } from "../../components/ant/avatar";
 import { AntPagination } from "../../components/ant/pagination";
 import { AntDropdown } from "../../components/ant/dropdown";
+import { AntTextInput } from "../../components/ant/textinput";
 
 const AntdComponent = () => {
   const { query } = useRouter();
   const component = String(query.component) as InteractiveLabel;
 
   switch (component) {
+    case InteractiveLabel.textinput:
+      return <AntTextInput />
     case InteractiveLabel.dropdown:
       return <AntDropdown />
     case InteractiveLabel.pagination:
