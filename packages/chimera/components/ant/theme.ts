@@ -27,6 +27,22 @@ export function randomAntTheme(): ThemeConfig {
 
   const algorithm = dark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm
 
+  // --- NEW: decide whether Select should use an accent border color
+  const useAccentSelectBorder = Math.random() < 1 / 3
+
+  const baseBorderColor = dark ? "#2A2A2A" : "#E5E7EB"
+  const baseBorderSecondary = dark ? "#2F2F2F" : "#EAECEF"
+
+  // start with neutral select borders
+  const neutralSelectBorder = dark ? "#3a3a3a" : "#D1D5DB"
+
+  // accent border for Select, derived from primary (slightly shifted so it’s not identical)
+  const accentSelectBorder = adjustColor(primary, dark ? 6 : -6)
+
+  const selectBorderColor = useAccentSelectBorder
+    ? accentSelectBorder
+    : neutralSelectBorder
+
   const config: ThemeConfig = {
     cssVar: true,
     algorithm,
@@ -45,9 +61,9 @@ export function randomAntTheme(): ThemeConfig {
       borderRadius,
       fontFamily,
 
-      // (optional) tighten borders to match your style
-      colorBorder: dark ? "#2A2A2A" : "#E5E7EB",
-      colorBorderSecondary: dark ? "#2F2F2F" : "#EAECEF",
+      // Keep global borders neutral; Select will override if needed
+      colorBorder: baseBorderColor,
+      colorBorderSecondary: baseBorderSecondary,
     },
 
     // Component-scoped tweaks to ensure readability for inputs & pickers
@@ -55,8 +71,10 @@ export function randomAntTheme(): ThemeConfig {
       Input: {
         colorBgContainer: bgPaper,
         colorText: textPrimary,
-        colorTextPlaceholder: dark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.35)",
-        colorBorder: dark ? "#3a3a3a" : "#D1D5DB",
+        colorTextPlaceholder: dark
+          ? "rgba(255,255,255,0.45)"
+          : "rgba(0,0,0,0.35)",
+        colorBorder: neutralSelectBorder,
         activeBorderColor: primary,
         hoverBorderColor: primary,
         borderRadius,
@@ -64,8 +82,10 @@ export function randomAntTheme(): ThemeConfig {
       DatePicker: {
         colorBgContainer: bgPaper,
         colorText: textPrimary,
-        colorTextPlaceholder: dark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.35)",
-        colorBorder: dark ? "#3a3a3a" : "#D1D5DB",
+        colorTextPlaceholder: dark
+          ? "rgba(255,255,255,0.45)"
+          : "rgba(0,0,0,0.35)",
+        colorBorder: neutralSelectBorder,
         activeBorderColor: primary,
         hoverBorderColor: primary,
         borderRadius,
@@ -73,7 +93,9 @@ export function randomAntTheme(): ThemeConfig {
       Calendar: {
         colorBgContainer: bgPaper,
         colorText: textPrimary,
-        colorTextDisabled: dark ? "rgba(255,255,255,0.30)" : "rgba(0,0,0,0.25)",
+        colorTextDisabled: dark
+          ? "rgba(255,255,255,0.30)"
+          : "rgba(0,0,0,0.25)",
         colorPrimary: textPrimary,
         borderRadiusLG: borderRadius,
       },
@@ -88,7 +110,12 @@ export function randomAntTheme(): ThemeConfig {
       Select: {
         colorBgContainer: bgPaper,
         colorText: textPrimary,
-        colorBorder: dark ? "#3a3a3a" : "#D1D5DB",
+
+        // 👇 This is now sometimes neutral, sometimes accent:
+        colorBorder: selectBorderColor,
+        hoverBorderColor: selectBorderColor,
+        activeBorderColor: selectBorderColor,
+
         optionSelectedBg: adjustColor(bgPaper, dark ? 8 : -8),
       },
       Modal: {
