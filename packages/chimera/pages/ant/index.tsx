@@ -13,12 +13,15 @@ import { AntTextarea } from "../../components/ant/textarea";
 import { AntToggle } from "../../components/ant/toggle";
 import { AntSlider } from "../../components/ant/slider";
 import { AntAvatar } from "../../components/ant/avatar";
+import { AntPagination } from "../../components/ant/pagination";
 
 const AntdComponent = () => {
   const { query } = useRouter();
   const component = String(query.component) as InteractiveLabel;
 
   switch (component) {
+    case InteractiveLabel.pagination:
+      return <AntPagination />
     case InteractiveLabel.avatar:
       return <AntAvatar />
     case InteractiveLabel.slider:

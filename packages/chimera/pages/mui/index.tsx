@@ -10,11 +10,14 @@ import { MuiTextarea } from "../../components/mui/textarea"
 import { MuiToggle } from "../../components/mui/toggle"
 import { MuiSlider } from "../../components/mui/slider"
 import { MuiAvatar } from "../../components/mui/avatar"
+import { MuiPagination } from "../../components/mui/pagination"
 
 const MuiComponent = () => {
   const component = useComponent()
 
   switch(component) {
+    case InteractiveLabel.pagination:
+      return <MuiPagination />
     case InteractiveLabel.avatar:
       return <MuiAvatar />
     case InteractiveLabel.slider:
