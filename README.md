@@ -22,9 +22,9 @@ that or completely _rebuild_ the screen with an updated one, that can be auto an
 * add synthetic component generator
 
 * labels to synthetic augment first
-  * textinput
   * button
   * video
+    * https://cookpete.github.io/react-player/
 
 * done-ish
   * dropdown (including opened)
@@ -41,8 +41,6 @@ that or completely _rebuild_ the screen with an updated one, that can be auto an
 * need more examples but real ones only.  scrape for these directly
   * ads
   * images
-  * textinput focused state
-  * dropdowns open state
   * logo
 
 * collapse tab into menuitem

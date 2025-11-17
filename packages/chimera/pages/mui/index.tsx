@@ -13,11 +13,14 @@ import { MuiAvatar } from "../../components/mui/avatar"
 import { MuiPagination } from "../../components/mui/pagination"
 import { MuiDropdown } from "../../components/mui/dropdown"
 import { MuiTextInput } from "../../components/mui/textinput"
+import { MuiButtonSet } from "../../components/mui/button"
 
 const MuiComponent = () => {
   const component = useComponent()
 
   switch(component) {
+    case InteractiveLabel.button:
+      return <MuiButtonSet />
     case InteractiveLabel.textinput:
       return <MuiTextInput />
     case InteractiveLabel.dropdown:

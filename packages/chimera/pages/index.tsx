@@ -5,11 +5,23 @@ import { VanillaTheme } from "../components/vanilla/type"
 import { useRandomTheme } from "../hooks/useRandomTheme"
 import { useMemo } from "react"
 import { RandomVariation } from "../components/vanilla/variation"
+import { VanillaButton } from "../components/vanilla/button"
+import { VanillaVideo } from "../components/vanilla/video"
 
 const VanillaComponent = ({ theme }: { theme: VanillaTheme }) => {
   const component = useComponent()
 
   switch(component) {
+    case InteractiveLabel.video:
+      return (
+        <VanillaVideo />
+      )
+    case InteractiveLabel.button:
+      return (
+        <VanillaButton theme={theme}>
+          Save
+        </VanillaButton>
+      )
     case InteractiveLabel.filepicker:
       return (
         <RandomVariation variations={[
