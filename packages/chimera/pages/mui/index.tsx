@@ -9,11 +9,14 @@ import { MuiAccordion } from '../../components/mui/accordion'
 import { MuiTextarea } from "../../components/mui/textarea"
 import { MuiToggle } from "../../components/mui/toggle"
 import { MuiSlider } from "../../components/mui/slider"
+import { MuiAvatar } from "../../components/mui/avatar"
 
 const MuiComponent = () => {
   const component = useComponent()
 
   switch(component) {
+    case InteractiveLabel.avatar:
+      return <MuiAvatar />
     case InteractiveLabel.slider:
       return (
         <MuiSlider />
