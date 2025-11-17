@@ -21,12 +21,10 @@ that or completely _rebuild_ the screen with an updated one, that can be auto an
 
 * add synthetic component generator
 
-* labels to synthetic augment first
+* done-ish
   * button
   * video
     * https://cookpete.github.io/react-player/
-
-* done-ish
   * dropdown (including opened)
   * pagination
   * avatar
@@ -42,6 +40,32 @@ that or completely _rebuild_ the screen with an updated one, that can be auto an
   * ads
   * images
   * logo
+
+^ for direct scraping maybe we can have a new extension... again...
+this one will let you draw a box around a component, choose a label and then save it as an interactive record directly
+this will do for logo I guess
+
+then one for cropping multiple elements on a given page (image)
+
+and a puppeteer script specifically for advertisements I guess...
+ad sites:
+https://www.nytimes.com/games/wordle/index.html (gotta press play)
+https://www.nytimes.com/spotlight/lifestyle
+https://www.buzzfeed.com
+https://www.buzzfeed.com/quizzes
+https://www.telegraph.co.uk/
+https://news.yahoo.com/
+https://forbes.com
+
+
+
+
+
+
+
+
+
+
 
 * collapse tab into menuitem
 
