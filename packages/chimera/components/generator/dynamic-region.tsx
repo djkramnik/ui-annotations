@@ -147,6 +147,8 @@ function RegionContent({
         const zBase = zBaseMap.get(c.id) ?? 0
         const isEditing = editingId === c.id
 
+        // normalize bulletpoints...
+
         return (
           <ResizableDraggable
             key={c.id}
