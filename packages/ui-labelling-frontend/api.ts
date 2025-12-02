@@ -123,9 +123,9 @@ export const getAnalytics = (tag?: string): Promise<{ data: Analytics}> => {
   )
 }
 
-export const getAnnotations = (tag?: string) => {
+export const getAnnotations = (tag?: string, synthetic?: boolean) => {
   return (
-    fetch(`/api/screenshot?published=0${tag ? `&tag=${tag}` : ''}`)
+    fetch(`/api/screenshot?published=0${tag ? `&tag=${tag}` : ''}${synthetic ? `&synthetic=true` : ''}`)
       .then(jsonOrThrow)
   )
 }

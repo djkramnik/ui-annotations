@@ -231,6 +231,8 @@ screenshotRouter.get('/analytics', async (_req: Request, res: Response) => {
 screenshotRouter.get('/', async (_req: Request, res: Response) => {
   const published = _req.query.published as string
   const tag = (_req.query.tag as string | undefined)
+  const synthetic = _req.query.synthetic as string
+
   try {
     const rows = await prisma.screenshot.findMany({
       select: { id: true, url: true, scroll_y: true, date: true },
@@ -250,6 +252,21 @@ screenshotRouter.get('/', async (_req: Request, res: Response) => {
             }
             : {}
         ),
+        ...(
+          synthetic === 'true'
+            ? {
+              synthetic_parent_id: {
+                not: null
+              }
+            }
+            : (
+              synthetic === 'false'
+                ? {
+                  synthetic_parent_id: null
+                }
+                : {}
+            )
+        )
       }
     });
 

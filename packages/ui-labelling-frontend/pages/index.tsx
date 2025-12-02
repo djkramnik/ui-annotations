@@ -61,7 +61,7 @@ const Annotation = ({
   return (
     <li>
       <Flex gap="12px" aic>
-        <Link href={`/view/${id}` + (tag ? `?tag=${tag}` : '')}>{url.slice(0, 40)}</Link>
+        <Link href={`/view/${id}` + (window.location.search)}>{url.slice(0, 40)}</Link>
         <strong>Date: <SimpleDate date={date} /></strong>
         {/* <p style={{ margin: 0 }}>Scroll: {scrollY}</p> */}
         <p style={{ margin: 0}}>{id}</p>
@@ -79,12 +79,14 @@ export default function DirectoryPage() {
   useEffect(() => {
     let cancelled = false
     const tagQuery = router.query.tag
+    const syntheticQuery = router.query.synthetic
     const tag = typeof tagQuery === 'string'
       ? tagQuery
       : undefined
+
     async function fetchAll() {
       return Promise.all([
-        getAnnotations(tag),
+        getAnnotations(tag, syntheticQuery === 'true'),
         getPublishedAnnotations(tag),
         getAnalytics(tag),
       ])
@@ -109,6 +111,7 @@ export default function DirectoryPage() {
   const tag = typeof tagQuery === 'string'
     ? tagQuery
     : undefined
+
   return (
     <main id="directory-view" className="directory">
     <h2>Annotations Directory</h2>
@@ -138,7 +141,10 @@ export default function DirectoryPage() {
             rows
               .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
               .map((row, index) => (
-                <Annotation key={index} index={index} {...row} tag={tag || undefined} />
+                <Annotation
+                  key={index}
+                  index={index} {...row} tag={tag || undefined}
+                />
               ))
           }
         </ol>
@@ -150,7 +156,12 @@ export default function DirectoryPage() {
             pubRows
               .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
               .map((row, index) => (
-                <Annotation key={index} index={index} {...row} tag={tag || undefined} />
+                <Annotation
+                  key={index}
+                  index={index}
+                  {...row}
+                  tag={tag || undefined}
+                />
               ))
           }
         </ol>

@@ -156,7 +156,7 @@ export default function AnnotationPage() {
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
         <button
           id="back-btn"
-          onClick={() => push('/' + (tag ? `?tag=${tag}` : ''))}
+          onClick={() => push('/' + window.location.search)}
         >
           Back
         </button>
@@ -167,7 +167,7 @@ export default function AnnotationPage() {
             prevId === null
               ? undefined
               : (
-                () => push('/view/' + (prevId) + (tag ? `?tag=${tag}` : ''))
+                () => push('/view/' + (prevId) + (window.location.search))
               )
           }
         >
@@ -180,7 +180,7 @@ export default function AnnotationPage() {
             nextId === null
               ? undefined
               : (
-                () => push('/view/' + (nextId) + (tag ? `?tag=${tag}` : ''))
+                () => push('/view/' + (nextId) + (window.location.search))
               )
           }
         >
