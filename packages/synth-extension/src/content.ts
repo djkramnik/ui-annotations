@@ -194,10 +194,13 @@ function buildAnnotations(container: HTMLElement, render?: boolean): Annotation[
     const [prefix, ...rest] = el.id.split('_')
     const label = rest.join('_')
     const isTextLabel = textContentLabels.includes(label as any)
-    console.log(label, isTextLabel)
+
     const r = isTextLabel
       ? getInnerTextBoundingBox(el)
-      : el.getBoundingClientRect();
+      : (label === ServiceManualLabel.bulletpoint
+          ? getCustomListItemBoundingBox(el)
+          : el.getBoundingClientRect()
+      )
 
     if (!r) {
       console.warn('no bounding box on this element', el)
@@ -407,4 +410,45 @@ function getInnerTextBoundingBox(el: HTMLElement): DOMRect | null {
   }
 
   return unionRect;
+}
+
+function getCustomListItemBoundingBox(item: HTMLElement): DOMRect | null {
+  // Try to find the bullet (might not exist)
+  const bullet = item.querySelector<HTMLElement>('.my-bullet');
+
+  // Text may be inside a wrapper or directly in the item
+  const textContainer =
+    item.querySelector<HTMLElement>('.my-text') ?? item;
+
+  // Get the text bounding box (prefer inner text node geometry)
+  const textRect =
+    getInnerTextBoundingBox(textContainer) ??
+    textContainer.getBoundingClientRect();
+
+  if (!textRect) return null;
+
+  // No bullet → return just the text rect
+  if (!bullet) {
+    return DOMRect.fromRect({
+      x: textRect.left,
+      y: textRect.top,
+      width: textRect.width,
+      height: textRect.height,
+    });
+  }
+
+  // Bullet exists → combine the two
+  const bulletRect = bullet.getBoundingClientRect();
+
+  const left = bulletRect.left;
+  const right = textRect.right;
+  const top = Math.min(bulletRect.top, textRect.top);
+  const bottom = Math.max(bulletRect.bottom, textRect.bottom);
+
+  return DOMRect.fromRect({
+    x: left,
+    y: top,
+    width: right - left,
+    height: bottom - top,
+  });
 }

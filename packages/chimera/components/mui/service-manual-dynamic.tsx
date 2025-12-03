@@ -126,7 +126,7 @@ export const DynamicMuiComponent: ComponentRendererType = ({
         >
           {
             !numbered && (
-              <span className="my-bullet">•</span>
+              <span className="my-bullet" />
             )
           }
           <span className="my-text">

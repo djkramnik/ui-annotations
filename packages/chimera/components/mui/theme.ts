@@ -19,13 +19,12 @@ export function randomMuiTheme() {
   const bgPaper = adjustColor(bgDefault, randInt(0, 5) * (dark ? 1 : -1));
 
   // ---- Bullet “design tokens” -----------------------------------------
-  // Base bullet color slightly nudged from either secondary or textSecondary
-  const bulletBaseColor = dark ? textSecondary : secondary;
-  const bulletColor = adjustColor(bulletBaseColor, dark ? 8 : -8);
 
+  const multipliers = [0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7]
+  const randomM = randomPick(multipliers)
   // Size + gap in rems so it scales with typography
-  const bulletSizeRem = 0.55 + 0.05 * randInt(0, 4); // ~0.55–0.75rem
-  const bulletGapRem = 0.3 + 0.05 * randInt(0, 4);   // ~0.30–0.50rem
+  const bulletSizeRem = (0.55 + 0.05) * randomM
+  const bulletGapRem = (0.5 + 0.05) * randomM
 
   const components = {
     MuiPaper: {
@@ -51,7 +50,6 @@ export function randomMuiTheme() {
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          "--my-bullet-color": bulletColor,
           "--my-bullet-size": `${bulletSizeRem}rem`,
           "--my-bullet-gap": `${bulletGapRem}rem`,
         },
@@ -60,7 +58,7 @@ export function randomMuiTheme() {
           width: "var(--my-bullet-size)",
           height: "var(--my-bullet-size)",
           borderRadius: "50%",
-          backgroundColor: "var(--my-bullet-color)",
+          backgroundColor: "currentColor",
           marginRight: "var(--my-bullet-gap)",
           flexShrink: 0,
         },
