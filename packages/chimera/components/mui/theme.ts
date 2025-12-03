@@ -5,18 +5,27 @@ import { DARK_COLOR_SCHEMES, LIGHT_COLOR_SCHEMES } from "../../util/faker/color"
 import { adjustColor } from "../../util/color";
 
 export function randomMuiTheme() {
-  const dark = Math.random() < 0.4
+  const dark = Math.random() < 0.4;
   const {
     primary,
     secondary,
     bgDefault,
     textPrimary,
-    textSecondary
+    textSecondary,
   } = dark
     ? randomPick(DARK_COLOR_SCHEMES)
-    : randomPick(LIGHT_COLOR_SCHEMES)
+    : randomPick(LIGHT_COLOR_SCHEMES);
 
-  const bgPaper = adjustColor(bgDefault, randInt(0, 5) * (dark ? 1 : -1))
+  const bgPaper = adjustColor(bgDefault, randInt(0, 5) * (dark ? 1 : -1));
+
+  // ---- Bullet “design tokens” -----------------------------------------
+  // Base bullet color slightly nudged from either secondary or textSecondary
+  const bulletBaseColor = dark ? textSecondary : secondary;
+  const bulletColor = adjustColor(bulletBaseColor, dark ? 8 : -8);
+
+  // Size + gap in rems so it scales with typography
+  const bulletSizeRem = 0.55 + 0.05 * randInt(0, 4); // ~0.55–0.75rem
+  const bulletGapRem = 0.3 + 0.05 * randInt(0, 4);   // ~0.30–0.50rem
 
   const components = {
     MuiPaper: {
@@ -38,9 +47,28 @@ export function randomMuiTheme() {
         },
       },
     },
+    // Expose bullet tokens as CSS vars + a default .my-bullet style
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          "--my-bullet-color": bulletColor,
+          "--my-bullet-size": `${bulletSizeRem}rem`,
+          "--my-bullet-gap": `${bulletGapRem}rem`,
+        },
+        ".my-bullet": {
+          display: "inline-block",
+          width: "var(--my-bullet-size)",
+          height: "var(--my-bullet-size)",
+          borderRadius: "50%",
+          backgroundColor: "var(--my-bullet-color)",
+          marginRight: "var(--my-bullet-gap)",
+          flexShrink: 0,
+        },
+      },
+    },
   } as const;
 
-  return createTheme({
+  const theme = createTheme({
     palette: {
       mode: dark ? "dark" : "light",
       primary: { main: primary },
@@ -49,11 +77,14 @@ export function randomMuiTheme() {
       text: { primary: textPrimary, secondary: textSecondary },
     },
     typography: {
-      fontFamily: Math.random() > 0.6
-        ? `"Fira Sans","Roboto","Helvetica","Arial",sans-serif`
-        : getRandomLocalFont()
+      fontFamily:
+        Math.random() > 0.6
+          ? `"Fira Sans","Roboto","Helvetica","Arial",sans-serif`
+          : getRandomLocalFont(),
     },
     shape: { borderRadius: [4, 6, 8, 10, 12][randInt(0, 4)] },
     components,
   });
+
+  return theme;
 }

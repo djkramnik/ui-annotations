@@ -3,7 +3,7 @@ import { GridRenderer } from "./dynamic-grid"
 import { DynamicMuiComponent } from "../../components/mui/service-manual-dynamic"
 import { randomMuiTheme } from "../../components/mui/theme"
 import { useMemo } from "react"
-import { PreviewSchema } from "../../util/generator"
+import { PreviewSchema } from "../../util/generator/types"
 
 export const GeneratedPreview = ({
   parentId,

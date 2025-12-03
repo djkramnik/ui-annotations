@@ -1,4 +1,4 @@
-import { SxProps, Theme } from '@mui/material/styles'
+import { SxProps, Theme, useTheme } from '@mui/material/styles'
 import { Rect, ServiceManualLabel } from 'ui-labelling-shared'
 import {
   estimateFontAndTrackingBox,
@@ -28,6 +28,7 @@ export const DynamicMuiComponent: ComponentRendererType = ({
   scale: number
   textContent?: string | null
 }) => {
+  const theme = useTheme()
   const inferredFontInfo = textContent
     ? estimateFontAndTrackingBox(rect, textContent, {
         lineCount: textContent.split('\n').length,
@@ -115,19 +116,22 @@ export const DynamicMuiComponent: ComponentRendererType = ({
 
       return (
         <ListItem
+          disableGutters
           id={`label_${label}`}
           sx={{
-            ...(numbered
-              ? undefined
-              : {
-                  display: 'list-item',
-                }),
             padding: 0,
             ...(fontStyling ?? {}),
             ...sx,
           }}
         >
-          <MultiLine>{children}</MultiLine>
+          {
+            !numbered && (
+              <span className="my-bullet">•</span>
+            )
+          }
+          <span className="my-text">
+            <MultiLine>{children}</MultiLine>
+          </span>
         </ListItem>
       )
     default:

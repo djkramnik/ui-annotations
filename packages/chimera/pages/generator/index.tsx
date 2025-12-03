@@ -9,7 +9,8 @@ import { fetchScreenshotById, fetchTighterAnnotations } from '../../util/api'
 import { PreviewScreenshot } from '../../components/generator/preview-screenshot'
 import { Flex } from '../../components/generator/flex'
 import { xyCut } from 'infer-layout'
-import { assignAnnotations, bboxToRect, mergeColsFlat, PreviewSchema } from '../../util/generator'
+import { assignAnnotations, bboxToRect, mergeColsFlat } from '../../util/generator'
+import { PreviewSchema } from '../../util/generator/types'
 import { GeneratedPreview } from '../../components/generator/preview'
 
 const GenerateFromExample = () => {
