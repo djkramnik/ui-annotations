@@ -1,5 +1,5 @@
 import type { Msg } from "./types";
-import type { Annotation, Rect, ScreenshotRequest } from 'ui-labelling-shared'
+import { Annotation, Rect, ScreenshotRequest, ServiceManualLabel } from 'ui-labelling-shared'
 
 /** Small utils */
 const raf = () => new Promise<void>(r => requestAnimationFrame(() => r()));
@@ -173,6 +173,17 @@ async function stitchElementPNG(el: HTMLElement, limiter: RateLimiter): Promise<
   return { base64, containerCssRect: el.getBoundingClientRect(), originalScroll };
 }
 
+// labels that require the element bounding box to be shrunk to the text content itself
+const textContentLabels: ServiceManualLabel[] = [
+  ServiceManualLabel.text_block,
+  ServiceManualLabel.heading,
+  ServiceManualLabel.phone,
+  ServiceManualLabel.url,
+  ServiceManualLabel.section_number,
+  ServiceManualLabel.page_num,
+  ServiceManualLabel.caption
+]
+
 /** Build annotations in **pure CSS pixels** relative to the container (no DPR or scale) */
 function buildAnnotations(container: HTMLElement, render?: boolean): Annotation[] {
   const c = container.getBoundingClientRect();
@@ -180,13 +191,36 @@ function buildAnnotations(container: HTMLElement, render?: boolean): Annotation[
   const anns: Annotation[] = [];
 
   nodes.forEach((el) => {
-    const r = el.getBoundingClientRect();
+    const [prefix, ...rest] = el.id.split('_')
+    const label = rest.join('_')
+    const isTextLabel = textContentLabels.includes(label as any)
+    console.log(label, isTextLabel)
+    const r = isTextLabel
+      ? getInnerTextBoundingBox(el)
+      : el.getBoundingClientRect();
+
+    if (!r) {
+      console.warn('no bounding box on this element', el)
+      return
+    }
     const relX = r.left - c.left;
     const relY = r.top - c.top;
     const text = el.innerText?.trim() || undefined;
-    const [prefix, ...rest] = el.id.split('_')
+
     if (render) {
-      el.classList.add('green-border')
+      if (!isTextLabel) {
+        el.classList.add('kermit-green-border')
+      } else {
+        // fun hacks
+        const d = document.createElement('div')
+        d.style.position = 'absolute'
+        d.style.left = `${relX}px`
+        d.style.top = `${relY}px`
+        d.style.width = `${r.width}px`
+        d.style.height = `${r.height}px`
+        d.classList.add('preview-box')
+        container.appendChild(d)
+      }
     }
     anns.push({
       id: crypto.randomUUID(),
@@ -237,6 +271,8 @@ async function runExport(): Promise<void> {
     // remove preview borders, if any
     const previews = document.querySelectorAll('#synth-container .kermit-green-border')
     previews.forEach(p => p.classList.remove('green-border'))
+    const otherPreviews = document.querySelectorAll('#synth-container .preview-box')
+    otherPreviews.forEach(p => p.remove())
 
     const parentTag = container.getAttribute('data-parent-tag')
     const parentId = container.getAttribute('data-parent-id')
@@ -310,7 +346,7 @@ const globalCSS = `
     box-sizing: border-box !important;
   }
 
-  .kermit-green-border {
+  .preview-box,.kermit-green-border {
     border: 1px solid rgb(22, 245, 41);
   }
 `;
@@ -325,3 +361,50 @@ function injectGlobalCSS(cssText: string) {
 
 // Call it
 injectGlobalCSS(globalCSS);
+
+function getInnerTextBoundingBox(el: HTMLElement): DOMRect | null {
+  const walker = document.createTreeWalker(
+    el,
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode(node) {
+        // Ignore empty / whitespace-only text nodes
+        return node.textContent?.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }
+    }
+  );
+
+  let unionRect: DOMRect | null = null;
+
+  while (walker.nextNode()) {
+    const textNode = walker.currentNode;
+
+    const range = document.createRange();
+    range.selectNodeContents(textNode);
+
+    const rect = range.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) continue;
+
+    if (!unionRect) {
+      // clone the first rect
+      unionRect = rect;
+    } else {
+      // expand the union rect to include this rect
+      const minX = Math.min(unionRect.left, rect.left);
+      const minY = Math.min(unionRect.top, rect.top);
+      const maxX = Math.max(unionRect.right, rect.right);
+      const maxY = Math.max(unionRect.bottom, rect.bottom);
+
+      unionRect = DOMRect.fromRect({
+        x: minX,
+        y: minY,
+        width: maxX - minX,
+        height: maxY - minY,
+      });
+    }
+
+    range.detach();
+  }
+
+  return unionRect;
+}
