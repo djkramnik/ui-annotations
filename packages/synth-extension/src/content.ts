@@ -194,10 +194,11 @@ function buildAnnotations(container: HTMLElement, render?: boolean): Annotation[
     const [prefix, ...rest] = el.id.split('_')
     const label = rest.join('_')
     const isTextLabel = textContentLabels.includes(label as any)
+    const isBulletpoint = label === ServiceManualLabel.bulletpoint
 
     const r = isTextLabel
       ? getInnerTextBoundingBox(el)
-      : (label === ServiceManualLabel.bulletpoint
+      : (isBulletpoint
           ? getCustomListItemBoundingBox(el)
           : el.getBoundingClientRect()
       )
@@ -211,9 +212,7 @@ function buildAnnotations(container: HTMLElement, render?: boolean): Annotation[
     const text = el.innerText?.trim() || undefined;
 
     if (render) {
-      if (!isTextLabel) {
-        el.classList.add('kermit-green-border')
-      } else {
+      if (isTextLabel || isBulletpoint) {
         // fun hacks
         const d = document.createElement('div')
         d.style.position = 'absolute'
@@ -223,8 +222,11 @@ function buildAnnotations(container: HTMLElement, render?: boolean): Annotation[
         d.style.height = `${r.height}px`
         d.classList.add('preview-box')
         container.appendChild(d)
+      } else {
+        el.classList.add('kermit-green-border')
       }
     }
+
     anns.push({
       id: crypto.randomUUID(),
       label: rest.join('_'),
