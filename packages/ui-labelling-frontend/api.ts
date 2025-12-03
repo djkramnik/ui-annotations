@@ -196,7 +196,7 @@ export const getEditableAnnotations = (page: number, tag?: string): Promise<{
   total: number
   records: AnnotationWithScreen[]
 }> => {
-  return fetch(`/api/annotation?page=${page}${tag ? `&tag=${tag}` : ''}`).then(jsonOrThrow)
+  return fetch(`/api/annotation?published=false&page=${page}${tag ? `&tag=${tag}` : ''}`).then(jsonOrThrow)
 }
 
 // DYK - this also supports fetching unpublished records when passing &published=false

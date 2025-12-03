@@ -11,6 +11,7 @@ type Row = {
   url: string
   date: string
   scrollY: number
+  synthetic_parent_id: number | null
 }
 
 const labels = Object.values(AnnotationLabel)
@@ -57,14 +58,14 @@ const Annotation = ({
   index: number
   tag?: string
 } & Row) => {
-  const { id, url, date, scrollY, tag } = rest
+  const { id, url, date, scrollY, tag, synthetic_parent_id } = rest
   return (
     <li>
       <Flex gap="12px" aic>
         <Link href={`/view/${id}` + (window.location.search)}>{url.slice(0, 40)}</Link>
         <strong>Date: <SimpleDate date={date} /></strong>
         {/* <p style={{ margin: 0 }}>Scroll: {scrollY}</p> */}
-        <p style={{ margin: 0}}>{id}</p>
+        <p style={{ margin: 0}}>{id}{typeof synthetic_parent_id === 'number' ? `:${synthetic_parent_id}` : ''}</p>
       </Flex>
     </li>
   )

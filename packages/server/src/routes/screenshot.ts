@@ -235,7 +235,7 @@ screenshotRouter.get('/', async (_req: Request, res: Response) => {
 
   try {
     const rows = await prisma.screenshot.findMany({
-      select: { id: true, url: true, scroll_y: true, date: true },
+      select: { id: true, url: true, scroll_y: true, date: true, synthetic_parent_id: true },
       orderBy: { id: 'asc' },
       where: {
         ...(

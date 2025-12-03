@@ -174,7 +174,7 @@ async function stitchElementPNG(el: HTMLElement, limiter: RateLimiter): Promise<
 }
 
 /** Build annotations in **pure CSS pixels** relative to the container (no DPR or scale) */
-function buildAnnotations(container: HTMLElement): Annotation[] {
+function buildAnnotations(container: HTMLElement, render?: boolean): Annotation[] {
   const c = container.getBoundingClientRect();
   const nodes = container.querySelectorAll<HTMLElement>('[id^="label_"]');
   const anns: Annotation[] = [];
@@ -185,7 +185,9 @@ function buildAnnotations(container: HTMLElement): Annotation[] {
     const relY = r.top - c.top;
     const text = el.innerText?.trim() || undefined;
     const [prefix, ...rest] = el.id.split('_')
-
+    if (render) {
+      el.classList.add('green-border')
+    }
     anns.push({
       id: crypto.randomUUID(),
       label: rest.join('_'),
@@ -203,8 +205,24 @@ function buildAnnotations(container: HTMLElement): Annotation[] {
   return anns;
 }
 
+// assumes we are
+function renderAnnotations(annotations: Annotation[]) {
+
+}
+
 /** Main */
 let exporting = false;
+
+
+async function runPreview(): Promise<void> {
+  const container = document.querySelector<HTMLElement>('#synth-container')
+  if (!container) { console.warn("No #synth-container found, noop."); return; }
+
+  const showBorders = true
+  const annotations = buildAnnotations(container, showBorders);
+
+  await (new Promise((resolve => setTimeout(resolve, 0))))
+}
 
 async function runExport(): Promise<void> {
   if (exporting) return;
@@ -215,6 +233,10 @@ async function runExport(): Promise<void> {
   try {
     const container = document.querySelector<HTMLElement>("#synth-container");
     if (!container) { console.warn("No #synth-container found, noop."); return; }
+
+    // remove preview borders, if any
+    const previews = document.querySelectorAll('#synth-container .kermit-green-border')
+    previews.forEach(p => p.classList.remove('green-border'))
 
     const parentTag = container.getAttribute('data-parent-tag')
     const parentId = container.getAttribute('data-parent-id')
@@ -269,7 +291,37 @@ async function runExport(): Promise<void> {
 
 /** Listen from popup */
 chrome.runtime.onMessage.addListener((msg: Msg) => {
-  if (msg?.type === "START_EXPORT") {
-    runExport().catch((err) => console.error("Export failed:", err));
+  switch(msg?.type) {
+    case 'START_EXPORT':
+      runExport().catch((err) => console.error("Export failed:", err));
+      break
+    case 'PREVIEW':
+      runPreview().catch((err) => console.error("Preview failed:", err))
+      break
+    default:
+      console.warn('received message but no handler', msg)
+      break
   }
 });
+
+const globalCSS = `
+  /* Example rules */
+  #synth-container * {
+    box-sizing: border-box !important;
+  }
+
+  .kermit-green-border {
+    border: 1px solid rgb(22, 245, 41);
+  }
+`;
+
+// Inject the style tag
+function injectGlobalCSS(cssText: string) {
+  const style = document.createElement('style');
+  style.setAttribute('data-extension-style', 'my-extension'); // optional marker
+  style.textContent = cssText;
+  document.head.appendChild(style);
+}
+
+// Call it
+injectGlobalCSS(globalCSS);

@@ -10,7 +10,7 @@ annotationRouter.get('/', async (req: Request, res: Response) => {
   const published = req.query.published as string !== 'false'
   const offset = (page - 1) * pageSize
   const tag = (req.query.tag as string) ?? null
-
+  console.log(page, pageSize, published, offset, tag)
   const [total, records] = await Promise.all([
     prisma.annotation.findMany({
       select: { id: true },
