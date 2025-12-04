@@ -20,24 +20,18 @@ export function randomMuiTheme() {
 
   // ---- Shape / radius (shared) -----------------------------------------
   const radiusOptions = [0, 1, 2, 4, 6, 8, 10, 12];
-  const shapeRadius = Math.random() > 0.4
-    ? randomPick(radiusOptions)
-    : 0
+  const shapeRadius = Math.random() > 0.4 ? randomPick(radiusOptions) : 0;
 
   // ---- Bullet “design tokens” ------------------------------------------
-
   const multipliers = [0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7];
   const randomM = randomPick(multipliers);
   const bulletSizeRem = (0.55 + 0.05) * randomM;
   const bulletGapRem = (0.5 + 0.05) * randomM;
 
   // ---- Primary synthetic container (BOX + TABLE) -----------------------
-  // Always visually distinct:
-  // - background definitely offset from bgPaper
-  // - always some border
   const primaryBgOffset = randInt(10, 20) * (dark ? 1 : -1);
   const primaryContainerBg = Math.random() > 0.6
-    ? 'transparent'
+    ? "transparent"
     : adjustColor(bgPaper, primaryBgOffset);
 
   const primaryBorderWidth = `${randomPick([1, 2])}px`;
@@ -63,12 +57,11 @@ export function randomMuiTheme() {
 
   // ---- Secondary synthetic container (page_context / toc / toc_section) -
 
-  // Often unstyled, sometimes lightly styled
-  const secondaryEnabled = Math.random() < 0.3; // 30% of themes: lightly styled
+  const secondaryEnabled = Math.random() < 0.3; // 30%: lightly styled
 
   const secondaryBg = secondaryEnabled
     ? adjustColor(bgPaper, randInt(-5, 5) * (dark ? 1 : -1))
-    : bgPaper; // visually same as paper
+    : bgPaper;
 
   const secondaryBorderWidth = secondaryEnabled
     ? `${randomPick([0, 1])}px`
@@ -83,6 +76,17 @@ export function randomMuiTheme() {
   const secondaryBoxShadow = secondaryHasShadow
     ? "0px 1px 2px rgba(0,0,0,0.15)"
     : "none";
+
+  // ---- Page frame container (page_frame) -------------------------------
+  // Always some non-transparent background, no shadow, behind content.
+  const pageFrameBgOffset = randInt(6, 16) * (dark ? 1 : -1);
+  const pageFrameBg = adjustColor(bgPaper, pageFrameBgOffset);
+
+  const pageFrameBorderWidth = `${randomPick([0, 1])}px`;
+  const pageFrameBorderBase = randomPick([bgDefault, textSecondary]);
+  const pageFrameBorderColor = pageFrameBorderWidth === "0px"
+    ? "transparent"
+    : adjustColor(pageFrameBorderBase, dark ? 3 : -3);
 
   const components = {
     MuiPaper: {
@@ -123,6 +127,12 @@ export function randomMuiTheme() {
           "--synthetic-secondary-border-color": secondaryBorderColor,
           "--synthetic-secondary-radius": `${shapeRadius}px`,
           "--synthetic-secondary-shadow": secondaryBoxShadow,
+
+          // Page frame container (page_frame)
+          "--synthetic-page-frame-bg": pageFrameBg,
+          "--synthetic-page-frame-border-width": pageFrameBorderWidth,
+          "--synthetic-page-frame-border-color": pageFrameBorderColor,
+          "--synthetic-page-frame-radius": `${shapeRadius}px`,
         },
 
         ".my-bullet": {
@@ -135,12 +145,12 @@ export function randomMuiTheme() {
           flexShrink: 0,
         },
 
-        // PRIMARY containers: always visibly styled (BOX + TABLE)
+        // PRIMARY containers: BOX + TABLE
         ".synthetic-container-table, \
          .synthetic-container-box": {
-          position: 'absolute',
-          width: '100%',
-          height: '100%',
+          position: "absolute",
+          width: "100%",
+          height: "100%",
           backgroundColor: "var(--synthetic-primary-bg)",
           borderRadius: "var(--synthetic-primary-radius)",
           borderStyle: "solid",
@@ -150,21 +160,34 @@ export function randomMuiTheme() {
           zIndex: -1,
         },
 
-        // SECONDARY containers: often almost invisible, sometimes lightly styled
+        // SECONDARY containers: page_context / toc / toc_section
         ".synthetic-container, \
          .synthetic-container-page_context, \
          .synthetic-container-toc, \
          .synthetic-container-toc_section": {
-          position: 'absolute',
-          width: '100%',
-          height: '100%',
+          position: "absolute",
+          width: "100%",
+          height: "100%",
           backgroundColor: "var(--synthetic-secondary-bg)",
           borderRadius: "var(--synthetic-secondary-radius)",
           borderStyle: "solid",
           borderWidth: "var(--synthetic-secondary-border-width)",
           borderColor: "var(--synthetic-secondary-border-color)",
           boxShadow: "var(--synthetic-secondary-shadow)",
-          zIndex: -1
+          zIndex: -1,
+        },
+
+        // PAGE FRAME container: always non-transparent bg, no shadow
+        ".synthetic-container-page_frame": {
+          position: "absolute",
+          width: "100%",
+          height: "100%",
+          backgroundColor: "var(--synthetic-page-frame-bg)",
+          borderStyle: "solid",
+          borderWidth: "var(--synthetic-page-frame-border-width)",
+          borderColor: "var(--synthetic-page-frame-border-color)",
+          boxShadow: "none",
+          zIndex: -1,
         },
       },
     },

@@ -43,6 +43,10 @@ export const DynamicMuiComponent: ComponentRendererType = ({
     : null
 
   switch (label) {
+    case ServiceManualLabel.page_frame:
+      return (
+        <div id="label_page_frame" className="synthetic-container-page_frame" />
+      )
     case ServiceManualLabel.box:
       return (
         <div id="label_box" className="synthetic-container-box" />
@@ -54,6 +58,11 @@ export const DynamicMuiComponent: ComponentRendererType = ({
     case ServiceManualLabel.toc_section:
       return (
         <div id="label_toc_section" className="synthetic-container-toc_section" />
+      )
+
+    case ServiceManualLabel.page_context:
+      return (
+        <div id="label_toc_section" className="synthetic-container-page_context" />
       )
 
     case ServiceManualLabel.table:
@@ -87,8 +96,8 @@ export const DynamicMuiComponent: ComponentRendererType = ({
         />
       )
 
-    case ServiceManualLabel.page_frame:
-    case ServiceManualLabel.page_context:
+
+
     case ServiceManualLabel.qr_code:
     case ServiceManualLabel.barcode:
       break
@@ -142,6 +151,8 @@ export const DynamicMuiComponent: ComponentRendererType = ({
           <MultiLine>{children}</MultiLine>
         </Typography>
       )
+    case ServiceManualLabel.caption:
+    case ServiceManualLabel.image_id:
     case ServiceManualLabel.text_block:
     case ServiceManualLabel.page_num:
       if (!textContent) {
@@ -196,6 +207,8 @@ function getFsInflation(label: ServiceManualLabel) {
       return 5
     case ServiceManualLabel.section_number:
       return 10
+    case ServiceManualLabel.image_id:
+      return 2
     default:
       return 0
   }

@@ -106,7 +106,7 @@ export function GridRenderer({
   // Track deletions locally (non-destructive to source data)
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
   const [selection, setSelection] = useState<Selection>(null)
-
+  console.log('preview?', data)
   const gridWidth = Math.min(maxWidth, data.screenshot.view_width)
   const { gridTemplateColumns, gridTemplateRows, items, container } = buildGrid({
     input: data,
