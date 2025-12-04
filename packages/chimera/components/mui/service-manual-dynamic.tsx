@@ -8,6 +8,7 @@ import { Avatar, ListItem, Typography } from '@mui/material'
 import { MultiLine } from '../generator/multi-line'
 import { DynamicPlaceholderImg } from '../generator/dynamic-img'
 import { ComponentRendererType } from '../../util/generator/types'
+import { TocEntry } from '../generator/toc_entry'
 
 export const DynamicMuiComponent: ComponentRendererType = ({
   label,
@@ -42,6 +43,35 @@ export const DynamicMuiComponent: ComponentRendererType = ({
     : null
 
   switch (label) {
+    case ServiceManualLabel.box:
+      return (
+        <div id="label_box" className="synthetic-container-box" />
+      )
+    case ServiceManualLabel.toc:
+      return (
+        <div id="label_toc" className="synthetic-container-toc" />
+      )
+    case ServiceManualLabel.toc_section:
+      return (
+        <div id="label_toc_section" className="synthetic-container-toc_section" />
+      )
+
+    case ServiceManualLabel.table:
+      return (
+        <div id="label_table" className="synthetic-container-table" />
+      )
+
+    case ServiceManualLabel.toc_entry:
+      return textContent
+        ? <TocEntry textContent={textContent} />
+        : null
+    case ServiceManualLabel.page_frame:
+
+    case ServiceManualLabel.page_context:
+    case ServiceManualLabel.qr_code:
+    case ServiceManualLabel.barcode:
+      break
+
     case ServiceManualLabel.diagram_number:
       return (
         <Avatar
@@ -149,3 +179,5 @@ function getFsInflation(label: ServiceManualLabel) {
       return 0
   }
 }
+
+
