@@ -1,7 +1,10 @@
+import { SxProps, Theme, Typography } from "@mui/material";
 import { Rect } from "ui-labelling-shared";
+import { MultiLine } from "./multi-line";
 
 type TocEntryProps = {
   textContent: string;
+  textSx?: SxProps<Theme>
   className?: string; // optional extra class for the container
 };
 
@@ -25,6 +28,7 @@ function splitTocText(text: string): { main: string; page?: string } {
 export function TocEntry({
   textContent,
   className,
+  textSx,
 }: TocEntryProps) {
   const { main, page } = splitTocText(textContent);
 
@@ -35,13 +39,18 @@ export function TocEntry({
       style={{
         display: "flex",
         alignItems: "center",
-        justifyContent: page ? "space-between" : "flex-start",
+        justifyContent: 'space-between',
         overflow: "hidden",
         whiteSpace: "nowrap",
         textOverflow: "ellipsis",
       }}
     >
-      <span className="toc_entry_text">{main}</span>
+      <Typography
+        component="p"
+        sx={textSx}
+      >
+        <MultiLine>{main}</MultiLine>
+      </Typography>
       {page && (
         <span className="toc_entry_page">
           ({page})
