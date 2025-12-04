@@ -1,10 +1,12 @@
-import { SxProps, Theme, Typography } from "@mui/material";
+import { Box, SxProps, Theme, Typography } from "@mui/material";
 import { Rect } from "ui-labelling-shared";
 import { MultiLine } from "./multi-line";
 
 type TocEntryProps = {
   textContent: string;
+  containerSx?: SxProps<Theme>
   textSx?: SxProps<Theme>
+  pageNumSx?: SxProps<Theme>
   className?: string; // optional extra class for the container
 };
 
@@ -29,11 +31,13 @@ export function TocEntry({
   textContent,
   className,
   textSx,
+  pageNumSx,
+  containerSx
 }: TocEntryProps) {
   const { main, page } = splitTocText(textContent);
 
   return (
-    <div
+    <Box
       id="label_toc_entry"
       className={`toc_entry ${className ?? ""}`.trim()}
       style={{
@@ -44,18 +48,22 @@ export function TocEntry({
         whiteSpace: "nowrap",
         textOverflow: "ellipsis",
       }}
+      sx={containerSx}
     >
       <Typography
+        className="toc_entry_main"
         component="p"
         sx={textSx}
       >
         <MultiLine>{main}</MultiLine>
       </Typography>
       {page && (
-        <span className="toc_entry_page">
-          ({page})
-        </span>
+        <Typography
+          className="toc_entry_page"
+          component="p"
+          sx={pageNumSx}
+        >{page}</Typography>
       )}
-    </div>
+    </Box>
   );
 }

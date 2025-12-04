@@ -62,11 +62,32 @@ export const DynamicMuiComponent: ComponentRendererType = ({
       )
 
     case ServiceManualLabel.toc_entry:
-      return textContent
-        ? <TocEntry textContent={textContent} />
+      if (!textContent) {
+        return null
+      }
+      const mainTextStyle = inferredFontInfo
+        ? {
+            fontSize: `${inferredFontInfo.fontPx * scale + getFsInflation(ServiceManualLabel.text_block)}px`,
+            letterSpacing: `${inferredFontInfo.letterSpacingPx * scale}px`,
+          }
         : null
-    case ServiceManualLabel.page_frame:
+      const pageNumStyle = inferredFontInfo
+        ? {
+            fontSize: `${inferredFontInfo.fontPx * scale + getFsInflation(ServiceManualLabel.page_num)}px`,
+            letterSpacing: `${inferredFontInfo.letterSpacingPx * scale}px`,
+          }
+        : null
 
+      return (
+        <TocEntry
+          textContent={textContent}
+          textSx={mainTextStyle}
+          pageNumSx={pageNumStyle}
+          containerSx={sx}
+        />
+      )
+
+    case ServiceManualLabel.page_frame:
     case ServiceManualLabel.page_context:
     case ServiceManualLabel.qr_code:
     case ServiceManualLabel.barcode:

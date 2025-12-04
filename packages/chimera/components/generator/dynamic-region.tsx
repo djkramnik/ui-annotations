@@ -1,4 +1,3 @@
-import { SxProps, Theme } from "@mui/material";
 import { useMemo, useState } from "react";
 import { Annotation, Rect, ServiceManualLabel } from "ui-labelling-shared";
 import { ResizableDraggable } from "./draggable";
