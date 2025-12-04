@@ -216,6 +216,7 @@ function GenSyntheticForm({
         opts: { maxFrac: 0.3 }
       })
 
+
       // we have to recalculate where all the annotations fall since we discarded some when
       // calculating layout
       const assignments = assignAnnotations(
@@ -239,6 +240,27 @@ function GenSyntheticForm({
           components
         }
       })
+
+      // we need to find, by comparing assignments and processedScreenshot.annotations if there be any stragglers
+      // and then push one more item on to layout, last, which is this full view rect which includes the stragglers
+      // the practical effect of this is to re-add components that span calculated regions and were ignored during layout calc (i.e. large page_frame)
+      // also we only need add this if there be stragglers
+      const flattenedAssignments = assignments.map(a => a.components).flat()
+      const stragglers: string[] = processedScreenshot.annotations.filter(
+        a => !flattenedAssignments.includes(a.id)
+      ).map(a => a.id)
+
+      if (stragglers.length > 0) {
+        layout.push({
+          rect: {
+            x: 0,
+            y: 0,
+            width: processedScreenshot.view_width,
+            height: processedScreenshot.view_height
+          },
+          components: stragglers
+        })
+      }
 
       onSubmit({
         screenshot: {
