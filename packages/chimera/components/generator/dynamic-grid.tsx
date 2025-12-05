@@ -106,7 +106,7 @@ export function GridRenderer({
   // Track deletions locally (non-destructive to source data)
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
   const [selection, setSelection] = useState<Selection>(null)
-  console.log('preview?', data)
+
   const gridWidth = Math.min(maxWidth, data.screenshot.view_width)
   const { gridTemplateColumns, gridTemplateRows, items, container } = buildGrid({
     input: data,
@@ -169,7 +169,7 @@ export function GridRenderer({
       tabIndex={0}
       onKeyDown={onKeyDown}
     >
-      {items.map((it) => (
+      {items.map((it, i) => (
         <div
           key={it.id}
           id={String(it.id)}
@@ -178,6 +178,12 @@ export function GridRenderer({
             gridRow: `${it.rowStart} / ${it.rowEnd}`,
             ...(showDebugBorders ? { outline: '1px dashed rgba(0,0,0,0.3)' } : null),
             position: 'relative',
+
+            // override to force certain layout regions to retreat into the background
+            // fear the old code by god fear it
+            zIndex: typeof data.layout[i]?.zIndex === 'number'
+              ? `${data.layout[i].zIndex}`
+              : 'initial'
           }}
           onPointerDown={(e) => {
             if (e.currentTarget === e.target) clearAll()

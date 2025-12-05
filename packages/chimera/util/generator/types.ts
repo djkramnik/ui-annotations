@@ -7,6 +7,7 @@ export type PreviewSchema = {
   layout: Array<{
     rect: Rect
     components: string[]
+    zIndex?: number
   }>
   contentBounds: Rect
 }

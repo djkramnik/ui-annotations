@@ -258,7 +258,8 @@ function GenSyntheticForm({
             width: processedScreenshot.view_width,
             height: processedScreenshot.view_height
           },
-          components: stragglers
+          components: stragglers,
+          zIndex: 0
         })
       }
 

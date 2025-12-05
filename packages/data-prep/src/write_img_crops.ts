@@ -12,7 +12,7 @@ const _labelArg = process.argv[3]
 
 const labels: string[] = typeof _labelArg === 'string'
   ? _labelArg.split(',')
-  : ['image', 'diagram']
+  : ['qrcode', 'barcode']
 
 main(tag, labels)
 
@@ -143,7 +143,7 @@ async function main(tag: string, labels: string[]) {
     }
   }
 
-  console.log('this many interactive records to write', crops.length)
+  console.log('this many img crops to write', crops.length)
   console.log('this many bad boys', badAnnotationIds.length)
   console.log('sample hunk', badAnnotationIds[0])
 
