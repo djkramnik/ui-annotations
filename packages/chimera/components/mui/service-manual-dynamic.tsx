@@ -96,12 +96,6 @@ export const DynamicMuiComponent: ComponentRendererType = ({
         />
       )
 
-
-
-    case ServiceManualLabel.qr_code:
-    case ServiceManualLabel.barcode:
-      break
-
     case ServiceManualLabel.diagram_number:
       return (
         <Avatar
@@ -116,12 +110,18 @@ export const DynamicMuiComponent: ComponentRendererType = ({
           {children}
         </Avatar>
       )
+
+    // image likes
+    case ServiceManualLabel.qr_code:
+    case ServiceManualLabel.barcode:
     case ServiceManualLabel.diagram:
     case ServiceManualLabel.image:
     case ServiceManualLabel.logo:
     case ServiceManualLabel.icon:
     case ServiceManualLabel.icon_warn:
       return <DynamicPlaceholderImg label={label} width={100} rect={rect} />
+
+    // section_number and heading
     case ServiceManualLabel.section_number:
     case ServiceManualLabel.heading:
       if (!textContent) {
@@ -151,6 +151,8 @@ export const DynamicMuiComponent: ComponentRendererType = ({
           <MultiLine>{children}</MultiLine>
         </Typography>
       )
+
+    // caption, image_id, text_block and page_num
     case ServiceManualLabel.caption:
     case ServiceManualLabel.image_id:
     case ServiceManualLabel.text_block:
@@ -170,6 +172,8 @@ export const DynamicMuiComponent: ComponentRendererType = ({
           <MultiLine>{children}</MultiLine>
         </Typography>
       )
+
+    // bulletpoint
     case ServiceManualLabel.bulletpoint:
       const numbered =
         typeof textContent === 'string'

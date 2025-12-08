@@ -12,7 +12,7 @@ const _labelArg = process.argv[3]
 
 const labels: string[] = typeof _labelArg === 'string'
   ? _labelArg.split(',')
-  : ['qrcode', 'barcode']
+  : ['qr_code', 'barcode']
 
 main(tag, labels)
 
