@@ -64,19 +64,24 @@ def download_s3_prefix_to_dir(s3_uri: str, local_dir: Path):
 
 def write_data_yaml(dataset_dir: Path, class_names: list[str]) -> Path:
     """
-    Generate dataset/data.yaml for YOLO.
+    Generate data.yaml for YOLO with absolute train/val paths.
 
-    Expects structure:
+    Expects:
       dataset_dir/
         images/train/
         images/val/
         labels/train/
         labels/val/
     """
+    dataset_dir = dataset_dir.resolve()
+
+    train_dir = (dataset_dir / "images" / "train").resolve()
+    val_dir   = (dataset_dir / "images" / "val").resolve()
+
     data = {
-        "path": ".",                # relative to this data.yaml
-        "train": "images/train",
-        "val": "images/val",
+        # Absolute paths so we don't care about CWD
+        "train": str(train_dir),
+        "val": str(val_dir),
         "names": class_names,
     }
 
@@ -86,7 +91,6 @@ def write_data_yaml(dataset_dir: Path, class_names: list[str]) -> Path:
 
     print(f"Generated YOLO data.yaml at {yaml_path}")
     return yaml_path
-
 
 def load_class_names(labels_json_path: str) -> list[str]:
     """
