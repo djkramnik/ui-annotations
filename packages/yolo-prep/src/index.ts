@@ -3,7 +3,8 @@ import fs from 'fs'
 import { getScreenIds, saveScreensToFs } from './util/screen';
 import { getDbClient } from './util/db';
 import { trainTestSplit, TrainTestSplit } from './util/split';
-import { getLabelsForImage, getLabelsForImages } from './util/label';
+import { writeLabelsForImages } from './util/label';
+import { ServiceManualLabel } from 'ui-labelling-shared';
 
 
 // reserve this for actual full one click yolo train pipeline plz
@@ -12,7 +13,31 @@ const screenTag = process.env.SCREEN_TAG ?? 'service_manual'
 const labels: string[] = typeof process.env.LABELS === 'string'
   ? process.env.LABELS.split(',')
   : [
-
+    ServiceManualLabel.logo,
+    ServiceManualLabel.text_block,
+    ServiceManualLabel.heading,
+    ServiceManualLabel.bulletpoint,
+    ServiceManualLabel.image,
+    ServiceManualLabel.caption,
+    ServiceManualLabel.image_id,
+    ServiceManualLabel.diagram,
+    ServiceManualLabel.diagram_number,
+    ServiceManualLabel.diagram_label,
+    ServiceManualLabel.icon_warn,
+    ServiceManualLabel.icon,
+    ServiceManualLabel.section_number,
+    ServiceManualLabel.page_num,
+    ServiceManualLabel.toc,
+    ServiceManualLabel.toc_section,
+    ServiceManualLabel.toc_entry,
+    ServiceManualLabel.qr_code,
+    ServiceManualLabel.barcode,
+    ServiceManualLabel.url,
+    ServiceManualLabel.phone,
+    ServiceManualLabel.page_context,
+    ServiceManualLabel.box,
+    ServiceManualLabel.table,
+    ServiceManualLabel.page_frame
   ] as string[]
 
 main({
@@ -50,7 +75,7 @@ async function main({
 
   // get screen ids for processing
   // hardcoded to only get published screens bro
-  const screenIds = (await getScreenIds({ tag: screenTag })).slice(0, 10)
+  const screenIds = (await getScreenIds({ tag: screenTag, labels })).slice(0, 10)
 
   // train test split
   const split: TrainTestSplit = trainTestSplit(screenIds)
@@ -64,16 +89,16 @@ async function main({
   })
 
   // generate the label files for each image
-  await getLabelsForImages({
+  await writeLabelsForImages({
     imageDir: TRAIN_IMAGES_DIR,
     labelDir: TRAIN_LABELS_DIR,
-    getLabels: getLabelsForImage
+    labels,
   })
 
-  await getLabelsForImages({
+  await writeLabelsForImages({
     imageDir: VAL_IMAGES_DIR,
     labelDir: VAL_LABELS_DIR,
-    getLabels: getLabelsForImage
+    labels,
   })
 }
 

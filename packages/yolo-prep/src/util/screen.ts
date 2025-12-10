@@ -6,14 +6,17 @@ import path from 'path'
 import fs from 'fs'
 
 export const getScreenIds = ({
-  tag
+  tag,
+  labels,
 }: {
   tag?: string
+  labels: string[]
 }): Promise<number[]> => {
   const prisma = getDbClient()
   return prisma.screenshot.findMany({
     select: {
-      id: true
+      id: true,
+      annotation: true
     },
     where: {
       tag,
@@ -23,7 +26,9 @@ export const getScreenIds = ({
       published: 1
     }
   }).then((rows) => {
-    return rows.map(s => s.id)
+    return rows
+      .filter(r => r.annotation.some(a => labels.includes(a.label)))
+      .map(s => s.id)
   })
 }
 
