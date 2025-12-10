@@ -19,6 +19,8 @@ export const writeLabelsForImages = async ({
   const prisma = getDbClient()
   const imgPaths = await getFiles(imageDir)
 
+  fs.mkdirSync(labelDir, { recursive: true })
+
   for (const imgPath of imgPaths) {
     // this is the screen id
     const base = path.parse(imgPath).name
@@ -58,7 +60,7 @@ export const writeLabelsForImages = async ({
     // write a file with the entries would you
     fs.writeFileSync(
       path.join(labelDir, `${screenId}.txt`),
-      yoloEntries.join('\n')
+      yoloEntries.join('\n'),
     )
   }
 }
