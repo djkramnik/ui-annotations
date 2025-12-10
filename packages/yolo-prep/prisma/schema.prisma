@@ -1,0 +1,83 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["interactiveTransactions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model image_crop {
+  id            Int         @id @default(autoincrement())
+  image_data    Bytes
+  true_id       String?     @db.Uuid
+  screenshot_id Int?
+  aspect_ratio  Float
+  og_width      Int
+  og_label      String?
+  screenshot    screenshot? @relation(fields: [screenshot_id], references: [id], map: "image_crop_annotationId_fkey")
+
+  @@index([screenshot_id], map: "image_crop_annotationId_idx")
+}
+
+model interactive {
+  id            Int         @id @default(autoincrement())
+  image_data    Bytes
+  label         String?
+  true_id       String?     @db.Uuid
+  screenshot_id Int?
+  screenshot    screenshot? @relation(fields: [screenshot_id], references: [id], map: "interactive_annotationId_fkey")
+
+  @@index([screenshot_id], map: "interactive_annotationId_idx")
+}
+
+model ocr {
+  id            Int         @id @default(autoincrement())
+  image_data    Bytes
+  date          DateTime    @db.Timestamptz(6)
+  text          String
+  screenshot_id Int?
+  screenshot    screenshot? @relation(fields: [screenshot_id], references: [id], map: "ocr_annotationId_fkey")
+}
+
+model screenshot {
+  id                  Int           @id(map: "annotations_pkey") @default(autoincrement())
+  scroll_y            Int
+  view_width          Int
+  view_height         Int
+  date                DateTime      @db.Timestamptz(6)
+  url                 String
+  annotations         Json
+  image_data          Bytes?
+  published           Int           @default(0)
+  tag                 String?
+  synthetic_parent_id Int?
+  image_crop          image_crop[]
+  interactive         interactive[]
+  ocr                 ocr[]
+  screenshot          screenshot?   @relation("screenshotToscreenshot", fields: [synthetic_parent_id], references: [id], map: "annotations_synthetic_parent_id_fkey")
+  other_screenshot    screenshot[]  @relation("screenshotToscreenshot")
+
+  // new back-relation (does not create a column)
+  annotation          annotation[]
+}
+
+model annotation {
+  id             String      @id @default(uuid()) @db.Uuid
+  x              Float
+  y              Float
+  width          Float
+  height         Float
+  aspect_ratio   Float
+  screenshot_id  Int
+  clean          Boolean     @default(false)
+  label String
+  text_content   String?
+
+  // relation
+  screenshot     screenshot  @relation(fields: [screenshot_id], references: [id], map: "annotation_screenshot_id_fkey", onDelete: Cascade)
+
+  @@index([screenshot_id])
+  @@map("annotation")
+}
