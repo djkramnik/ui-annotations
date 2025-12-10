@@ -74,7 +74,9 @@ async function main(tag: string, labels: string[]) {
           id: screen.id
         },
         select: {
-          image_data: true
+          image_data: true,
+          view_height: true,
+          view_width: true
         }
       })
     ])
@@ -112,7 +114,7 @@ async function main(tag: string, labels: string[]) {
         continue
       }
 
-      const { image_data, view_width, view_height, id } = screen
+      const { image_data, view_width, view_height } = currScreen
 
       const sx = actualSize.width / view_width
       const sy = actualSize.height / view_height
@@ -147,7 +149,7 @@ async function main(tag: string, labels: string[]) {
           .toFormat('png')
           .toBuffer()
         crops.push({
-          screenshot_id: id,
+          screenshot_id: screen.id,
           image_data: clip,
           true_id: a.id,
           og_width: Math.round(scaledRoundedRect.width),
