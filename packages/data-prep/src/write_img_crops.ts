@@ -43,8 +43,8 @@ async function main(tag: string, labels: string[]) {
     where: {
       tag,
     },
-    include: {
-      annotation: true
+    select: {
+      id: true
     }
   })
   // prevent dups
@@ -63,7 +63,24 @@ async function main(tag: string, labels: string[]) {
 
   let badAnnotationIds = []
   for (const screen of screens) {
-    const annotations = screen.annotation
+    const [rawAnnotations, currScreen] = await Promise.all([
+      prisma.annotation.findMany({
+        where: {
+          screenshot_id: screen.id
+        }
+      }),
+      prisma.screenshot.findFirst({
+        where: {
+          id: screen.id
+        },
+        select: {
+          image_data: true
+        }
+      })
+    ])
+    const image_data = currScreen?.image_data
+
+    const annotations = rawAnnotations
       .map(a => ({
         ...a,
         rect: {
@@ -73,11 +90,11 @@ async function main(tag: string, labels: string[]) {
           height: a.height
         }
       })) as Annotation[]
-    if (!Array.isArray(annotations) || !screen.image_data) {
-      console.log('skipping screen because empty annotations: ', screen.id)
+    if (!Array.isArray(annotations) || !image_data) {
+      console.log('skipping screen because empty annotations or image_data: ', screen.id)
       continue
     }
-    const actualSize = getRasterSize(screen.image_data)
+    const actualSize = getRasterSize(image_data)
     if (actualSize === null) {
       console.warn('Could not get the raster size for this screen', screen.id)
       continue
