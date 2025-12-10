@@ -5,10 +5,14 @@ import { getDbClient } from './util/db';
 import { trainTestSplit, TrainTestSplit } from './util/split';
 import { writeLabelsForImages } from './util/label';
 import { ServiceManualLabel } from 'ui-labelling-shared';
+import { uploadDirectoryToS3 } from './util/s3';
+import dotenv = require('dotenv')
 
+dotenv.config()
 
 // reserve this for actual full one click yolo train pipeline plz
-// script vars here plz
+// env vars here plz
+const bucket = process.env.AWS_S3_BUCKET
 const screenTag = process.env.SCREEN_TAG ?? 'service_manual'
 const labels: string[] = typeof process.env.LABELS === 'string'
   ? process.env.LABELS.split(',')
@@ -57,7 +61,8 @@ async function main({
 }: {
   screenTag: string
 }) {
-  const OUTPUT_ROOT = path.resolve('dist', process.env.OUTPUT_ROOT ?? 'yolo')
+  const outRoot = process.env.OUT_ROOT ?? 'yolo'
+  const OUTPUT_ROOT = path.resolve('dist', outRoot)
   const IMAGES_DIR = path.resolve(OUTPUT_ROOT, 'images')
   const LABELS_DIR = path.resolve(OUTPUT_ROOT, 'labels')
   const TRAIN_IMAGES_DIR = path.resolve(IMAGES_DIR, 'train')
@@ -99,6 +104,17 @@ async function main({
     imageDir: VAL_IMAGES_DIR,
     labelDir: VAL_LABELS_DIR,
     labels,
+  })
+
+  // write directory to s3 bucket
+  if (!bucket) {
+    console.error('no bucket specified')
+    return
+  }
+  await uploadDirectoryToS3({
+    localDir: OUTPUT_ROOT,
+    bucket,
+    prefix: outRoot,
   })
 }
 
