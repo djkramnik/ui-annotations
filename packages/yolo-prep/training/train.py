@@ -131,7 +131,7 @@ def main():
     class_names = load_class_names(labels_json_path)
 
     # YOLO base model (e.g., yolo11n.pt, yolo11m.pt, etc.)
-    base_model = os.environ.get("BASE_MODEL", "yolo11n.pt")
+    base_model = os.environ.get("BASE_MODEL", "yolo11s.pt")
 
     # Training hyperparams
     epochs = int(os.environ.get("EPOCHS", "50"))

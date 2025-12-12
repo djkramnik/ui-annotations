@@ -1,27 +1,33 @@
-# training/Dockerfile
-
 FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04
 
-# System deps
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    && rm -rf /var/lib/apt/lists/*
+# Install Python and system libraries needed by OpenCV (cv2)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        python3 \
+        python3-pip \
+        libgl1 \
+        libglib2.0-0 \
+        libsm6 \
+        libxext6 \
+        libxrender1 && \
+    rm -rf /var/lib/apt/lists/*
 
+# Make `python` point to python3
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 
-# SageMaker working directory
 WORKDIR /opt/ml/code
 
-# Copy ONLY the required files — no .dockerignore needed
+# 1. Install CUDA-enabled PyTorch (CUDA 12.1 wheels)
+RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu121
+
+# 2. Install training dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# 3. Copy training code and resources
 COPY train.py .
 COPY labels.json .
+COPY yolo11s.pt .
 
-# Let the Python output stream immediately
-ENV PYTHONUNBUFFERED=1
-
-# Default command SageMaker will run
-ENTRYPOINT ["python", "train.py"]
+# 4. Run training
+ENTRYPOINT ["python", "-u", "train.py"]
