@@ -1,19 +1,17 @@
-import * as path from 'node:path'
-import fs from 'fs'
-import { getScreenIds, saveScreensToFs } from './util/screen';
+import { getScreenIds, saveScreensToS3 } from './util/screen';
 import { getDbClient } from './util/db';
 import { trainTestSplit, TrainTestSplit } from './util/split';
-import { writeLabelsForImages } from './util/label';
 import { ServiceManualLabel } from 'ui-labelling-shared';
-import { uploadDirectoryToS3 } from './util/s3';
 import dotenv = require('dotenv')
+import { gmtTimestamp } from './util/date';
 
 dotenv.config()
 
 // reserve this for actual full one click yolo train pipeline plz
 // env vars here plz
-const bucket = process.env.AWS_S3_BUCKET
+const bucket = process.env.AWS_S3_BUCKET ?? 'apexify-s3-milvus'
 const screenTag = process.env.SCREEN_TAG ?? 'service_manual'
+const runName = process.env.YOLO_RUN_NAME ?? `${screenTag}_${gmtTimestamp()}`
 const labels: string[] = typeof process.env.LABELS === 'string'
   ? process.env.LABELS.split(',')
   : [
@@ -45,7 +43,8 @@ const labels: string[] = typeof process.env.LABELS === 'string'
   ] as string[]
 
 main({
-  screenTag
+  screenTag,
+  labels
 })
   .catch(err => {
     console.error(err);
@@ -56,27 +55,15 @@ main({
     await prisma.$disconnect();
   });
 
+
+// given a tag and label set,
 async function main({
-  screenTag
+  screenTag,
+  labels,
 }: {
   screenTag: string
+  labels: string[]
 }) {
-  const outRoot = process.env.OUT_ROOT ?? 'yolo'
-  const OUTPUT_ROOT = path.resolve('dist', outRoot)
-  const IMAGES_DIR = path.resolve(OUTPUT_ROOT, 'images')
-  const LABELS_DIR = path.resolve(OUTPUT_ROOT, 'labels')
-  const TRAIN_IMAGES_DIR = path.resolve(IMAGES_DIR, 'train')
-  const VAL_IMAGES_DIR = path.resolve(IMAGES_DIR, 'val')
-  const TRAIN_LABELS_DIR = path.resolve(LABELS_DIR, 'train')
-  const VAL_LABELS_DIR = path.resolve(LABELS_DIR, 'val')
-
-  // start by deleting output_root would ya
-  // can maybe make this more flexible later
-  if (fs.existsSync(OUTPUT_ROOT)) {
-    console.log('existing output dir..')
-    // scary shit?
-    fs.rmSync(OUTPUT_ROOT, { recursive: true, force: true })
-  }
 
   // get screen ids for processing
   // hardcoded to only get published screens bro
@@ -85,37 +72,16 @@ async function main({
   // train test split
   const split: TrainTestSplit = trainTestSplit(screenIds)
 
-  // convert screen ids to actual files on local FS
-  await saveScreensToFs({
+  saveScreensToS3({
     screenIds,
-    testDir: VAL_IMAGES_DIR,
-    trainDir: TRAIN_IMAGES_DIR,
-    split
-  })
-
-  // generate the label files for each image
-  await writeLabelsForImages({
-    imageDir: TRAIN_IMAGES_DIR,
-    labelDir: TRAIN_LABELS_DIR,
-    labels,
-  })
-
-  await writeLabelsForImages({
-    imageDir: VAL_IMAGES_DIR,
-    labelDir: VAL_LABELS_DIR,
-    labels,
-  })
-
-  // write directory to s3 bucket
-  if (!bucket) {
-    console.error('no bucket specified')
-    return
-  }
-  await uploadDirectoryToS3({
-    localDir: OUTPUT_ROOT,
+    prefix: `yolo/${runName}`,
+    split,
     bucket,
-    prefix: outRoot,
+    labels
   })
+
+  // kick off a new sagemaker job, using the runName and prefix
+
 }
 
 

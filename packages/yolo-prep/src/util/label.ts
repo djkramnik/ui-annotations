@@ -3,6 +3,80 @@ import { Annotation } from "ui-labelling-shared"
 import  fs from 'fs'
 import path from 'path'
 import { getDbClient } from './db'
+import { getS3Client } from './s3'
+import { PutObjectCommand } from '@aws-sdk/client-s3'
+
+
+export const genAndSaveLabelsToS3 = async ({
+  screenId,
+  image_data,
+  annotations,
+  viewWidthCss,
+  viewHeightCss,
+  labels,
+  bucket,
+  labelPrefix,
+}: {
+  image_data: Buffer
+  screenId: number
+  annotations: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    id: string;
+    screenshot_id: number;
+    aspect_ratio: number;
+    label: string;
+    clean: boolean;
+    text_content: string | null;
+  }[]
+  viewWidthCss: number
+  viewHeightCss: number
+  labels: string[]
+  bucket: string
+  labelPrefix: string // e.g. "my-prefix/labels/train"
+}) => {
+  const s3 = getS3Client()
+
+
+  // for better reusability this buildYoloEntries could be an argument passed to this function
+  // buildYoloEntries contains knowledge of the process by which the annotations were created, and
+  // uses that to prepare them for yolo training. But in the future perhaps we will have annotations
+  // that require different preprocessing
+  const yoloEntries = await buildYoloEntries({
+    image_data,
+    viewWidthCss,
+    viewHeightCss,
+    labels,
+    annotations: annotations.map(a => ({
+      ...a,
+      text_content: a.text_content ?? undefined,
+      rect: {
+        x: a.x,
+        y: a.y,
+        width: a.width,
+        height: a.height,
+      },
+    })),
+  })
+
+  const key = `${labelPrefix.replace(/\/+$/, '')}/${screenId}.txt`
+  const body = Buffer.from(yoloEntries.join('\n'), 'utf8')
+
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      Body: body,
+      ContentType: 'text/plain',
+    }),
+  )
+}
+
+
+
+
 
 // this relies on the fact that the image files within the imageDir
 // are of the format {screenId}.{ext}.  If this is not true this whole thing breaks.
@@ -78,18 +152,24 @@ async function getFiles(dir: string): Promise<string[]> {
  */
 async function buildYoloEntries({
   imgPath,
+  image_data,
   viewWidthCss,
   viewHeightCss,
   labels,
   annotations,
 }: {
-  imgPath: string
   viewWidthCss: number
   viewHeightCss: number
   labels: string[]
   annotations: Annotation[]
-}): Promise<string[]> {
-  const meta = await sharp(imgPath).metadata();
+} & ({
+  imgPath: string
+  image_data?: undefined
+} | {
+  imgPath?: undefined
+  image_data: Buffer
+})): Promise<string[]> {
+  const meta = await sharp(imgPath ?? image_data).metadata()
   const imgWidth = meta.width;
   const imgHeight = meta.height;
 
