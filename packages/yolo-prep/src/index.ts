@@ -3,7 +3,7 @@ import { getDbClient } from './util/db';
 import { trainTestSplit, TrainTestSplit } from './util/split';
 import { ServiceManualLabel } from 'ui-labelling-shared';
 import dotenv = require('dotenv')
-import { gmtTimestamp } from './util/date';
+import { gmtTimestamp, sagemakerGmtTimestamp } from './util/date';
 import { startYoloTrainingJob } from './util/sagemaker';
 import { Config, configSchema } from './util/types';
 
@@ -88,7 +88,7 @@ async function main({
   })
 
   // secret debug flag
-  if (process.env.SAGEMAKER_ONLY !== 'true') {
+  if (process.env.SKIP_DATA_UPLOAD !== 'true') {
     // get screen ids for processing
     // hardcoded to only get published screens bro
     const screenIds = (await getScreenIds({ tag: screenTag, labels }))
@@ -111,7 +111,7 @@ async function main({
     sagemakerRoleArn,
     datasetS3Uri: `s3://${bucket}/yolo/${runName}`,
     outputS3Uri: `s3://${bucket}/yolo-models/${runName}`,
-    jobName: runName,
+    jobName: `${screenTag}_${sagemakerGmtTimestamp()}`,
     imageUri
   })
 }

@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "tsc && node dist/index.js"
+    "start": "tsc && node dist/index.js",
+    "start:sans-upload": "SKIP_DATA_UPLOAD=true tsc && node dist/index.js"
   },
   "keywords": [],
   "author": "",

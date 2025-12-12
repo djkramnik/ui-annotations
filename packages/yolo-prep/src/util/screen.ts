@@ -92,12 +92,14 @@ export const saveScreensToS3 = async ({
   split,
   bucket,
   labels,
+  log = true
 }: {
   screenIds: number[]
   prefix: string // root prefix, e.g. "yolo-dataset"
   split: TrainTestSplit
   bucket: string
   labels: string[]
+  log?: boolean
 }) => {
   const s3 = getS3Client()
   const prisma = getDbClient()
@@ -192,6 +194,9 @@ export const saveScreensToS3 = async ({
         bucket,
         labelPrefix,
       })
+      if (log) {
+        console.log('uploaded annotations ' + imageKey)
+      }
     } catch (err) {
       console.error(
         `failed to upload screenshot ${id} to s3://${bucket}/${imageKey}`,
