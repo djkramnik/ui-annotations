@@ -13,6 +13,7 @@ export function gmtTimestamp() {
   return `${year}-${month}-${day}:${hour}:${minute}:${second}`
 }
 
+// Member must satisfy regular expression pattern: [a-zA-Z0-9](-*[a-zA-Z0-9]){0,62}
 export function sagemakerGmtTimestamp() {
   const d = new Date()
 
@@ -25,5 +26,5 @@ export function sagemakerGmtTimestamp() {
   const minute = pad(d.getUTCMinutes())
   const second = pad(d.getUTCSeconds())
 
-  return `${year}-${month}-${day}_${hour}_${minute}_${second}`
+  return `${year}-${month}-${day}-${hour}-${minute}-${second}`
 }
