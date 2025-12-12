@@ -55,6 +55,8 @@ if (parsedConfig.error) {
   process.exit(1)
 }
 
+// todo: incorporate the docker file build and optionally build and push the image
+// labels in particular is part of the docker build
 main(parsedConfig.data)
   .catch(err => {
     console.error(err);
@@ -96,7 +98,7 @@ async function main({
     // train test split
     const split: TrainTestSplit = trainTestSplit(screenIds)
 
-    saveScreensToS3({
+    await saveScreensToS3({
       screenIds,
       prefix: `yolo/${runName}`,
       split,
@@ -106,7 +108,7 @@ async function main({
   }
 
   // kick off a new sagemaker job, using the runName and prefix
-  startYoloTrainingJob({
+  await startYoloTrainingJob({
     region,
     sagemakerRoleArn,
     datasetS3Uri: `s3://${bucket}/yolo/${runName}`,
