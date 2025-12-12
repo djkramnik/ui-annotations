@@ -55,7 +55,7 @@ if (parsedConfig.error) {
   process.exit(1)
 }
 
-// todo: incorporate the docker file build and optionally build and push the image
+// todo: incorporate the docker file build and optionally build and push the image.
 // labels in particular is part of the docker build
 main(parsedConfig.data)
   .catch(err => {
@@ -67,8 +67,6 @@ main(parsedConfig.data)
     await prisma.$disconnect();
   });
 
-
-// given a tag and label set,
 async function main({
   screenTag,
   labels,
@@ -102,7 +100,7 @@ async function main({
       screenIds,
       prefix: `yolo/${runName}`,
       split,
-      bucket: bucket!,
+      bucket,
       labels
     })
   }
