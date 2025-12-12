@@ -4,15 +4,15 @@ import { trainTestSplit, TrainTestSplit } from './util/split';
 import { ServiceManualLabel } from 'ui-labelling-shared';
 import dotenv = require('dotenv')
 import { gmtTimestamp } from './util/date';
+import { startYoloTrainingJob } from './util/sagemaker';
+import { Config, configSchema } from './util/types';
 
 dotenv.config()
 
-// reserve this for actual full one click yolo train pipeline plz
-// env vars here plz
-const bucket = process.env.AWS_S3_BUCKET ?? 'apexify-s3-milvus'
 const screenTag = process.env.SCREEN_TAG ?? 'service_manual'
-const runName = process.env.YOLO_RUN_NAME ?? `${screenTag}_${gmtTimestamp()}`
-const labels: string[] = typeof process.env.LABELS === 'string'
+const parsedConfig = configSchema.safeParse({
+  screenTag: process.env.SCREEN_TAG ?? 'service_manual',
+  labels: typeof process.env.LABELS === 'string'
   ? process.env.LABELS.split(',')
   : [
     ServiceManualLabel.logo,
@@ -40,12 +40,22 @@ const labels: string[] = typeof process.env.LABELS === 'string'
     ServiceManualLabel.box,
     ServiceManualLabel.table,
     ServiceManualLabel.page_frame
-  ] as string[]
+  ] as string[],
+  runName: process.env.YOLO_RUN_NAME ?? `${screenTag}_${gmtTimestamp()}`,
 
-main({
-  screenTag,
-  labels
+  // non-negotiable env vars
+  region: process.env.AWS_REGION,
+  bucket: process.env.AWS_S3_BUCKET,
+  sagemakerRoleArn: process.env.AWS_SAGEMAKER_ROLE_ARN,
+  imageUri: process.env.AWS_SAGEMAKER_IMAGE_URI
 })
+
+if (parsedConfig.error) {
+  console.error('invalid config. check yo env vars!\n', parsedConfig.error)
+  process.exit(1)
+}
+
+main(parsedConfig.data)
   .catch(err => {
     console.error(err);
     process.exit(1);
@@ -60,28 +70,50 @@ main({
 async function main({
   screenTag,
   labels,
-}: {
-  screenTag: string
-  labels: string[]
-}) {
+  bucket,
+  region,
+  sagemakerRoleArn,
+  runName,
+  imageUri,
+}: Config) {
 
-  // get screen ids for processing
-  // hardcoded to only get published screens bro
-  const screenIds = (await getScreenIds({ tag: screenTag, labels })).slice(0, 10)
-
-  // train test split
-  const split: TrainTestSplit = trainTestSplit(screenIds)
-
-  saveScreensToS3({
-    screenIds,
-    prefix: `yolo/${runName}`,
-    split,
+  console.log('config:', {
+    screenTag,
+    labels,
     bucket,
-    labels
+    region,
+    sagemakerRoleArn,
+    runName,
+    imageUri,
   })
 
-  // kick off a new sagemaker job, using the runName and prefix
+  // secret debug flag
+  if (process.env.SAGEMAKER_ONLY !== 'true') {
+    // get screen ids for processing
+    // hardcoded to only get published screens bro
+    const screenIds = (await getScreenIds({ tag: screenTag, labels }))
 
+    // train test split
+    const split: TrainTestSplit = trainTestSplit(screenIds)
+
+    saveScreensToS3({
+      screenIds,
+      prefix: `yolo/${runName}`,
+      split,
+      bucket: bucket!,
+      labels
+    })
+  }
+
+  // kick off a new sagemaker job, using the runName and prefix
+  startYoloTrainingJob({
+    region,
+    sagemakerRoleArn,
+    datasetS3Uri: `s3://${bucket}/yolo/${runName}`,
+    outputS3Uri: `s3://${bucket}/yolo-models/${runName}`,
+    jobName: runName,
+    imageUri
+  })
 }
 
 
