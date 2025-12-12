@@ -27,6 +27,7 @@ export interface YoloTrainingJobConfig {
 export async function startYoloTrainingJob(
   cfg: YoloTrainingJobConfig,
 ): Promise<{ jobName: string; response: any }> {
+  console.log('config for sagemaker:', cfg)
   const {
     region,
     sagemakerRoleArn,

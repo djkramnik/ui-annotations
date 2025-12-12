@@ -9,7 +9,10 @@ export const configSchema = z.object({
   bucket: z.string().nonempty(),
   runName: z.string().nonempty(),
   sagemakerRoleArn: z.string().nonempty(),
-  imageUri: z.string().nonempty()
+  imageUri: z.string().nonempty(),
+  // optional
+  datasetS3Uri: z.string().nonempty().optional(),
+  outputS3Uri: z.string().nonempty().optional(),
 })
 
 export type Config = {
@@ -20,6 +23,9 @@ export type Config = {
   runName: string
   sagemakerRoleArn: string
   imageUri: string
+
+  datasetS3Uri?: string
+  outputS3Uri?: string
 }
 
 ;({} as Config satisfies z.infer<typeof configSchema>)

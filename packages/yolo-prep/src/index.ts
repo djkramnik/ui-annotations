@@ -10,6 +10,7 @@ import { Config, configSchema } from './util/types';
 dotenv.config()
 
 const screenTag = process.env.SCREEN_TAG ?? 'service_manual'
+
 const parsedConfig = configSchema.safeParse({
   screenTag: process.env.SCREEN_TAG ?? 'service_manual',
   labels: typeof process.env.LABELS === 'string'
@@ -43,11 +44,15 @@ const parsedConfig = configSchema.safeParse({
   ] as string[],
   runName: process.env.YOLO_RUN_NAME ?? `${screenTag}_${gmtTimestamp()}`,
 
+  // optional sagemaker
+  datasetS3Uri: process.env.AWS_SAGEMAKER_DATASET_URI,
+  outputS3Uri: process.env.AWS_SAGEMAKER_OUTPUT_URI,
+
   // non-negotiable env vars
   region: process.env.AWS_REGION,
   bucket: process.env.AWS_S3_BUCKET,
   sagemakerRoleArn: process.env.AWS_SAGEMAKER_ROLE_ARN,
-  imageUri: process.env.AWS_SAGEMAKER_IMAGE_URI
+  imageUri: process.env.AWS_SAGEMAKER_IMAGE_URI,
 })
 
 if (parsedConfig.error) {
@@ -75,6 +80,8 @@ async function main({
   sagemakerRoleArn,
   runName,
   imageUri,
+  datasetS3Uri,
+  outputS3Uri,
 }: Config) {
 
   console.log('config:', {
@@ -85,6 +92,8 @@ async function main({
     sagemakerRoleArn,
     runName,
     imageUri,
+    datasetS3Uri,
+    outputS3Uri,
   })
 
   // secret debug flag
@@ -109,9 +118,9 @@ async function main({
   await startYoloTrainingJob({
     region,
     sagemakerRoleArn,
-    datasetS3Uri: `s3://${bucket}/yolo/${runName}`,
-    outputS3Uri: `s3://${bucket}/yolo-models/${runName}`,
-    jobName: `${screenTag}_${sagemakerGmtTimestamp()}`,
+    datasetS3Uri: datasetS3Uri ?? `s3://${bucket}/yolo/${runName}`,
+    outputS3Uri: outputS3Uri ?? `s3://${bucket}/yolo-models/${runName}`,
+    jobName: `${screenTag.replace(/_/g, '-')}-${sagemakerGmtTimestamp()}`, // need to enforce rules on screentag
     imageUri
   })
 }
