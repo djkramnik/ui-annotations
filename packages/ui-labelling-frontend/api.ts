@@ -263,3 +263,13 @@ export const getYoloPreds = ({
     })
   })
 }
+
+export const getYoloModels = (): Promise<string[]> => {
+  return fetch('/yolo/health')
+    .then(jsonOrThrow)
+    .then(_r => {
+      const resp = _r as unknown as { available_models: string[] }
+      return resp.available_models
+    })
+}
+

@@ -24,6 +24,7 @@ import ScreenshotAnnotator from '../../components/screenshot-annotated' // ← N
 import { SimpleDate } from '../../components/date'
 import {
   deleteAnnotation,
+  getYoloPreds,
   occludeScreenshot,
   publishAnnotation,
   unPublishAnnotation,
@@ -37,6 +38,8 @@ import { AnnotationToggler } from '../../components/annotation'
 import { useAdjustRect } from '../../hooks/adjust'
 import { adjustAnnotation } from '../../utils/adjust'
 import { useMode } from '../../hooks/mode'
+import { YoloModels } from '../../components/models'
+import { AnnotationBox } from '../../utils/yolo'
 
 type TightenResponse = {
   id: string
@@ -680,6 +683,44 @@ export default function AnnotationPage() {
   useMode(pageState.mode, setModeFromKeypress)
   // end keypress page mode support
 
+  // yolo predict saga
+  const handleYoloPredict = useCallback(async (model: string) => {
+    if (!annotations) {
+      console.warn('cannot yolo predict before the screen data is loaded')
+      return
+    }
+
+    try {
+      setDisabled(true)
+
+      const resp = await getYoloPreds({
+        screen: {
+          image_data: annotations.image_data,
+          view_height: annotations.view_height,
+          view_width: annotations.view_width
+        },
+        model
+      })
+
+      setAnnotations(annotations => ({
+        ...annotations,
+        annotations: resp.map(r => {
+          return {
+            ...r,
+            id: crypto.randomUUID(),
+            clean: false,
+          }
+        })
+      }))
+    } catch(e) {
+      console.error('failed to fetch yolo preds! ', e)
+    } finally {
+      setDisabled(false)
+    }
+  }, [setAnnotations, annotations, setDisabled])
+
+  // end yolo predict saga
+
   useEffect(() => {
     if (!isReady) return
     fetch(`/api/screenshot/sequence/${query.id}`)
@@ -857,6 +898,7 @@ export default function AnnotationPage() {
             gap="24px"
             style={{ flexGrow: '1', maxWidth: '10%' }}
           >
+            <YoloModels disabled={disabled} handleClick={handleYoloPredict} />
             <Flex
               style={{
                 border: '1px solid #aaa',
@@ -895,6 +937,7 @@ export default function AnnotationPage() {
               </button>
               <button onClick={processNested}>Process Nested</button>
               <button onClick={handleTighten}>Tighter</button>
+
 
             </Flex>
             {pageState.mode === 'toggle' &&
