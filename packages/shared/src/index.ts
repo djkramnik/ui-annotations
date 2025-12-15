@@ -702,3 +702,19 @@ export async function* postProcessAdjacent(
 
   yield [...merged, ...passthrough]
 }
+
+
+// this is the worst shared util in the history of the world possibly
+
+export type XyXy = [number, number, number, number]
+export type YoloPredictResponse = {
+  imgWidth: number
+  imgHeight: number
+  detections: {
+    box: XyXy,
+    conf: number
+    label: string
+    text?: string
+  }[]
+}
+

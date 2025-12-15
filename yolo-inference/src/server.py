@@ -155,7 +155,7 @@ async def yolo_predictions(payload: YoloPayload) -> Dict[str, Any]:
     detections: List[Dict[str, Any]] = []
 
     if getattr(r, "boxes", None) is None:
-        return {"width": width, "height": height, "detections": detections}
+        return {"imgWidth": width, "imgHeight": height, "detections": detections}
 
     # [[x1,y1,x2,y2]]
     xyxy = r.boxes.xyxy.cpu().tolist()
@@ -172,4 +172,4 @@ async def yolo_predictions(payload: YoloPayload) -> Dict[str, Any]:
             }
         )
 
-    return {"width": width, "height": height, "detections": detections}
+    return {"imgWidth": width, "imgHeight": height, "detections": detections}
