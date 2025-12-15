@@ -2,7 +2,7 @@
 
 import { Annotation, YoloPredictResponse } from "ui-labelling-shared"
 
-type AnnotationBox = Pick<Annotation, 'rect' | 'label'> & { conf: number }
+export type AnnotationBox = Pick<Annotation, 'rect' | 'label'> & { conf: number }
 
 // convert into the annotations format and perform scaling along the way
 export const parseAnnotationsFromYoloResponse = ({

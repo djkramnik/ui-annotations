@@ -1,8 +1,10 @@
 import {
   Annotation,
   AnnotationLabel,
-  Screenshot
+  Screenshot,
+  YoloPredictResponse
 } from "ui-labelling-shared"
+import { AnnotationBox, parseAnnotationsFromYoloResponse } from "./utils/yolo"
 
 const jsonOrThrow = (r: Response) => {
   if (r.ok) {
@@ -219,4 +221,45 @@ export const deleteSingleAnnotation = (id: string) => {
       'Content-Type': 'application/json'
     }
   }).then(jsonOrThrow)
+}
+
+// yolo calls.
+
+export const getYoloPreds = ({
+  screen,
+  model,
+  conf,
+  iou,
+  imgsz,
+}: {
+  screen: Pick<Screenshot, 'image_data' | 'view_height' | 'view_width'>
+  model: string
+  conf?: number
+  iou?: number
+  imgsz?: number
+}): Promise<AnnotationBox[]> => {
+  const base64 = Buffer.from(screen.image_data).toString('base64')
+
+  return fetch('/yolo/yolo_predictions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      conf,
+      iou,
+      imgsz,
+      model_name: model,
+      image_base64: base64,
+    })
+  })
+  .then(jsonOrThrow)
+  .then(_r => {
+    const resp = _r as unknown as YoloPredictResponse
+    return parseAnnotationsFromYoloResponse({
+      viewHeight: screen.view_height,
+      viewWidth: screen.view_width,
+      response: resp
+    })
+  })
 }
