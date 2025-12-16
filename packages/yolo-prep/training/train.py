@@ -212,5 +212,86 @@ def main():
     print("Training complete.")
 
 
+    # --- Output dir for metrics/artifacts ------------------------ #
+    output_dir = Path(
+        os.environ.get("OUTPUT_DIR")
+        or os.environ.get("SM_OUTPUT_DATA_DIR")  # SageMaker canonical output/data
+        or (model_dir / "output")                # local fallback
+    )
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1) Copy common Ultralytics artifacts so you can inspect training quality
+    #    (file set varies by Ultralytics version; we copy what exists)
+    artifact_names = [
+        "results.csv",
+        "results.png",
+        "args.yaml",
+        "confusion_matrix.png",
+        "confusion_matrix_normalized.png",
+        "F1_curve.png",
+        "P_curve.png",
+        "R_curve.png",
+        "PR_curve.png",
+    ]
+
+    copied = []
+    for name in artifact_names:
+        src = save_dir / name
+        if src.is_file():
+            shutil.copy2(src, output_dir / name)
+            copied.append(name)
+
+    # Always copy weights metadata if present (optional but handy)
+    weights_dir = save_dir / "weights"
+    if weights_dir.is_dir():
+        dst_weights_dir = output_dir / "weights"
+        dst_weights_dir.mkdir(parents=True, exist_ok=True)
+        for w in ["best.pt", "last.pt"]:
+            src = weights_dir / w
+            if src.is_file():
+                shutil.copy2(src, dst_weights_dir / w)
+                copied.append(f"weights/{w}")
+
+    print(f"Copied artifacts to {output_dir}: {copied}")
+
+    # 2) Compute and save validation metrics (mAP/precision/recall, etc.)
+    #    Use best weights if available, else current model object.
+    try:
+        eval_model = YOLO(str(best_weights)) if best_weights.is_file() else model
+        val_results = eval_model.val(
+            data=str(data_yaml_path),
+            imgsz=imgsz,
+            device=device,
+        )
+
+        # Extract common metrics across Ultralytics versions as defensively as possible
+        metrics = {}
+
+        # Newer versions often expose 'results_dict'
+        rd = getattr(val_results, "results_dict", None)
+        if isinstance(rd, dict):
+            metrics.update(rd)
+
+        # Many versions have .box with map/map50, etc.
+        box = getattr(val_results, "box", None)
+        if box is not None:
+            for k in ["map", "map50", "map75", "mp", "mr"]:
+                v = getattr(box, k, None)
+                if v is not None:
+                    metrics[f"box/{k}"] = float(v)
+
+        # Fallback: just stringify something if nothing extracted
+        if not metrics:
+            metrics["note"] = "Could not extract structured metrics; check results.csv/results.png"
+            metrics["val_results_type"] = str(type(val_results))
+
+        metrics_path = output_dir / "metrics.json"
+        with open(metrics_path, "w") as f:
+            json.dump(metrics, f, indent=2)
+
+        print(f"Wrote validation metrics to: {metrics_path}")
+    except Exception as e:
+        print(f"WARNING: validation metrics computation failed: {e}")
+
 if __name__ == "__main__":
     main()

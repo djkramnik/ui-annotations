@@ -11,9 +11,11 @@ import { genAndSaveLabelsToS3 } from './label';
 export const getScreenIds = ({
   tag,
   labels,
+  removeSynthetic
 }: {
   tag?: string
   labels: string[]
+  removeSynthetic?: boolean
 }): Promise<number[]> => {
   const prisma = getDbClient()
   return prisma.screenshot.findMany({
@@ -27,6 +29,7 @@ export const getScreenIds = ({
         not: null
       },
       published: 1,
+      ...(removeSynthetic ? { synthetic_parent_id : null } : {})
     }
   }).then((rows) => {
     return rows

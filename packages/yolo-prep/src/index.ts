@@ -100,8 +100,8 @@ async function main({
   if (process.env.SKIP_DATA_UPLOAD !== 'true') {
     // get screen ids for processing
     // hardcoded to only get published screens bro
-    const screenIds = (await getScreenIds({ tag: screenTag, labels }))
-
+    const screenIds = (await getScreenIds({ tag: screenTag, labels, removeSynthetic: true }))
+    console.log(`${screenIds.length} annotated screens in total`)
     // train test split
     const split: TrainTestSplit = trainTestSplit(screenIds)
 
