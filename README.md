@@ -5,127 +5,38 @@ This repo also includes a web server for storing annotations in local postgres i
 
 #### TODO
 
-#### Next steps
+vit transformer saga (1)
 
-moar building
-====
-
-* frontend viewer[id] -- predict and populate functionality
-* frontend viewer[id] -- filter by label
-* frontend viewer[id] -- intelligently remove / add key listeners by context. fix the bug with key press collision
-* frontend viewer[id] -- swap sections by bounding box with differing ui (i.e font).
-that or completely _rebuild_ the screen with an updated one, that can be auto annotated
-
-
-1) chimera
-
-* add synthetic component generator
-
-* done-ish
-  * button
-  * video
-    * https://cookpete.github.io/react-player/
-  * dropdown (including opened)
-  * pagination
-  * avatar
-  * radio
-  * datepicker
-  * filepicker
-  * accordion
-  * textarea
-  * toggle
-  * slider
-
-* need more examples but real ones only.  scrape for these directly
-  * ads
-  * images
-  * logo
-
-^ for direct scraping maybe we can have a new extension... again...
-this one will let you draw a box around a component, choose a label and then save it as an interactive record directly
-this will do for logo I guess
-
-then one for cropping multiple elements on a given page (image)
-
-and a puppeteer script specifically for advertisements I guess...
-ad sites:
-https://www.nytimes.com/games/wordle/index.html (gotta press play)
-https://www.nytimes.com/spotlight/lifestyle
-https://www.buzzfeed.com
-https://www.buzzfeed.com/quizzes
-https://www.telegraph.co.uk/
-https://news.yahoo.com/
-https://forbes.com
+* expand on the number of fonts that I currently have please.  how to duplicate fonts from websites in the wild.
+* integrate this expanded font set to
+* using the chimera pages, write a script (puppeteer I think) to automatically locate specifically labelled elements, and crop them and save in db.
+* scraping for special labels
+  * need more examples but real ones only.  scrape for these directly
+    * ads
+    * images
+    * logo
+    * ad sites:
+      https://www.nytimes.com/games/wordle/index.html (gotta press play)
+      https://www.nytimes.com/spotlight/lifestyle
+      https://www.buzzfeed.com
+      https://www.buzzfeed.com/quizzes
+      https://www.telegraph.co.uk/
+      https://news.yahoo.com/
+      https://forbes.com
 
 
+ui-annotations todo (2)
+- frontend
+    - clone button (new screen with current annotations but different tag?)
+    - predict but do not overwrite.  so I can have screenshot, apply one yolo model, and then another
+    - fix broken shit on the annotator (keypress etc)
+    - when you click an existing annotation you should be able to drag it. need easier 'finessing' of labels
+- service manual detector
+    - try leveraging text_region?
+    - change service_manual detector to only focus on structural stuff (tables, images, diagrams, diagram_num)
+    - create a new textregion detector, built on top of the old one, except it recognizes number reginons (page nums, section num etc)
+    - a classifier (vit transformer) (that includes padding in its crop) plus perhaps metadata (y position, neighbouring labels etc) distinguishes between different kinds of text
 
-
-
-
-
-
-
-
-
-* collapse tab into menuitem
-
-* create synthetic element generator for label balancing.. (must inflate everything to 3k... )
-
-* why so many bad extracts in write_interactive?
-* rewrite write_interactive to find missed annotations + get the failed extracts
-* why persistent bad scrape examples
-
-2) * train ViT based classification model
-
-3) * create synthetic composite data generator. have to use it on existing interactive label annotations that have granular labels on them, and prob filter out unknowns
-  * pull an annotation with interactive label. optionally with a condition that it has never been copied yet
-  * select bounding boxes to swap components for
-  * save the task to create the synthetic (task table)
-  * a bridge table, parent, clone
-  * a script to manually kick off uncompleted synthetic creation tasks pulled from the db
-4) special state screenshots
-  * need a way to perhaps run some logic on the screen to focus certain elements
-  * or to do things like close popups
-  * can be generic and hopeful or targeted to the domain
-  * so that we get special states in the corpus
-
-training
-====
-5) * retrain interactive proposals model.. using additional data
-
-* retrain text model.. using the additional data
-* given a screenshot, run all predictors.
-* evaluate where we at.
-* pass? layout detection -- broad and narrow
-
-improvements
-====
-* need a frontend viewer button to turn all annotations on a given page to uppercase
-* need some script targeting the db to start and end trim text_content
-* need something like a select mode in the frontend viewer.  if only to select and delete.
-* a way to draw multiple for a label, and delete multiple by clicking.   I need some refactoring, however mild, to manage keypress listener collisions
-
-
-#### QOL / BUGS
-
-* update automatically if you click next / prev (with the same warning)
-* after you hit enter in draw mode, focus the dropdown so you can press a letter please
-* in the extension there should be a mode to vary the styles on the page and take multiple
-screenshots
-* need a faster way to delette annotations on the frontend viewer (give us the icon)
-* need a faster way to draw annotate.  I should be able to draw multiple boxes and then label them in one shot?
-* reset the toggle text / shrink to text node checkboxes to false after each submit
-* export should call end at the same time.  buttons like start / end / export should be disabled if appropriate
-* for visual projection, check everything by default and restore to this default state after each submit
-* projection can result in invisible elements getting added.  confirm this on the test-site.  confirm a fix likewise
-* before navigating away can we notify if no export was performed
-
-#### Nice to haves (Future)
-* can we fix shadow dom navigation
-* can we account for shadow dom when projecting to other elements
-* can we have a way of testing the visual similarity of two elements? (compare mode)
-* can we have a way of testing for the separation between two dom nodes (cousins)
-* can we have clean code (no)
 
 ### UI Labelling Extension
 
