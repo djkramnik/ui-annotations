@@ -7,7 +7,6 @@ import {
   scaleRect,
   tightenBoundingBoxes,
 } from '../util/screenshot'
-import { Annotation } from 'ui-labelling-shared'
 
 type Rect = {
   x: number
@@ -18,7 +17,7 @@ type Rect = {
 
 export const utilRouter = Router()
 
-// post
+// though this is a post its really a pure fetch facepalm
 utilRouter.post('/crop', async (req: Request, res: Response) => {
   const body = req.body as { minRatio: number; maxRatio: number; total?: number; label?: string }
 

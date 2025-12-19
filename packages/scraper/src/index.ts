@@ -9,8 +9,7 @@ import { PrismaClient } from '@prisma/client'
 import { getHnHrefs, scrolledToBottom, scrollY } from './dom'
 import { processScreenText } from './configs/text'
 import { applyInteractiveTransforms, processScreenForInteractive } from './configs/interactive'
-
-const prisma = new PrismaClient()
+import { prisma } from './db'
 
 let processScreen: ProcessScreenshot | null = null
 const labelType = process.argv[2]
@@ -138,7 +137,7 @@ async function main({
       for (const link of links) {
         try {
           console.log('navigating to new link', link)
-          await page.goto(link, { waitUntil: 'networkidle2' })
+          await page.goto(withCacheBuster(link), { waitUntil: 'networkidle2' })
 
           // inner scroll loop.
           let scrollIndex = 0
@@ -159,8 +158,13 @@ async function main({
             // remove effects
             await cleanup()
 
-            // if we failed to get any annotations or if we are scrolled to bottom stop this inner loop
+            // return meta null for early break.  or if scrolled to the bottom
             if (!meta || await scrolledToBottom(page)) {
+              if (meta) {
+                console.log('scrolled to bottom ', link, scrollIndex)
+              } else {
+                console.log('stopping early per processScreen', link, scrollIndex)
+              }
               break
             }
 
@@ -190,4 +194,10 @@ async function main({
   } finally {
     browser?.close()
   }
+}
+
+function withCacheBuster(rawUrl: string): string {
+  const u = new URL(rawUrl);
+  u.searchParams.set("__puppeteer_ts", String(Date.now()));
+  return u.toString();
 }
