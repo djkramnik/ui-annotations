@@ -57,6 +57,7 @@ export async function processScreenForSynth(
       clip,
       captureBeyondViewport: true,
     })) as string
+
     await saveSyntheticCrop({
       label: labelSuffixFromId(id),
       base64,
