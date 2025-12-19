@@ -5,11 +5,11 @@ import {
   ProcessScreenshot,
   waitForEnter,
 } from './util'
-import { PrismaClient } from '@prisma/client'
 import { getHnHrefs, scrolledToBottom, scrollY } from './dom'
 import { processScreenText } from './configs/text'
 import { applyInteractiveTransforms, processScreenForInteractive } from './configs/interactive'
 import { prisma } from './db'
+import { processScreenForSynth } from './configs/synth'
 
 let processScreen: ProcessScreenshot | null = null
 const labelType = process.argv[2]
@@ -17,6 +17,8 @@ switch(labelType) {
   case 'interactive':
     processScreen = processScreenForInteractive
     break
+  case 'synth_classifier':
+    processScreen = processScreenForSynth
   default:
     processScreen = processScreenText
     break
@@ -30,7 +32,7 @@ main({
   linkType: process.argv[3] ?? 'hn',
   maxPages: getNumberArg(process.argv[4]) ?? 5,
   maxLinks: getNumberArg(process.argv[5]) ?? undefined,
-  maxScrollIndex: 2,
+  maxScrollIndex: getNumberArg(process.argv[6]) ?? 2,
 })
 
 async function fetchUrls(tag: string): Promise<string[]> {
@@ -58,6 +60,8 @@ async function getLinks({
   page: Page
 }): Promise<string[]> {
   switch (type) {
+    case 'synth':
+      return []
     case 'hn':
       const tabName = 'news'
       await page.goto(`https://news.ycombinator.com/${tabName}?p=${index + 1}`)
@@ -78,6 +82,21 @@ async function getLinks({
       return []
   }
 }
+
+// TODO: REFACTOR:
+// all options relating to getLinks, max pages and max links, scroll behaviour
+// should be made a part of the config I think.  "pages" concept should not be surfaced,
+// but should remain internal to the config, as it is specific to the HN gathering strat.
+// transform should perhaps be renamed to domTransform.. it does not have to
+// only be used for viewport / font changes but can also be used to click things
+// in the dom.  Its a little annoying but if you want to mix and match process logic and link logic, just
+// create a new config.  this way we only have to specify the config name when calling this script.
+// alternatively parse flag args (--) and have --processor --links --transform
+
+// TODO: FEATURE
+// a monitor mode.  So that from the CLI, after transform but prior to process,
+// we can perform various options on the page to check if its truly ready for processing
+// before proceeding. This is to debug / eliminate the mis-aligned bounding box issues that sometimes occur
 
 async function main({
   config,

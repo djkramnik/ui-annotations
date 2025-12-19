@@ -2,6 +2,33 @@ import { Page } from 'puppeteer-core'
 import { getMetadata } from '../dom'
 import { saveSyntheticCrop } from '../util/crop'
 
+export async function getLinks(reps: number = 50): Promise<string[]> {
+  const labels = [
+    'accordion',
+    'avatar',
+    'button',
+    'datepicker',
+    'dropdown',
+    'icon',
+    'pagination',
+    'radio',
+    'selectablecard', // checkbox also gets gathered here
+    'slider',
+    'textarea',
+    'textinput',
+    'toggle'
+  ]
+
+  return labels.reduce((acc, l) => {
+    return acc.concat(new Array(reps)
+      .fill(null)
+      .map((_, i) => `http://localhost:3000/${i % 2 ? 'mui' : 'ant'}/${l}`)
+    )
+  }, [] as string[])
+
+  return []
+}
+
 export async function processScreenForSynth(
   page: Page,
   link: string,

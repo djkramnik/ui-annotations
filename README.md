@@ -7,11 +7,20 @@ This repo also includes a web server for storing annotations in local postgres i
 
 vit transformer saga (1)
 
+* selectable card should also have radio toggle.  more frequent zero checkbox / radio button renders.
+* mui/ant icon needs to be completed
+* mui + ant radio needs random options
+* too many ant renders are unusuable due to color contrast (particularly radio)
+
+
 * expand on the number of fonts that I currently have please.  how to duplicate fonts from websites in the wild.
 * integrate this expanded font set to
+
 * using the chimera pages, write a script (puppeteer I think) to automatically locate specifically labelled elements, and crop them and save in db.
+
 * scraping for special labels
   * need more examples but real ones only.  scrape for these directly
+    * avatar (reddit) / youtube
     * ads
     * images
     * logo
