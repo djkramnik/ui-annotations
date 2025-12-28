@@ -7,6 +7,8 @@ This repo also includes a web server for storing annotations in local postgres i
 
 vit transformer saga (1)
 
+* refactor scraper for some reason
+
 * selectable card should also have radio toggle.  more frequent zero checkbox / radio button renders.
 * mui/ant icon needs to be completed
 * mui + ant radio needs random options

@@ -34,8 +34,8 @@ export function scrollY(page: Page, amount?: number): Promise<void> {
 
 export function scrolledToBottom(page: Page): Promise<boolean> {
   return page.evaluate(() => {
-      const el = document.scrollingElement || document.documentElement;
-      return Math.ceil(el.scrollTop + el.clientHeight) >= el.scrollHeight - 2; // some superstition
+    const el = document.scrollingElement || document.documentElement;
+    return Math.ceil(el.scrollTop + el.clientHeight) >= el.scrollHeight - 2; // some superstition
   })
 }
 
