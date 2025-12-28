@@ -2,7 +2,7 @@ import { Page } from 'puppeteer-core'
 import { getMetadata } from '../dom'
 import { saveSyntheticCrop } from '../util/crop'
 
-export async function getLinks(reps: number = 50): Promise<string[]> {
+export async function getChimericLinks(reps: number = 50): Promise<string[]> {
   const labels = [
     'accordion',
     'avatar',

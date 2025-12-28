@@ -5,32 +5,41 @@ import {
 import { scrolledToBottom, scrollY } from './dom'
 import { processScreenText } from './configs/text'
 import { applyInteractiveTransforms, processScreenForInteractive } from './configs/interactive'
-import { processScreenForSynth } from './configs/synth'
+import { getChimericLinks, processScreenForSynth } from './configs/synth'
 import { launchPuppeteer } from './util/puppeteer'
 import { extractNamedArgs, scraperArgs, ScraperConfig, configName, ConfigName } from './util/args'
-
-// TODO: REFACTOR:
-// parse flag args (--) and have --processor --links --transform
+import { Browser, Page } from 'puppeteer-core'
+import { fetchHnLinks } from './configs/fetch-hn-links'
 
 // TODO: FEATURE
 // a monitor mode.  So that from the CLI, after transform but prior to process,
 // we can perform various options on the page to check if its truly ready for processing
 // before proceeding. This is to debug / eliminate the mis-aligned bounding box issues that sometimes occur
 
-const args = extractNamedArgs()
-const parsedArgs = scraperArgs.safeParse(args)
-if (parsedArgs.error) {
-  console.error('error parsing scraper script args', parsedArgs.error)
-  process.exit(0)
-}
-const config = mapArgs(parsedArgs.data)
+;(async () => {
+  const args = extractNamedArgs()
+  const parsedArgs = scraperArgs.safeParse(args)
+  if (parsedArgs.error) {
+    console.error('error parsing scraper script args', parsedArgs.error)
+    process.exit(0)
+  }
 
-main(config)
-.catch((e) => {
-  console.log(`unhandled exception`, e)
-})
+  let browser: Browser | null = null
+  let page: Page | null = null
+  try {
+    const p = await launchPuppeteer()
+    browser = p.browser
+    page = p.page
+    const config = mapArgs(parsedArgs.data, page)
+    await main(config, page)
+  } catch(e) {
+    console.log(`unhandled exception`, e)
+  } finally {
+    browser?.close()
+  }
+})()
 
-async function main(config: ScraperConfig) {
+async function main(config: ScraperConfig, page: Page) {
   const {
     processScreen,
     transform,
@@ -43,7 +52,6 @@ async function main(config: ScraperConfig) {
     maxLinks,
   })
 
-  const { browser, page } = await launchPuppeteer()
   const links = await fetchLinks()
   let linkIndex = 0
 
@@ -93,9 +101,7 @@ async function main(config: ScraperConfig) {
 
     process.exit(0)
   } catch (err) {
-    console.error('Failed to launch Chrome:', err)
-  } finally {
-    browser?.close()
+    console.error('error in outer layer of main', err)
   }
 }
 
@@ -113,8 +119,7 @@ function mapArgs({
   processor: ConfigName
   transform: ConfigName
   links: ConfigName
-}): ScraperConfig {
-
+}, page: Page): ScraperConfig {
   const processors: Record<ConfigName, ScraperConfig['processScreen']> = {
     'interactive': processScreenForInteractive,
     'text': processScreenText,
@@ -126,10 +131,15 @@ function mapArgs({
     'synth': applyInteractiveTransforms,
   }
 
+  // this is messy
   const linkFetchers: Record<ConfigName, ScraperConfig['fetchLinks']> = {
-    'interactive': () => Promise.resolve([]),
-    'text': () => Promise.resolve([]),
-    'synth': () => Promise.resolve([])
+    'interactive': () => {
+      return fetchHnLinks(page, { tag: 'interactive' })
+    },
+    'text': () => {
+      return fetchHnLinks(page, { tag: 'text' })
+    },
+    'synth': getChimericLinks
   }
 
   return {
