@@ -2,6 +2,7 @@ import { Page } from "puppeteer-core"
 import { prisma } from "../db"
 import { getHnHrefs } from "../dom"
 
+// with puppeteer loop through n pages of hacker news and scrape the urls
 export const fetchHnLinks = async (page: Page, options?: Partial<{
   tag: string
   maxPages: number

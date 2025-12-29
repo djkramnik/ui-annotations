@@ -5,10 +5,7 @@
   "scripts": {
     "build": "tsc",
     "start": "npm run build && node dist/index.js",
-    "start:synth": "npm run build && node dist/index.js synth_classifier synth 1 200",
-    "start:interactive": "npm run build && node dist/index.js interactive hn 5",
-    "start:test": "npm run build && node dist/index.js interactive local 1 1",
-    "start:local": "npm run build && node dist/local.js",
+    "start:synth": "npm run build && node dist/index.js --processor=synth --transform=synth --links=synth",
     "prisma:db:pull": "npx prisma db pull"
   },
   "keywords": [],

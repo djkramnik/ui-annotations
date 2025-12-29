@@ -25,8 +25,6 @@ export async function getChimericLinks(reps: number = 50): Promise<string[]> {
       .map((_, i) => `http://localhost:3000/${i % 2 ? 'mui' : 'ant'}/${l}`)
     )
   }, [] as string[])
-
-  return []
 }
 
 export async function processScreenForSynth(

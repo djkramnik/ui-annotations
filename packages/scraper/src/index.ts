@@ -139,7 +139,7 @@ function mapArgs({
     'text': () => {
       return fetchHnLinks(page, { tag: 'text' })
     },
-    'synth': getChimericLinks
+    'synth': () => getChimericLinks(20)
   }
 
   return {
