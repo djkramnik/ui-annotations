@@ -22,7 +22,7 @@ export async function getChimericLinks(reps: number = 50): Promise<string[]> {
   return labels.reduce((acc, l) => {
     return acc.concat(new Array(reps)
       .fill(null)
-      .map((_, i) => `http://localhost:3000/${i % 2 ? 'mui' : 'ant'}/${l}`)
+      .map((_, i) => `http://localhost:3000/${i % 2 ? 'mui' : 'ant'}?component=${l}`)
     )
   }, [] as string[])
 }
