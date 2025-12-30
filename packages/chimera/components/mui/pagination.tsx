@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { useEffect, useState } from 'react'
-import { Pagination, Paper, Stack, useTheme } from '@mui/material'
+import { Pagination, PaginationItem, Paper, Stack, useTheme } from '@mui/material'
 import { randInt, randomPick } from '../../util/random'
 
 type Item = {
@@ -61,6 +61,12 @@ export function MuiPagination() {
             color={it.color}
             variant={it.variant}
             shape={it.shape}
+            renderItem={(item) => (
+              <PaginationItem
+                {...item}          // ← preserves ALL default behavior
+                data-label="label_pagination"
+              />
+            )}
           />
         </Paper>
       ))}

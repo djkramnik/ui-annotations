@@ -1,4 +1,6 @@
 import { FormControl, FormControlLabel, FormLabel, Radio, RadioGroup } from "@mui/material"
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 
 export const MuiRadioGroup = ({
   title,
@@ -20,7 +22,17 @@ export const MuiRadioGroup = ({
         {
           options.map(o => {
             return (
-              <FormControlLabel key={o} value={o} control={<Radio id={o} />} label={o} />
+              <FormControlLabel key={o} value={o} control={
+                <Radio
+                  id={o}
+                  icon={
+                    <RadioButtonUncheckedIcon data-label="label_radio" />
+                  }
+                  checkedIcon={
+                    <RadioButtonCheckedIcon data-label="label_radio" />
+                  }
+                />
+              } label={o} />
             )
           })
         }

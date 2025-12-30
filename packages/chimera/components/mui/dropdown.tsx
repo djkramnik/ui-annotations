@@ -90,6 +90,7 @@ export function MuiDropdown() {
             }}
           >
             <FormControl
+              data-label="label_dropdown"
               fullWidth
               size={it.size}
               variant={it.variant}
