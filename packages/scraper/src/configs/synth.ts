@@ -39,12 +39,13 @@ export async function processScreenForSynth(
   const afterScrollWaitMs = opts?.afterScrollWaitMs ?? 2000
 
   // Select all elements whose id starts with "label_"
-  const elements = await page.$$('[id^="label_"]')
+  const elements = await page.$$('[data-label^="label_"]')
 
   for (const el of elements) {
     // Get id (cheap, no evaluate needed)
-    const id = await el.evaluate((node) => (node as HTMLElement).id)
-    if (!id) continue
+    const labelName = await el.evaluate(
+      (node) => (node as HTMLElement).getAttribute('data-label'))
+    if (!labelName) continue
 
     // Ensure element is on screen
     await el.evaluate((node) =>
@@ -84,7 +85,7 @@ export async function processScreenForSynth(
     })) as string
 
     await saveSyntheticCrop({
-      label: labelSuffixFromId(id),
+      label: labelSuffixFromId(labelName),
       base64,
       ogWidth: clip.width,
       ogHeight: clip.height,
@@ -100,6 +101,6 @@ export async function processScreenForSynth(
 const snooze = (ms: number = 2000) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms))
 
-function labelSuffixFromId(id: string): string {
-  return id.startsWith('label_') ? id.slice('label_'.length) : id
+function labelSuffixFromId(label: string): string {
+  return label.startsWith('label_') ? label.slice('label_'.length) : label
 }

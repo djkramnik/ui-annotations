@@ -54,6 +54,7 @@ export function MuiAccordion() {
         const Icon = it.Icon
         return (
           <Accordion
+            data-label="label_accordion"
             key={`${it.title}-${idx}`}
             expanded={expanded === idx}
             onChange={(_, isExp) => setExpanded(isExp ? idx : false)}
