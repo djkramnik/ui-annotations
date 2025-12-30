@@ -43,6 +43,7 @@ export function MuiTextarea() {
           }}
         >
           <TextField
+            data-label="label_textarea"
             fullWidth
             multiline
             minRows={it.rows}

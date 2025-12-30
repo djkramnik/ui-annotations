@@ -152,12 +152,22 @@ export function MuiToggle() {
                     )
                   }
                   disabled={it.disabled}
+                  slotProps={{
+                    root: {
+                      'data-label': 'label_toggle'
+                    } as any
+                  }}
                 />
               ) : (
                 <WrappedSwitch
                   size={it.size}
                   color={it.color}
                   checked={it.checked}
+                  slotProps={{
+                    root: {
+                      'data-label': 'label_toggle'
+                    } as any
+                  }}
                   onChange={() =>
                     setItems((prev) =>
                       prev.map((x, j) =>

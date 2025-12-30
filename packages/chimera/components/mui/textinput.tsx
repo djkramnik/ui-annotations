@@ -180,6 +180,7 @@ export function MuiTextInput() {
           }}
         >
           <TextField
+            data-label="label_textinput"
             fullWidth
             type={it.type}
             size={it.size}
