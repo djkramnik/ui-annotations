@@ -44,6 +44,7 @@ export const MuiSelectableCard = () => {
 
   return (
     <Card
+      data-label="label_selectablecard"
       variant={checked ? 'outlined' : 'elevation'}
       sx={{
         borderColor: checked ? 'primary.main' : 'transparent',

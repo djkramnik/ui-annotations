@@ -97,6 +97,7 @@ export function MuiSlider() {
           >
             <Box sx={wrapperSx}>
               <Slider
+                data-label="label_slider"
                 value={it.value}
                 onChange={(_, newValue) =>
                   setItems(prev =>
