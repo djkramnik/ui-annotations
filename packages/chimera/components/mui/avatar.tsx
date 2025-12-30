@@ -63,6 +63,7 @@ export function MuiAvatar() {
           }}
         >
           <Avatar
+            data-label="label_avatar"
             variant={it.variant}
             sx={{
               width: it.size,

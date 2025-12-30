@@ -10,6 +10,7 @@ import { StaticDatePicker } from "@mui/x-date-pickers/StaticDatePicker"
 import { randInt, randomPick } from "../../util/random"
 import { DATE_PICKER_LABELS } from "../../util/faker/date"
 import { Theme } from "@mui/material"
+import { useEffect } from "react"
 
 type MuiDatePickerProps = {
   label: string
@@ -72,7 +73,7 @@ const MuiDatePicker = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Box sx={{ width: 320 }}>
+      <Box sx={{ width: 320 }} data-label="label_datepicker">
         {variant === 0 && (
           <DesktopDatePicker
             label={label}
@@ -82,7 +83,10 @@ const MuiDatePicker = () => {
             open={open ?? undefined}
             // Keep the input editable and visible even when open
             slotProps={{
-              textField: { fullWidth: true, sx } as any,
+              textField: {
+                fullWidth: true,
+                sx
+              } as any,
             }}
           />
         )}
@@ -94,7 +98,13 @@ const MuiDatePicker = () => {
             onChange={(newValue) => setValue(newValue)}
             open={open ?? undefined}
             slotProps={{
-              textField: { fullWidth: true, sx } as any,
+              textField: {
+                fullWidth: true,
+                sx
+              },
+              mobilePaper: {
+                'data-label': 'label_datepicker'
+              } as any
             }}
           />
         )}

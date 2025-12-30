@@ -129,6 +129,7 @@ export function MuiButtonSet() {
           }}
         >
           <Button
+            data-label="label_button"
             fullWidth={it.fullWidth}
             variant={it.variant}
             size={it.size}
