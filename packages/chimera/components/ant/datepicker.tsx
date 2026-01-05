@@ -4,6 +4,9 @@ import type { Dayjs } from "dayjs"
 import dayjs from "dayjs"
 import { randInt, randomPick } from "../../util/random"
 import { DATE_PICKER_LABELS } from "../../util/faker/date"
+import { LabelWrap } from "../label-wrap"
+import { InteractiveLabel } from "ui-labelling-shared"
+import { useEffect } from "react"
 
 type Variant = "date" | "month" | "static"
 
@@ -20,6 +23,7 @@ function randomPlausibleDate(): Dayjs {
 
 function pickVariant(): Variant {
   const i = randInt(0, 2)
+  return 'date'
   return i === 0 ? "date" : i === 1 ? "month" : "static"
 }
 
@@ -32,18 +36,32 @@ const AntDatePicker: React.FC = () => {
   // Ant v5 uses Dayjs by default; no adapter needed.
   // We only care about varied visual states on initial render.
 
+  useEffect(() => {
+    const el = document.querySelector('.label_datepicker')
+    if (el) {
+      el.setAttribute('data-label', 'label_datepicker')
+    }
+  }, [])
+
   return (
     <Space direction="vertical" style={{ width: 320 }}>
       <Typography.Text type="secondary">{label}</Typography.Text>
 
       {variant === "date" && (
-        <DatePicker
-          value={value}
-          onChange={(d) => d && setValue(d)}
-          open={open}                 // show dropdown calendar on mount occasionally
-          style={{ width: "100%" }}
-          allowClear
-        />
+        <LabelWrap label={InteractiveLabel.datepicker}>
+          <DatePicker
+            classNames= {{
+              popup: {
+                root: 'label_datepicker'
+              }
+            }}
+            value={value}
+            onChange={(d) => d && setValue(d)}
+            open={open}                 // show dropdown calendar on mount occasionally
+            style={{ width: "100%" }}
+            allowClear
+          />
+        </LabelWrap>
       )}
 
       {variant === "month" && (

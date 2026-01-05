@@ -8,7 +8,8 @@ export const LabelWrap = ({
   children?: React.ReactNode
 }) => {
   return (
-    <div data-label={`label_${label}`} style={{ width: 'fit-content' }}>
+    <div data-label={`label_${label}`}
+      style={{ width: 'fit-content' }}>
       {children}
     </div>
   )
