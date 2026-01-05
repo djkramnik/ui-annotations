@@ -12,9 +12,12 @@ vit transformer saga (1)
 * mui + ant radio needs random options
 * too many ant renders are unusuable due to color contrast (particularly radio)
 * need a specific scraper for vanilla I guess.. filepicker
+* datepicker -- differentiate between the input and the popup
+* dropdown -- we don't actually label the options / dropdown part
+
 
 * expand on the number of fonts that I currently have please.  how to duplicate fonts from websites in the wild.
-* integrate this expanded font set to
+* integrate this expanded font set before scraping in earnest
 
 * scraping for special labels
   * need more examples but real ones only.  scrape for these directly

@@ -7,6 +7,8 @@ import {
   getRandomOptionLabels,
   getRandomDropdownPhrase,
 } from '../../util/faker/select' // adjust path as needed
+import { LabelWrap } from '../label-wrap'
+import { InteractiveLabel } from 'ui-labelling-shared'
 
 const { Option } = Select
 
@@ -81,23 +83,25 @@ export function AntDropdown() {
         }}
         bodyStyle={{ padding: 0 }}
       >
-        <Select
-          style={{ width: '100%' }}
-          size={size}
-          placeholder={phrase}
-          value={value}
-          open={open}
-          onDropdownVisibleChange={handleVisibleChange}
-          onChange={handleChange}
-          allowClear
-          suffixIcon={<DownOutlined style={{ color: borderColor }} />}
-        >
-          {labels.map(label => (
-            <Option key={label} value={label}>
-              {label}
-            </Option>
-          ))}
-        </Select>
+        <LabelWrap label={InteractiveLabel.dropdown} style={{ width: 'initial' }}>
+          <Select
+            style={{ width: '100%' }}
+            size={size}
+            placeholder={phrase}
+            value={value}
+            open={open}
+            onDropdownVisibleChange={handleVisibleChange}
+            onChange={handleChange}
+            allowClear
+            suffixIcon={<DownOutlined style={{ color: borderColor }} />}
+          >
+            {labels.map(label => (
+              <Option key={label} value={label}>
+                {label}
+              </Option>
+            ))}
+          </Select>
+        </LabelWrap>
       </Card>
     </Space>
   )

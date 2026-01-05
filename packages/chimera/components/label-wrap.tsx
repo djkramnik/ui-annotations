@@ -1,15 +1,18 @@
+import { CSSProperties } from "react"
 import { InteractiveLabel } from "ui-labelling-shared"
 
 export const LabelWrap = ({
   label,
-  children
+  children,
+  style,
 }: {
   label: InteractiveLabel
   children?: React.ReactNode
+  style?: CSSProperties
 }) => {
   return (
     <div data-label={`label_${label}`}
-      style={{ width: 'fit-content' }}>
+      style={{ width: 'fit-content', ...style }}>
       {children}
     </div>
   )
