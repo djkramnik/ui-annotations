@@ -2,6 +2,8 @@ import * as React from 'react'
 import { useEffect, useState } from 'react'
 import { Card, Pagination, Space, theme as antdTheme } from 'antd'
 import { randInt, randomPick } from '../../util/random'
+import { InteractiveLabel } from 'ui-labelling-shared'
+import { LabelWrap } from '../label-wrap'
 
 type Item = {
   width: number               // 260–700
@@ -39,6 +41,15 @@ export function AntPagination() {
     setItems(generated)
   }, [])
 
+  useEffect(() => {
+    setTimeout(() => {
+      Array.from(document.querySelectorAll('input[type="text"]'))
+        .forEach(el => {
+          el.setAttribute('data-label', 'label_pagination')
+        })
+    }, 100)
+  }, [])
+
   return (
     <Space direction="vertical" align="start" size="middle">
       {items.map((it, idx) => (
@@ -62,6 +73,16 @@ export function AntPagination() {
             size={it.size}
             simple={it.simple}
             showSizeChanger={it.showSizeChanger}
+
+            itemRender={
+              (page, type, originalElement) => {
+                return (
+                  <LabelWrap label={InteractiveLabel.pagination}>
+                    {originalElement}
+                  </LabelWrap>
+                )
+              }
+            }
           />
         </Card>
       ))}

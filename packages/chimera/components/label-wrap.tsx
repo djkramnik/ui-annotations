@@ -11,9 +11,9 @@ export const LabelWrap = ({
   style?: CSSProperties
 }) => {
   return (
-    <div data-label={`label_${label}`}
+    <span data-label={`label_${label}`}
       style={{ width: 'fit-content', ...style }}>
       {children}
-    </div>
+    </span>
   )
 }

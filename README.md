@@ -13,7 +13,10 @@ vit transformer saga (1)
 * too many ant renders are unusuable due to color contrast (particularly radio)
 * need a specific scraper for vanilla I guess.. filepicker
 * datepicker -- differentiate between the input and the popup
-* dropdown -- we don't actually label the options / dropdown part
+* dropdown -- we don't actually label the options / dropdown part.  a distinct label for this?
+* filepicker -- do we need the same differentiation
+*
+
 
 
 * expand on the number of fonts that I currently have please.  how to duplicate fonts from websites in the wild.
