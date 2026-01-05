@@ -11,6 +11,8 @@ import {
 
 import { cardTitles, cardDescriptions } from '../../util/faker/selectablecard'
 import { randInt, randomPick } from '../../util/random'
+import { IdWrap } from '../id-wrap'
+import { InteractiveLabel } from 'ui-labelling-shared'
 
 type Item = {
   title: string
@@ -72,47 +74,49 @@ export function AntAccordion() {
             // keep styles plausible and native by leaning on Ant tokens
             key={key}
           >
-            <Collapse
-              className="themed-collapse"
-              activeKey={activeKey}
-              onChange={(k) => setActiveKey(k as any)}
-              expandIcon={expandIcon}
-              style={{
-                width: it.width,
-                boxShadow,
-                borderRadius: token.borderRadiusLG,
-                transition: 'box-shadow 0.25s ease',
-              }}
-              items={[
-                {
-                  key,
-                  label: (
-                    <Typography.Text
-                      style={{
-                        fontSize: it.titlePx,
-                        fontWeight: 600,
-                        margin: 0,
-                        lineHeight: 1.3,
-                      }}
-                    >
-                      {it.title}
-                    </Typography.Text>
-                  ),
-                  children: (
-                    <Typography.Paragraph
-                      type="secondary"
-                      style={{
-                        fontSize: it.descPx,
-                        lineHeight: 1.5,
-                        margin: 0,
-                      }}
-                    >
-                      {it.description}
-                    </Typography.Paragraph>
-                  ),
-                },
-              ]}
-            />
+            <IdWrap label={InteractiveLabel.accordion}>
+              <Collapse
+                className="themed-collapse"
+                activeKey={activeKey}
+                onChange={(k) => setActiveKey(k as any)}
+                expandIcon={expandIcon}
+                style={{
+                  width: it.width,
+                  boxShadow,
+                  borderRadius: token.borderRadiusLG,
+                  transition: 'box-shadow 0.25s ease',
+                }}
+                items={[
+                  {
+                    key,
+                    label: (
+                      <Typography.Text
+                        style={{
+                          fontSize: it.titlePx,
+                          fontWeight: 600,
+                          margin: 0,
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        {it.title}
+                      </Typography.Text>
+                    ),
+                    children: (
+                      <Typography.Paragraph
+                        type="secondary"
+                        style={{
+                          fontSize: it.descPx,
+                          lineHeight: 1.5,
+                          margin: 0,
+                        }}
+                      >
+                        {it.description}
+                      </Typography.Paragraph>
+                    ),
+                  },
+                ]}
+              />
+            </IdWrap>
           </ConfigProvider>
         )
       })}

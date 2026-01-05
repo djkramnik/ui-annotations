@@ -2,6 +2,8 @@ import * as React from 'react'
 import { useEffect, useState } from 'react'
 import { Avatar, Card, Space, theme as antdTheme, Typography } from 'antd'
 import { randInt, randomPick } from '../../util/random'
+import { InteractiveLabel } from 'ui-labelling-shared'
+import { IdWrap } from '../id-wrap'
 
 type Item = {
   size: number            // 32–96
@@ -68,17 +70,18 @@ export function AntAvatar() {
           }}
           bodyStyle={{ padding: 0 }}
         >
-          <Avatar
-            shape={it.shape}
-            size={it.size}
-            style={{
-              backgroundColor: it.bgColor,
-              fontSize: it.size * 0.45,
-            }}
-          >
-            {it.content}
-          </Avatar>
-
+          <IdWrap label={InteractiveLabel.avatar}>
+            <Avatar
+              shape={it.shape}
+              size={it.size}
+              style={{
+                backgroundColor: it.bgColor,
+                fontSize: it.size * 0.45,
+              }}
+            >
+              {it.content}
+            </Avatar>
+          </IdWrap>
           <Typography.Text type="secondary">
             size: {it.size}px<br />
             shape: {it.shape}
