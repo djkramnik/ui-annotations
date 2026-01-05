@@ -11,7 +11,7 @@ import {
 
 import { cardTitles, cardDescriptions } from '../../util/faker/selectablecard'
 import { randInt, randomPick } from '../../util/random'
-import { IdWrap } from '../id-wrap'
+import { LabelWrap } from '../label-wrap'
 import { InteractiveLabel } from 'ui-labelling-shared'
 
 type Item = {
@@ -74,7 +74,7 @@ export function AntAccordion() {
             // keep styles plausible and native by leaning on Ant tokens
             key={key}
           >
-            <IdWrap label={InteractiveLabel.accordion}>
+            <LabelWrap label={InteractiveLabel.accordion}>
               <Collapse
                 className="themed-collapse"
                 activeKey={activeKey}
@@ -116,7 +116,7 @@ export function AntAccordion() {
                   },
                 ]}
               />
-            </IdWrap>
+            </LabelWrap>
           </ConfigProvider>
         )
       })}

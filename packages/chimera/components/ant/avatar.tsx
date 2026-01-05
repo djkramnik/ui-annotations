@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Avatar, Card, Space, theme as antdTheme, Typography } from 'antd'
 import { randInt, randomPick } from '../../util/random'
 import { InteractiveLabel } from 'ui-labelling-shared'
-import { IdWrap } from '../id-wrap'
+import { LabelWrap } from '../label-wrap'
 
 type Item = {
   size: number            // 32–96
@@ -70,7 +70,7 @@ export function AntAvatar() {
           }}
           bodyStyle={{ padding: 0 }}
         >
-          <IdWrap label={InteractiveLabel.avatar}>
+          <LabelWrap label={InteractiveLabel.avatar}>
             <Avatar
               shape={it.shape}
               size={it.size}
@@ -81,7 +81,7 @@ export function AntAvatar() {
             >
               {it.content}
             </Avatar>
-          </IdWrap>
+          </LabelWrap>
           <Typography.Text type="secondary">
             size: {it.size}px<br />
             shape: {it.shape}

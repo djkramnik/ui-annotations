@@ -1,6 +1,6 @@
 import { InteractiveLabel } from "ui-labelling-shared"
 
-export const IdWrap = ({
+export const LabelWrap = ({
   label,
   children
 }: {
@@ -8,7 +8,7 @@ export const IdWrap = ({
   children?: React.ReactNode
 }) => {
   return (
-    <div id={`label_${label}`} style={{ width: 'fit-content' }}>
+    <div data-label={`label_${label}`} style={{ width: 'fit-content' }}>
       {children}
     </div>
   )

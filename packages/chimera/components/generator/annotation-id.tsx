@@ -5,7 +5,7 @@ type LabelWrapperProps = {
   children?: ReactElement<{ id?: string }> | null;
 };
 
-export function AnnotationIdWrapper({ label, children }: LabelWrapperProps) {
+export function AnnotationLabelWrapper({ label, children }: LabelWrapperProps) {
   // noop if no child
   if (!children) return null;
 
