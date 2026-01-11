@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Slider, theme as antdTheme } from 'antd'
 import { randInt } from '../../util/random'
 import { getClamp } from '../../util/clamp'
+import { LabelWrap } from '../label-wrap'
+import { InteractiveLabel } from 'ui-labelling-shared'
 
 export function AntSlider() {
   const { token } = antdTheme.useToken()
@@ -37,16 +39,18 @@ export function AntSlider() {
         width: 'fit-content',
       }}
     >
-      <Slider
-        vertical={vertical}
-        value={value}
-        onChange={setValue}
-        min={0}
-        max={100}
-        styles={styles}
-        // ⬇️ crucial: set height for vertical, width for horizontal
-        style={vertical ? { height: railLen } : { width: railLen }}
-      />
+      <LabelWrap label={InteractiveLabel.slider}>
+        <Slider
+          vertical={vertical}
+          value={value}
+          onChange={setValue}
+          min={0}
+          max={100}
+          styles={styles}
+          // ⬇️ crucial: set height for vertical, width for horizontal
+          style={vertical ? { height: railLen } : { width: railLen }}
+        />
+      </LabelWrap>
     </div>
   )
 }
