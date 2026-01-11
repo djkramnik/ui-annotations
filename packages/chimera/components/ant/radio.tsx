@@ -1,4 +1,6 @@
 import { Radio } from "antd"
+import { useEffect } from "react"
+import { InteractiveLabel } from "ui-labelling-shared"
 
 export const AntRadioGroup = ({
   title,
@@ -9,6 +11,12 @@ export const AntRadioGroup = ({
   options: string[]
   selected?: number
 }) => {
+  useEffect(() => {
+    document.querySelectorAll('input[type="radio"]')
+      .forEach(el => {
+        el.setAttribute('data-label', `label_${InteractiveLabel.radio}`)
+      })
+  }, [])
   return (
     <div>
       <h4>{title}</h4>
