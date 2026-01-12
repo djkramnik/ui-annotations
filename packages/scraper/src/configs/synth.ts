@@ -1,6 +1,6 @@
 import { Page } from 'puppeteer-core'
 import { getMetadata } from '../dom'
-import { saveSyntheticCrop } from '../util/crop'
+import { saveSyntheticRecord } from '../util/interactive'
 
 export async function getChimericLinks(reps: number = 50): Promise<string[]> {
   const labels = [
@@ -84,11 +84,9 @@ export async function processScreenForSynth(
       captureBeyondViewport: true,
     })) as string
 
-    await saveSyntheticCrop({
+    await saveSyntheticRecord({
       label: labelSuffixFromId(labelName),
       base64,
-      ogWidth: clip.width,
-      ogHeight: clip.height,
     })
 
     await el.dispose()

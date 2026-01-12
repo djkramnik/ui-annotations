@@ -7,18 +7,22 @@ This repo also includes a web server for storing annotations in local postgres i
 
 vit transformer saga (1)
 
+* I need to.. look at bad crops.. diagnose why these occur..
+* need to look at any differences between mui and ant
 * selectable card should also have radio toggle.  more frequent zero checkbox / radio button renders.
 * mui/ant icon needs to be completed
 * mui + ant radio needs random options
 * too many ant renders are unusuable due to color contrast (particularly radio)
 
-
 * need a specific scraper for vanilla I guess.. filepicker
-* datepicker -- differentiate between the input and the popup
+* datepicker -- differentiate between the input and the popup (let them be distinct)
 * dropdown -- we don't actually label the options / dropdown part.  a distinct label for this?
 * filepicker -- do we need the same differentiation
-*
+* video scraper
 
+* font expansion
+
+* pump every label to 3k 
 
 
 * expand on the number of fonts that I currently have please.  how to duplicate fonts from websites in the wild.

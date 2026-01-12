@@ -68,6 +68,7 @@ export const getInteractivePage = ({
   items: InteractiveRecord[]
   total: number
 }> => {
+  console.log('getInteractivePage:', ' page=', page, ' unlabelled=', unlabelled, ' label=', label)
   return (
     fetch(`/api/interactive?page=${page}${unlabelled === false ? '' : '&unlabelled=true'}${label ? `&label=${label}` : ''}`)
       .then(jsonOrThrow)
