@@ -2,6 +2,8 @@ import * as React from 'react'
 import { useEffect, useState } from 'react'
 import { Card, ConfigProvider, Space, Switch, theme as antdTheme } from 'antd'
 import { randInt, randomPick } from '../../util/random'
+import { LabelWrap } from '../label-wrap'
+import { InteractiveLabel } from 'ui-labelling-shared'
 
 type AntSize = 'small' | 'default'
 
@@ -39,6 +41,16 @@ export function AntToggle() {
     }))
     setItems(generated)
   }, [])
+
+  useEffect(() => {
+    if (items.length < 1) {
+      return
+    }
+    document.querySelectorAll('button[role="switch"]')
+      .forEach(el => {
+        el.setAttribute('data-label', `label_${InteractiveLabel.toggle}`)
+      })
+  }, [items])
 
   return (
     <>
