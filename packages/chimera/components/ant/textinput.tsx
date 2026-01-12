@@ -21,6 +21,8 @@ import {
   getRandomTextInputConfig,
   TextInputFlavor,
 } from '../../util/faker/textinput'
+import { InteractiveLabel } from 'ui-labelling-shared'
+import { LabelWrap } from '../label-wrap'
 
 const { Text } = Typography
 const { Password } = Input
@@ -191,11 +193,16 @@ export function AntTextInput() {
         }
 
         const inputNode =
-          it.type === 'password' ? (
-            <Password {...commonProps} />
-          ) : (
-            <Input {...commonProps} type={it.type} />
-          )
+          <div data-label="label_textinput">
+            {
+             it.type === 'password' ? (
+                <Password {...commonProps} />
+              ) : (
+                <Input {...commonProps} type={it.type} />
+              )
+            }
+          </div>
+
 
         return (
           <Card
