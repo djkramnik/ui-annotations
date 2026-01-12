@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { Card, Input, Space, theme as antdTheme } from 'antd'
 import { randInt, randomPick } from '../../util/random'
 import { getRandomSentences } from '../../util/faker/text'
+import { LabelWrap } from '../label-wrap'
+import { InteractiveLabel } from 'ui-labelling-shared'
 
 const { TextArea } = Input
 
@@ -30,6 +32,16 @@ export function AntTextarea() {
     setItems(generated)
   }, [])
 
+  useEffect(() => {
+    if (items.length < 1) {
+      return
+    }
+    document.querySelectorAll('textarea')
+      .forEach(el => {
+        el.setAttribute('data-label', `label_${InteractiveLabel.textarea}`)
+      })
+  }, [items])
+
   return (
     <Space direction="vertical" align="start" size="middle">
       {items.map((it, idx) => (
@@ -44,17 +56,17 @@ export function AntTextarea() {
           }}
           bodyStyle={{ padding: 0 }}
         >
-          <TextArea
-            rows={it.rows}
-            defaultValue={it.defaultValue}
-            placeholder="Enter text..."
-            style={{
-              fontSize: it.fontPx,
-              lineHeight: 1.5,
-              border: `1px solid ${token.colorBorder}`,
-              borderRadius: 6,
-            }}
-          />
+            <TextArea
+              rows={it.rows}
+              defaultValue={it.defaultValue}
+              placeholder="Enter text..."
+              style={{
+                fontSize: it.fontPx,
+                lineHeight: 1.5,
+                border: `1px solid ${token.colorBorder}`,
+                borderRadius: 6,
+              }}
+            />
         </Card>
       ))}
     </Space>
