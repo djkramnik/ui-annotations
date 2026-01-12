@@ -69,8 +69,8 @@ export async function processScreenForSynth(
     const clip = {
       x: Math.max(0, Math.floor(box.x - pad)),
       y: Math.max(0, Math.floor(box.y - pad)),
-      width: Math.ceil(box.width + pad * 2),
-      height: Math.ceil(box.height + pad * 2),
+      width: Math.ceil(box.width + (pad * 2)),
+      height: Math.ceil(box.height + (pad * 2)),
     }
 
     if (clip.width <= 0 || clip.height <= 0) {

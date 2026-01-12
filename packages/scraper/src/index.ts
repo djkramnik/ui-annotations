@@ -123,7 +123,9 @@ function mapArgs({
   const processors: Record<ConfigName, ScraperConfig['processScreen']> = {
     'interactive': processScreenForInteractive,
     'text': processScreenText,
-    'synth': processScreenForSynth
+    'synth': (page: Page, link: string) => {
+      return processScreenForSynth(page, link, { paddingPx: 5 })
+    }
   }
   const transformers: Record<ConfigName, ApplyTransformations> = {
     'interactive': applyInteractiveTransforms,
