@@ -1,5 +1,6 @@
 import {
   ApplyTransformations,
+  snooze,
   waitForEnter,
 } from './util'
 import { scrolledToBottom, scrollY } from './dom'
@@ -70,11 +71,14 @@ async function main(config: ScraperConfig, page: Page) {
         while (scrollIndex <= maxScrollIndex) {
           scrollIndex += 1
 
+          await waitForEnter('pre transform')
           const cleanup = await transform(page)
-
+          await snooze(5000)
+          await waitForEnter('page was transformed')
           // collect annotations
           // make the annotations, post them to backend
           const meta = await processScreen(page, link)
+
 
           // remove effects
           await cleanup()

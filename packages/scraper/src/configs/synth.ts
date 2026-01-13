@@ -5,18 +5,18 @@ import { saveSyntheticRecord } from '../util/interactive'
 export async function getChimericLinks(reps: number = 50): Promise<string[]> {
   const labels = [
     'accordion',
-    'avatar',
-    'button',
-    'datepicker',
-    'dropdown',
-    'icon',
-    'pagination',
-    'radio',
-    'selectablecard', // checkbox also gets gathered here
-    'slider',
-    'textarea',
-    'textinput',
-    'toggle'
+    // 'avatar',
+    // 'button',
+    // 'datepicker',
+    // 'dropdown',
+    // 'icon',
+    // 'pagination',
+    // 'radio',
+    // 'selectablecard', // checkbox also gets gathered here
+    // 'slider',
+    // 'textarea',
+    // 'textinput',
+    // 'toggle'
   ]
 
   return labels.reduce((acc, l) => {
@@ -87,6 +87,7 @@ export async function processScreenForSynth(
     await saveSyntheticRecord({
       label: labelSuffixFromId(labelName),
       base64,
+      meta: { 'type': link.includes('mui') ? 'mui' : 'ant' }
     })
 
     await el.dispose()

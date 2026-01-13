@@ -27,6 +27,7 @@ model interactive {
   label         String?
   true_id       String?     @db.Uuid
   screenshot_id Int?
+  metadata      Json?
   screenshot    screenshot? @relation(fields: [screenshot_id], references: [id], map: "interactive_annotationId_fkey")
 
   @@index([screenshot_id], map: "interactive_annotationId_idx")
@@ -60,24 +61,31 @@ model screenshot {
   other_screenshot    screenshot[]  @relation("screenshotToscreenshot")
 
   // new back-relation (does not create a column)
-  annotation          annotation[]
+  annotation annotation[]
 }
 
 model annotation {
-  id             String      @id @default(uuid()) @db.Uuid
-  x              Float
-  y              Float
-  width          Float
-  height         Float
-  aspect_ratio   Float
-  screenshot_id  Int
-  clean          Boolean     @default(false)
-  label String
-  text_content   String?
+  id            String  @id @default(uuid()) @db.Uuid
+  x             Float
+  y             Float
+  width         Float
+  height        Float
+  aspect_ratio  Float
+  screenshot_id Int
+  clean         Boolean @default(false)
+  label         String
+  text_content  String?
 
   // relation
-  screenshot     screenshot  @relation(fields: [screenshot_id], references: [id], map: "annotation_screenshot_id_fkey", onDelete: Cascade)
+  screenshot screenshot @relation(fields: [screenshot_id], references: [id], map: "annotation_screenshot_id_fkey", onDelete: Cascade)
 
   @@index([screenshot_id])
   @@map("annotation")
+}
+
+model tag_label {
+  id    Int     @id(map: "tag_label_pkey") @default(autoincrement())
+  tag   String?
+  label String
+  color String
 }

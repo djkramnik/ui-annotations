@@ -52,8 +52,11 @@ export const getCli = (): CliMethods => {
   return { start }
 }
 
-export const waitForEnter = (): Promise<void> => {
+export const waitForEnter = (message?: string): Promise<void> => {
   return new Promise(resolve => {
+    if (message) {
+      console.log(message)
+    }
     process.stdin.once('data', function () {
       resolve()
     })
