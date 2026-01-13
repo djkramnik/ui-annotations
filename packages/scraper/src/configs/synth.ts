@@ -1,6 +1,7 @@
-import { Page } from 'puppeteer-core'
+import { ElementHandle, Page } from 'puppeteer-core'
 import { getMetadata } from '../dom'
 import { saveSyntheticRecord } from '../util/interactive'
+import { snooze } from '../util'
 
 export async function getChimericLinks(reps: number = 50): Promise<string[]> {
   const labels = [
@@ -27,6 +28,58 @@ export async function getChimericLinks(reps: number = 50): Promise<string[]> {
   }, [] as string[])
 }
 
+
+const nextFrame = async (page: Page) => {
+  await page.evaluate(
+    () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
+  )
+}
+
+const waitForStableRect = async (
+  page: Page,
+  el: ElementHandle<Element>,
+  opts?: { maxTries?: number; settleFrames?: number; pixelTol?: number },
+) => {
+  const maxTries = opts?.maxTries ?? 12
+  const settleFrames = opts?.settleFrames ?? 2
+  const pixelTol = opts?.pixelTol ?? 0.5
+
+  type Rect = { x: number; y: number; width: number; height: number }
+
+  const getRect = async (): Promise<Rect | null> => {
+    return el.evaluate((node) => {
+      const r = (node as HTMLElement).getBoundingClientRect()
+      if (!r || r.width <= 0 || r.height <= 0) return null
+      // convert viewport coords -> page coords
+      return {
+        x: r.left + window.scrollX,
+        y: r.top + window.scrollY,
+        width: r.width,
+        height: r.height,
+      }
+    })
+  }
+
+  const closeEnough = (a: Rect, b: Rect) =>
+    Math.abs(a.x - b.x) <= pixelTol &&
+    Math.abs(a.y - b.y) <= pixelTol &&
+    Math.abs(a.width - b.width) <= pixelTol &&
+    Math.abs(a.height - b.height) <= pixelTol
+
+  let prev = await getRect()
+  if (!prev) return null
+
+  for (let i = 0; i < maxTries; i++) {
+    for (let k = 0; k < settleFrames; k++) await nextFrame(page)
+    const cur = await getRect()
+    if (!cur) return null
+    if (closeEnough(prev, cur)) return cur
+    prev = cur
+  }
+
+  return prev
+}
+
 export async function processScreenForSynth(
   page: Page,
   link: string,
@@ -36,58 +89,79 @@ export async function processScreenForSynth(
   },
 ) {
   const paddingPx = opts?.paddingPx ?? 0
-  const afterScrollWaitMs = opts?.afterScrollWaitMs ?? 2000
+  const afterScrollWaitMs = opts?.afterScrollWaitMs ?? 0
 
-  // Select all elements whose id starts with "label_"
+  // Optional: kill smooth scroll + animations to reduce flake for synthetic capture
+  await page.addStyleTag({
+    content: `
+      html { scroll-behavior: auto !important; }
+      *, *::before, *::after { transition: none !important; animation: none !important; }
+    `,
+  }).catch(() => {
+    // ignore if CSP blocks it
+  })
+
   const elements = await page.$$('[data-label^="label_"]')
 
   for (const el of elements) {
-    // Get id (cheap, no evaluate needed)
     const labelName = await el.evaluate(
-      (node) => (node as HTMLElement).getAttribute('data-label'))
-    if (!labelName) continue
+      (node) => (node as HTMLElement).getAttribute('data-label'),
+    )
+    if (!labelName) {
+      await el.dispose()
+      continue
+    }
 
-    // Ensure element is on screen
+    // Scroll into view (don’t rely on fixed sleep alone)
     await el.evaluate((node) =>
-      (node as HTMLElement).scrollIntoView({
-        block: 'center',
-        inline: 'center',
-      }),
+      (node as HTMLElement).scrollIntoView({ block: 'center', inline: 'center' }),
     )
 
-    await snooze(afterScrollWaitMs)
+    if (afterScrollWaitMs > 0) {
+      await snooze(afterScrollWaitMs)
+    }
 
-    const box = await el.boundingBox()
-    if (!box) {
-      // element might be display:none or detached
+    // Wait for the element’s rect to stop changing (reflow/scroll/animations)
+    const rect = await waitForStableRect(page, el)
+    if (!rect) {
       await el.dispose()
       continue
     }
 
     const pad = Math.max(0, Math.floor(paddingPx))
 
-    const clip = {
-      x: Math.max(0, Math.floor(box.x - pad)),
-      y: Math.max(0, Math.floor(box.y - pad)),
-      width: Math.ceil(box.width + (pad * 2)),
-      height: Math.ceil(box.height + (pad * 2)),
-    }
+    // Prefer element screenshot (most robust), but we can’t pad directly with el.screenshot.
+    // So:
+    // - If no padding: use el.screenshot()
+    // - If padding: use page.screenshot with a clip derived from getBoundingClientRect()
+    let base64: string
 
-    if (clip.width <= 0 || clip.height <= 0) {
-      await el.dispose()
-      continue
-    }
+    if (pad === 0) {
+      base64 = (await el.screenshot({ encoding: 'base64' })) as string
+    } else {
+      const clip = {
+        x: Math.max(0, Math.floor(rect.x - pad)),
+        y: Math.max(0, Math.floor(rect.y - pad)),
+        width: Math.ceil(rect.width + pad * 2),
+        height: Math.ceil(rect.height + pad * 2),
+      }
 
-    const base64 = (await page.screenshot({
-      encoding: 'base64',
-      clip,
-      captureBeyondViewport: true,
-    })) as string
+      if (clip.width <= 0 || clip.height <= 0) {
+        await el.dispose()
+        continue
+      }
+
+      base64 = (await page.screenshot({
+        encoding: 'base64',
+        clip,
+        captureBeyondViewport: true,
+      })) as string
+    }
 
     await saveSyntheticRecord({
       label: labelSuffixFromId(labelName),
       base64,
-      meta: { 'type': link.includes('mui') ? 'mui' : 'ant' }
+      meta: { type: link.includes('mui') ? 'mui' : 'ant' },
     })
 
     await el.dispose()
@@ -96,9 +170,6 @@ export async function processScreenForSynth(
   const meta = await getMetadata(page, link, 'synthetic')
   return meta
 }
-
-const snooze = (ms: number = 2000) =>
-  new Promise<void>((resolve) => setTimeout(resolve, ms))
 
 function labelSuffixFromId(label: string): string {
   return label.startsWith('label_') ? label.slice('label_'.length) : label
