@@ -4,9 +4,9 @@ import { saveSyntheticRecord } from '../util/interactive'
 
 export async function getChimericLinks(reps: number = 50): Promise<string[]> {
   const labels = [
-    'accordion',
-    // 'avatar',
-    // 'button',
+    // 'accordion',
+    // 'avatar', // problem with mui avatar?
+    'button',
     // 'datepicker',
     // 'dropdown',
     // 'icon',

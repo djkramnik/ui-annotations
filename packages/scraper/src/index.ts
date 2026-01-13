@@ -28,7 +28,7 @@ import { fetchHnLinks } from './configs/fetch-hn-links'
   let browser: Browser | null = null
   let page: Page | null = null
   try {
-    const p = await launchPuppeteer()
+    const p = await launchPuppeteer({ headless: true })
     browser = p.browser
     page = p.page
     const config = mapArgs(parsedArgs.data, page)

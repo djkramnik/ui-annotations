@@ -51,6 +51,16 @@ export function AntAvatar() {
     setItems(generated)
   }, [])
 
+  useEffect(() => {
+    if (items.length < 1) {
+      return
+    }
+    document.querySelectorAll('.ant-avatar')
+      .forEach(el => {
+        el.setAttribute('data-label', `label_${InteractiveLabel.avatar}`)
+      })
+  }, [items])
+
   return (
     <Space direction="vertical" align="start" size="middle">
       {items.map((it, idx) => (
@@ -70,18 +80,16 @@ export function AntAvatar() {
           }}
           bodyStyle={{ padding: 0 }}
         >
-          <LabelWrap label={InteractiveLabel.avatar}>
-            <Avatar
-              shape={it.shape}
-              size={it.size}
-              style={{
-                backgroundColor: it.bgColor,
-                fontSize: it.size * 0.45,
-              }}
-            >
-              {it.content}
-            </Avatar>
-          </LabelWrap>
+          <Avatar
+            shape={it.shape}
+            size={it.size}
+            style={{
+              backgroundColor: it.bgColor,
+              fontSize: it.size * 0.45,
+            }}
+          >
+            {it.content}
+          </Avatar>
           <Typography.Text type="secondary">
             size: {it.size}px<br />
             shape: {it.shape}

@@ -13,7 +13,7 @@ export const launchPuppeteer = async (options?: LaunchOptions): Promise<{
     defaultViewport: null, // let Chrome use the full window size
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   }
-  const browser = await puppeteer.launch(options ?? defaultOpts)
+  const browser = await puppeteer.launch({...defaultOpts, ...options})
   const page = await browser.newPage()
 
   return { browser, page }

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "rm -rf dist && tsc",
     "start": "npm run build && node dist/index.js",
     "start:synth": "npm run build && node dist/index.js --processor=synth --transform=synth --links=synth --max_scroll=0",
     "start:synth:debug": "npm run build && node dist/index.js --processor=synth --transform=synth --links=synth --debug=true --max_scroll=0",
