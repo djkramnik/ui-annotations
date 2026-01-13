@@ -68,13 +68,14 @@ export async function applyInteractiveTransforms(page: Page) {
     width: randInt(800, 1600),
     height: randInt(500, 992),
   })
+
   await snooze(5000)
 
   let removeFont = null
   // a quarter of the time change the font?
   if (Math.random() >= 0.75) {
     removeFont = await changeFontFamily(page, getRandomLocalFont())
-    await snooze(5000)
+
   }
   let zoom = 1
   if (Math.random() >= 0.5) {

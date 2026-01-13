@@ -25,6 +25,8 @@ export const scraperArgs = z.object({
   processor: configName,
   transform: configName,
   links: configName,
+  debug: z.string().optional(),
+  max_scroll: z.number().optional()
 })
 
 export type ScraperConfig = {
@@ -33,4 +35,5 @@ export type ScraperConfig = {
   fetchLinks: () => Promise<string[]>
   maxScrollIndex?: number
   maxLinks?: number
+  debug?: boolean
 }

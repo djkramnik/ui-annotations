@@ -46,11 +46,14 @@ async function main(config: ScraperConfig, page: Page) {
     transform,
     fetchLinks,
     maxScrollIndex = 3,
-    maxLinks = 1000 }= config
+    maxLinks = 1000,
+    debug,
+  } = config
 
   console.log('scraper params:', {
     maxScrollIndex,
     maxLinks,
+    debug,
   })
 
   const links = await fetchLinks()
@@ -71,17 +74,24 @@ async function main(config: ScraperConfig, page: Page) {
         while (scrollIndex <= maxScrollIndex) {
           scrollIndex += 1
 
-          await waitForEnter('pre transform')
           const cleanup = await transform(page)
-          await snooze(5000)
-          await waitForEnter('page was transformed')
+          if (debug) {
+            await waitForEnter('page was transformed')
+          }
+
           // collect annotations
           // make the annotations, post them to backend
           const meta = await processScreen(page, link)
-
+          if (debug) {
+            await waitForEnter('pre cleanup')
+          }
 
           // remove effects
           await cleanup()
+
+          if (debug) {
+            await waitForEnter('cleanup applied')
+          }
 
           // return meta null for early break.  or if scrolled to the bottom
           if (!meta || await scrolledToBottom(page)) {
@@ -100,8 +110,7 @@ async function main(config: ScraperConfig, page: Page) {
       }
     }
 
-    console.log('press enter to quit')
-    await waitForEnter()
+    await waitForEnter('done')
 
     process.exit(0)
   } catch (err) {
@@ -118,11 +127,15 @@ function withCacheBuster(rawUrl: string): string {
 function mapArgs({
   processor,
   transform,
-  links
+  links,
+  debug,
+  max_scroll
 }: {
   processor: ConfigName
   transform: ConfigName
   links: ConfigName
+  debug?: string
+  max_scroll?: number
 }, page: Page): ScraperConfig {
   const processors: Record<ConfigName, ScraperConfig['processScreen']> = {
     'interactive': processScreenForInteractive,
@@ -134,7 +147,7 @@ function mapArgs({
   const transformers: Record<ConfigName, ApplyTransformations> = {
     'interactive': applyInteractiveTransforms,
     'text': applyInteractiveTransforms, // applyTextTransforms exists but was less reliable and I have no alt right now
-    'synth': applyInteractiveTransforms,
+    'synth': async (page: Page) => { return () => Promise.resolve() } // no transforms for synth please
   }
 
   // this is messy
@@ -151,6 +164,8 @@ function mapArgs({
   return {
     processScreen: processors[processor],
     transform: transformers[transform],
-    fetchLinks: linkFetchers[links]
+    fetchLinks: linkFetchers[links],
+    debug: debug === 'true',
+    maxScrollIndex: max_scroll
   }
 }

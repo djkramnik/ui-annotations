@@ -55,7 +55,7 @@ export const getCli = (): CliMethods => {
 export const waitForEnter = (message?: string): Promise<void> => {
   return new Promise(resolve => {
     if (message) {
-      console.log(message)
+      console.log(`${message} [press enter to resume]`)
     }
     process.stdin.once('data', function () {
       resolve()
