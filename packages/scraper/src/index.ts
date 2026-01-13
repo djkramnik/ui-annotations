@@ -135,7 +135,7 @@ function mapArgs({
   transform: ConfigName
   links: ConfigName
   debug?: string
-  max_scroll?: number
+  max_scroll?: string
 }, page: Page): ScraperConfig {
   const processors: Record<ConfigName, ScraperConfig['processScreen']> = {
     'interactive': processScreenForInteractive,
@@ -166,6 +166,6 @@ function mapArgs({
     transform: transformers[transform],
     fetchLinks: linkFetchers[links],
     debug: debug === 'true',
-    maxScrollIndex: max_scroll
+    maxScrollIndex: max_scroll ? Number(max_scroll) : undefined
   }
 }

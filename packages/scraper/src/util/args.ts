@@ -26,7 +26,7 @@ export const scraperArgs = z.object({
   transform: configName,
   links: configName,
   debug: z.string().optional(),
-  max_scroll: z.number().optional()
+  max_scroll: z.string().optional()
 })
 
 export type ScraperConfig = {
