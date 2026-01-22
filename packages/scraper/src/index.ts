@@ -6,7 +6,7 @@ import {
 import { scrolledToBottom, scrollY } from './dom'
 import { processScreenText } from './configs/text'
 import { applyInteractiveTransforms, processScreenForInteractive } from './configs/interactive'
-import { getChimericLinks, processScreenForSynth } from './configs/synth'
+import { getChimericLinks, processScreenForSynth, transformForSynth } from './configs/synth'
 import { launchPuppeteer } from './util/puppeteer'
 import { extractNamedArgs, scraperArgs, ScraperConfig, configName, ConfigName } from './util/args'
 import { Browser, Page } from 'puppeteer-core'
@@ -147,7 +147,7 @@ function mapArgs({
   const transformers: Record<ConfigName, ApplyTransformations> = {
     'interactive': applyInteractiveTransforms,
     'text': applyInteractiveTransforms, // applyTextTransforms exists but was less reliable and I have no alt right now
-    'synth': async (page: Page) => { return () => Promise.resolve() } // no transforms for synth please
+    'synth': transformForSynth,
   }
 
   // this is messy

@@ -5,19 +5,19 @@ import { snooze } from '../util'
 
 export async function getChimericLinks(reps: number = 50): Promise<string[]> {
   const labels = [
-    // 'accordion',
-    // 'avatar', // problem with mui avatar?
+    'accordion',
+    'avatar', // problem with mui avatar?
     'button',
-    // 'datepicker',
-    // 'dropdown',
-    // 'icon',
-    // 'pagination',
-    // 'radio',
-    // 'selectablecard', // checkbox also gets gathered here
-    // 'slider',
-    // 'textarea',
-    // 'textinput',
-    // 'toggle'
+    'datepicker',
+    'dropdown',
+    'icon',
+    'pagination',
+    'radio',
+    'selectablecard', // checkbox also gets gathered here
+    'slider',
+    'textarea',
+    'textinput',
+    'toggle'
   ]
 
   return labels.reduce((acc, l) => {
@@ -173,4 +173,10 @@ export async function processScreenForSynth(
 
 function labelSuffixFromId(label: string): string {
   return label.startsWith('label_') ? label.slice('label_'.length) : label
+}
+
+export async function transformForSynth(page: Page) {
+  await page.addStyleTag({ content: 'nextjs-portal{display:none!important;}' })
+  // no cleanup to do
+  return async () => {}
 }
