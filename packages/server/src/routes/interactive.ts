@@ -149,9 +149,10 @@ interactiveRouter.get('/', async (req: Request, res: Response) => {
     const pageSizeQ = typeof req.query.pageSize === 'string'
       ? req.query.pageSize
       : '20'
-    const synth = typeof req.query.label === 'string'
+    const synth = typeof req.query.synth === 'string'
       ? req.query.synth
       : undefined
+
     const page = Math.floor(Number(pageQ))
     const pageSize= Math.min(Math.floor(Number(pageSizeQ)), 50)
     const unlabelledOnly = req.query.unlabelled === 'true'
@@ -169,7 +170,7 @@ interactiveRouter.get('/', async (req: Request, res: Response) => {
       return
     }
 
-    const synthWhereClause = { screenshot_id: null }
+    const synthWhereClause = { screenshot_id: { equals: null }}
 
     // just the where clause needs to be conditional
     // but prisma types too complicated for me
@@ -187,12 +188,10 @@ interactiveRouter.get('/', async (req: Request, res: Response) => {
       )
       : (
         prisma.interactive.findMany({
-          ...(label ? {
-            where: {
-              label,
-              ...(synth === 'true' ? synthWhereClause : {})
-            }
-          }: {}),
+          where: {
+            ...(label ? { label } : {}),
+            ...(synth === 'true' ? synthWhereClause : {})
+          },
           orderBy: { id: 'desc' },
           skip:  page * pageSize, // page is 0 based index,
           take: pageSize
@@ -203,22 +202,18 @@ interactiveRouter.get('/', async (req: Request, res: Response) => {
       unlabelledOnly && !label
         ? (
           prisma.interactive.count({
-            ...(unlabelledOnly ? {
-              where: {
-                label: { equals: null },
-                ...(synth === 'true' ? synthWhereClause : {})
-              }
-            } : undefined)
+            where: {
+              label: { equals: null },
+              ...(synth === 'true' ? synthWhereClause : {})
+            },
           })
         )
         : (
           prisma.interactive.count({
-            ...(label ? {
-              where: {
-                label,
-                ...(synth === 'true' ? synthWhereClause : {})
-              }
-            } : undefined)
+            where: {
+              ...(label ? { label } : {}),
+              ...(synth === 'true' ? synthWhereClause : {})
+            },
           })
         )
 

@@ -311,6 +311,7 @@ export default function InteractiveLabellingPage() {
               page={page - 1}
               unlabelled={unlabelled}
               targetLabel={targetLabel}
+              synth={synthOnly}
             />
           ) : null}
           <NavButton
@@ -318,6 +319,7 @@ export default function InteractiveLabellingPage() {
             page={page + 1}
             unlabelled={unlabelled}
             targetLabel={targetLabel}
+            synth={synthOnly}
           />
           <button onClick={updateAll}>Update all</button>
         </Flex>
