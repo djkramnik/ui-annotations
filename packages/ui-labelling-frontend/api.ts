@@ -60,17 +60,19 @@ export const getInteractivePage = ({
   page,
   unlabelled,
   label,
+  synth,
 }: {
   page: number
   unlabelled?: boolean
   label?: string
+  synth?: boolean
 }): Promise<{
   items: InteractiveRecord[]
   total: number
 }> => {
   console.log('getInteractivePage:', ' page=', page, ' unlabelled=', unlabelled, ' label=', label)
   return (
-    fetch(`/api/interactive?page=${page}${unlabelled === false ? '' : '&unlabelled=true'}${label ? `&label=${label}` : ''}`)
+    fetch(`/api/interactive?page=${page}${unlabelled === false ? '' : '&unlabelled=true'}${label ? `&label=${label}` : ''}${synth ? `&synth=true` : ''}`)
       .then(jsonOrThrow)
   )
 }

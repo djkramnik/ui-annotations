@@ -80,16 +80,18 @@ const NavButton = ({
   page,
   unlabelled,
   targetLabel,
+  synth,
 }: {
   text: string
   page: number
   unlabelled?: boolean
   targetLabel?: string
+  synth?: boolean
 }) => {
   const { push } = useRouter()
   const navigate = useCallback(() => {
     push(
-      `/interactive?page=${page}${unlabelled === false ? '&unlabelled=false' : ''}${targetLabel ? `&label=${targetLabel}` : ''}`,
+      `/interactive?page=${page}${unlabelled === false ? '&unlabelled=false' : ''}${targetLabel ? `&label=${targetLabel}` : ''}${synth ? `&synth=true` : ''}`,
     )
   }, [page, unlabelled, push])
   return (
@@ -104,6 +106,7 @@ export default function InteractiveLabellingPage() {
   const page = Number(String(query.page ?? '0'))
   const unlabelled = String(query.unlabelled) !== 'false'
   const targetLabel = String(query.label ?? '')
+  const synthOnly = query.synth === 'true'
   const [analytics, setAnalytics] =
     useState<{ label: string; count: number }[]>()
   const [records, setRecords] = useState<InteractiveRecord[] | null>(null)
@@ -165,6 +168,7 @@ export default function InteractiveLabellingPage() {
         page,
         unlabelled,
         label: targetLabel || undefined,
+        synth: synthOnly
       })
       if (cancelled) {
         return
@@ -233,6 +237,7 @@ export default function InteractiveLabellingPage() {
               page={page - 1}
               unlabelled={unlabelled}
               targetLabel={targetLabel}
+              synth={synthOnly}
             />
           ) : null}
           <NavButton
@@ -240,6 +245,7 @@ export default function InteractiveLabellingPage() {
             page={page + 1}
             unlabelled={unlabelled}
             targetLabel={targetLabel}
+            synth={synthOnly}
           />
         </Flex>
         <table style={{ tableLayout: 'fixed', border: '1px solid black' }}>
@@ -285,6 +291,7 @@ export default function InteractiveLabellingPage() {
                     />
                   </td>
                   <td>
+
                     <Link
                       href={`/interactive/${r.annotationId}?boxId=${r.true_id}`}
                       target="_blank"
