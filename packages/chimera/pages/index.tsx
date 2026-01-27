@@ -25,7 +25,7 @@ const VanillaComponent = ({ theme }: { theme: VanillaTheme }) => {
     case InteractiveLabel.filepicker:
       return (
         <RandomVariation variations={[
-          FilePickerSlim,
+          // FilePickerSlim,
           FilePicker
         ]}
         theme={theme}

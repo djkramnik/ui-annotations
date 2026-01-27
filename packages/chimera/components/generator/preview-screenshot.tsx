@@ -7,7 +7,7 @@ export function PreviewScreenshot({ screenshot }: { screenshot: Screenshot }) {
     <Flex gap="12px">
       <Flex aic>
         <Base64Img
-          source={screenshot.image_data}
+          source={screenshot.image_data as any}
           style={{ width: '200px', border: '1px solid black' }}
         />
       </Flex>

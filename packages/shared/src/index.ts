@@ -99,7 +99,6 @@ export const annotationLabels: Record<AnnotationLabel, string> = {
 }
 
 export enum InteractiveLabel {
-  // form
   button = 'button',
   link = 'link',
   radio = 'radio',
@@ -109,24 +108,22 @@ export enum InteractiveLabel {
   dropdown = 'dropdown',
   textinput = 'textinput',
   textarea = 'textarea',
-  datepicker = 'datepicker',
-  filepicker = 'filepicker',
+  datepicker = 'datepicker', // just the input like element with appropriate signaling
+  filepicker = 'filepicker', // just the input like element with appropriate signaling
   video = 'video',
-  // nav
-  tab = 'tab',
   pagination = 'pagination',
-  // misc
-  iconbutton = 'iconbutton', // clickable icon... no text
+  iconbutton = 'iconbutton',
   image = 'image',
-  thumbnail = 'thumbnail',
   avatar = 'avatar',
   logo = 'logo',
-  menuitem = 'menuitem',
-  selectablecard = 'selectablecard',
   accordion = 'accordion',
   ad = 'ad',
   misc = 'misc',
-  other = 'other' // will get filtered out of interaction yolo, but used for conf threshold of granular
+  other = 'other', // will get filtered out of interaction yolo, but used for conf threshold of granular
+  // new
+  file_drop = 'file_drop', // a drag and drop zone
+  dropdown_menu = 'dropdown_menu', // opened select element.  the options
+  calendar = 'calendar' // opened datepicker element
 }
 
 /**
