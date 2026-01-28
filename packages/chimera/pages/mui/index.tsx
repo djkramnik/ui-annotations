@@ -20,7 +20,7 @@ const MuiComponent = () => {
 
   switch(component) {
     case InteractiveLabel.iconbutton:
-      return <AllMuiIconsGrid />
+      return <AllMuiIconsGrid fontSize="large" />
     case InteractiveLabel.button:
       return <MuiButtonSet />
     case InteractiveLabel.textinput:
