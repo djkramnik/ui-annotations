@@ -1,3 +1,4 @@
+import { useRouter } from 'next/router'
 import { ThemeProvider, CssBaseline } from "@mui/material"
 import { InteractiveLabel } from 'ui-labelling-shared'
 import { MuiRadioGroup } from '../../components/mui/radio'
@@ -14,13 +15,18 @@ import { MuiDropdown } from "../../components/mui/dropdown"
 import { MuiTextInput } from "../../components/mui/textinput"
 import { MuiButtonSet } from "../../components/mui/button"
 import { AllMuiIconsGrid } from "../../components/mui/icon"
+import { MuiIconsGridAlt } from '../../components/mui/iconbutton'
 
 const MuiComponent = () => {
+  const { query } = useRouter()
   const component = useComponent()
 
   switch(component) {
     case InteractiveLabel.iconbutton:
-      return <AllMuiIconsGrid fontSize="large" />
+      const showAlt = query.alt === 'true'
+      return showAlt
+        ? <MuiIconsGridAlt />
+        : <AllMuiIconsGrid fontSize="large" />
     case InteractiveLabel.button:
       return <MuiButtonSet />
     case InteractiveLabel.textinput:

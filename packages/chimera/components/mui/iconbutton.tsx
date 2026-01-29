@@ -1,17 +1,21 @@
 import * as React from 'react'
 import { useMemo } from 'react'
 import * as Icons from '@mui/icons-material'
+import { ButtonBase } from '@mui/material'
+import { useTheme } from '@mui/material/styles'
 import { InteractiveLabel } from 'ui-labelling-shared'
 import { useRandomizedBackground } from '../../hooks/useRandomizedBackground'
-import { useTheme } from '@mui/material/styles'
 
 const iconEntries = Object.entries(Icons).filter(
   ([, v]) => v && typeof v === 'object' && 'type' in (v as any),
 )
 
 type Props = {
+  /** How many columns in the grid */
   columns?: number
+  /** MUI icon fontSize prop */
   fontSize?: 'inherit' | 'small' | 'medium' | 'large'
+  /** Maximum number of icons to show (random sample) */
   maxIcons?: number
 }
 
@@ -30,11 +34,12 @@ type ButtonKnob = {
   padY: number
   minWidth: number
   minHeight: number
+  outlined: boolean
 }
 
 function makeRandomButtonKnob(rng = Math.random): ButtonKnob {
-  // pick one of a few sane styles
-  const kind = Math.floor(rng() * 3) // 0 pill, 1 rounded, 2 sharper
+  // 0 pill, 1 rounded rect, 2 sharper rect
+  const kind = Math.floor(rng() * 3)
 
   const padX = 6 + Math.floor(rng() * 14) // 6..19
   const padY = 4 + Math.floor(rng() * 10) // 4..13
@@ -46,17 +51,21 @@ function makeRandomButtonKnob(rng = Math.random): ButtonKnob {
         ? 10 + Math.floor(rng() * 10) // 10..19
         : 2 + Math.floor(rng() * 6) // 2..7
 
-  // keep a minimum hit area feel; still allows tight bboxes around inner span if you select that
   const minWidth = 28 + Math.floor(rng() * 18) // 28..45
   const minHeight = 28 + Math.floor(rng() * 18) // 28..45
 
-  return { borderRadiusPx, padX, padY, minWidth, minHeight }
+  const outlined = rng() > 0.35 // mostly outlined, sometimes subtle filled
+
+  return { borderRadiusPx, padX, padY, minWidth, minHeight, outlined }
 }
 
 /**
- * Random sample of MUI icons. One global button style per mount.
+ * Random sample of MUI icons in a grid.
+ * - One global button style per mount (shape + padding)
+ * - Each icon wrapped in a MUI-like ButtonBase
+ * - data-label is on the button element for bbox selection
  */
-export function AllMuiIconsGrid({
+export function MuiIconsGridAlt({
   columns = 10,
   fontSize = 'medium',
   maxIcons = 50,
@@ -103,38 +112,47 @@ export function AllMuiIconsGrid({
               padding: 8,
             }}
           >
-            <button
-              type="button"
-              style={{
+            <ButtonBase
+              data-label={`label_${InteractiveLabel.iconbutton}`}
+              focusRipple
+              // keep layout tightly hugging the button box
+              sx={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: `${buttonKnob.padY}px ${buttonKnob.padX}px`,
-                borderRadius: buttonKnob.borderRadiusPx,
-                minWidth: buttonKnob.minWidth,
-                minHeight: buttonKnob.minHeight,
-
-                // keep it “buttony” but theme-safe
-                background: 'transparent',
+                borderRadius: `${buttonKnob.borderRadiusPx}px`,
+                px: `${buttonKnob.padX}px`,
+                py: `${buttonKnob.padY}px`,
+                minWidth: `${buttonKnob.minWidth}px`,
+                minHeight: `${buttonKnob.minHeight}px`,
+                lineHeight: 0, // avoid extra inline height
+                // MUI-ish visuals
+                border: buttonKnob.outlined
+                  ? '1px solid'
+                  : '1px solid transparent',
+                borderColor: buttonKnob.outlined ? 'currentColor' : 'transparent',
+                backgroundColor: buttonKnob.outlined
+                  ? 'transparent'
+                  : 'rgba(255,255,255,0.08)',
                 color: 'inherit',
-                border: '1px solid currentColor',
-                cursor: 'pointer',
+                transition: theme.transitions.create(
+                  ['background-color', 'box-shadow', 'transform'],
+                  { duration: theme.transitions.duration.shortest },
+                ),
+                '&:hover': {
+                  backgroundColor: buttonKnob.outlined
+                    ? 'rgba(255,255,255,0.08)'
+                    : 'rgba(255,255,255,0.12)',
+                },
+                '&:active': {
+                  transform: 'translateY(0.5px)',
+                },
+                // ensure ripple is clipped correctly for pill/rounded
+                overflow: 'hidden',
               }}
             >
-              {/* Put the data-label on the tight wrapper for bbox accuracy */}
-              <span
-                data-label={`label_${InteractiveLabel.iconbutton}`}
-                style={{
-                  display: 'inline-flex',
-                  width: 'fit-content',
-                  height: 'fit-content',
-                  lineHeight: 0,
-                  verticalAlign: 'top',
-                }}
-              >
-                <Icon fontSize={fontSize} />
-              </span>
-            </button>
+              <Icon fontSize={fontSize} />
+            </ButtonBase>
           </div>
         )
       })}
