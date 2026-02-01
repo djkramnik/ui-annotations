@@ -14,6 +14,7 @@ import {
   getRandomOptionLabels,
   getRandomDropdownPhrase,
 } from '../../util/faker/select' // adjust path as needed
+import { InteractiveLabel } from 'ui-labelling-shared'
 
 type Item = {
   width: number                 // 240–520
@@ -26,7 +27,11 @@ type Item = {
   phrase: string                // label text
 }
 
-export function MuiDropdown() {
+export function MuiDropdown({
+  open,
+}: {
+  open?: boolean
+}) {
   const theme = useTheme()
   const [items, setItems] = useState<Item[]>([])
 
@@ -49,8 +54,7 @@ export function MuiDropdown() {
         shadowIndex: randInt(1, 6),
         labels,
         selectedIndex,
-        // 40% chance of starting open
-        open: Math.random() < 0.4,
+        open: open === true,
         size: randomPick(['small', 'medium']),
         variant: randomPick(['outlined', 'filled', 'standard']),
         phrase,
@@ -58,7 +62,7 @@ export function MuiDropdown() {
     })
 
     setItems(generated)
-  }, [])
+  }, [open])
 
   const handleOpenChange = (idx: number, open: boolean) => {
     setItems(prev =>
@@ -90,7 +94,9 @@ export function MuiDropdown() {
             }}
           >
             <FormControl
-              data-label="label_dropdown"
+              {...!open ? {
+                'data-label': `label_${InteractiveLabel.dropdown}`
+              }: {}}
               fullWidth
               size={it.size}
               variant={it.variant}
@@ -110,6 +116,15 @@ export function MuiDropdown() {
                 open={it.open}
                 onOpen={() => handleOpenChange(idx, true)}
                 onClose={() => handleOpenChange(idx, false)}
+                MenuProps={{
+                  ...open
+                    ? {
+                      PaperProps: {
+                        'data-label': `label_${InteractiveLabel.dropdown_menu}`
+                      },
+                    }
+                    : {}
+                }}
               >
                 {it.labels.map((label) => (
                   <MenuItem key={label} value={label}>

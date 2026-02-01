@@ -32,7 +32,9 @@ const MuiComponent = () => {
     case InteractiveLabel.textinput:
       return <MuiTextInput />
     case InteractiveLabel.dropdown:
-      return <MuiDropdown />
+      return <MuiDropdown open={false} />
+    case InteractiveLabel.dropdown_menu:
+      return <MuiDropdown open={true} />
     case InteractiveLabel.pagination:
       return <MuiPagination />
     case InteractiveLabel.avatar:
