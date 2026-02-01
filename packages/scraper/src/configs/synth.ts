@@ -2,30 +2,57 @@ import { ElementHandle, Page } from 'puppeteer-core'
 import { getMetadata } from '../dom'
 import { saveSyntheticRecord } from '../util/interactive'
 import { snooze } from '../util'
+import { InteractiveLabel } from 'ui-labelling-shared'
 
-export async function getChimericLinks(reps: number = 50): Promise<string[]> {
-  const labels = [
-    'accordion',
-    'avatar', // problem with mui avatar?
-    'button',
-    'datepicker',
-    'dropdown',
-    'icon',
-    'pagination',
-    'radio',
-    'selectablecard', // checkbox also gets gathered here
-    'slider',
-    'textarea',
-    'textinput',
-    'toggle'
+// sigh.. some synth pages have multiple of a component.  Ideally they would all be like that and have a fixed
+// number per render.. but to avoid needing to go back and do that we have this multiplier factor. this lets us generate
+// extra pages / reloads of labels for which the synth page outputs less of the component
+const labelMultiplier: Partial<Record<InteractiveLabel, number>> = {
+
+}
+
+// more bullshit.  because there is some mismatch between the canonial label and the actual page name
+const labelToComponent: Partial<Record<InteractiveLabel, string>> = {
+
+}
+
+export async function getChimericLinks(defaultReps: number = 50): Promise<string[]> {
+  const frameworkLabels: InteractiveLabel[] = [
+    InteractiveLabel.accordion,
+    InteractiveLabel.avatar,
+    InteractiveLabel.button,
+    // InteractiveLabel.datepicker, // needs separation of picker and open calendar
+    InteractiveLabel.dropdown,
+    InteractiveLabel.iconbutton,
+    InteractiveLabel.pagination,
+    InteractiveLabel.radio,
+    InteractiveLabel.slider,
+    InteractiveLabel.textarea,
+    InteractiveLabel.textinput,
+    InteractiveLabel.toggle
+  ]
+  const vanillaLabels: InteractiveLabel[] = [
+    InteractiveLabel.filepicker
   ]
 
-  return labels.reduce((acc, l) => {
-    return acc.concat(new Array(reps)
+  // framework links will be reloaded defaultReps (or multiplier) number of times and alternate between mui and ant versions
+  const frameworkLinks = frameworkLabels.reduce((acc, l) => {
+    return acc.concat(new Array(labelMultiplier[l] ?? defaultReps)
       .fill(null)
-      .map((_, i) => `http://localhost:3000/${i % 2 ? 'mui' : 'ant'}?component=${l}`)
+      .map(
+        (_, i) => `http://localhost:3000/${i % 2 ? 'mui' : 'ant'}?component=${labelToComponent[l] ?? l}`)
+      )
+  }, [] as string[])
+
+  const vanillaLinks = vanillaLabels.reduce((acc, l) => {
+    return acc.concat(
+      new Array(labelMultiplier[l] ?? defaultReps)
+        .fill(null)
+        .map(_ => `http://locahlst:3000?component=${labelToComponent[l] ?? l}`)
     )
   }, [] as string[])
+
+  return frameworkLinks.concat(vanillaLinks)
 }
 
 

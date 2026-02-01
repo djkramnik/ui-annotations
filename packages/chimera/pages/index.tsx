@@ -22,14 +22,13 @@ const VanillaComponent = ({ theme }: { theme: VanillaTheme }) => {
           Save
         </VanillaButton>
       )
+    case InteractiveLabel.file_drop:
+      return (
+        <FilePicker theme={theme} />
+      )
     case InteractiveLabel.filepicker:
       return (
-        <RandomVariation variations={[
-          // FilePickerSlim,
-          FilePicker
-        ]}
-        theme={theme}
-        />
+        <FilePickerSlim theme={theme} />
       )
     default:
       return null

@@ -1,47 +1,8 @@
-import {
-  AttachEmail,
-  AttachEmailRounded,
-  AttachEmailTwoTone,
-  AttachFile,
-  AttachFileOutlined,
-  AttachFileRounded,
-  AttachFileSharp,
-  AttachFileTwoTone,
-  AudioFile,
-  AudioFileOutlined,
-  AudioFileRounded,
-  AudioFileSharp,
-  AudioFileTwoTone,
-  Close,
-  Cloud,
-  CloudCircle,
-  CloudCircleOutlined,
-  CloudCircleRounded,
-  CloudCircleSharp,
-  Delete,
-  DeleteOutline,
-  Download,
-  DownloadForOffline,
-  DriveFileMove,
-  DriveFileMoveOutline,
-  FileDownload,
-  FileDownloadOutlined,
-  Folder,
-  Image,
-  RemoveCircle,
-  RemoveCircleOutline,
-  Upload,
-  UploadFile,
-  UploadFileOutlined,
-  UploadFileRounded,
-  UploadFileSharp,
-  UploadFileTwoTone,
-} from '@mui/icons-material'
 import { VanillaTheme } from './type'
 import { randInt, randomPick } from '../../util/random'
-import { RandomMuiIcon } from '../mui/icon'
+
 import { VanillaButton } from './button'
-import { RandomAntIcon } from '../ant/icon'
+
 import {
   AntCloudOutlined,
   DownloadOutlined,
@@ -69,7 +30,8 @@ import {
   fpTernarys,
   randomFilePath,
 } from '../../util/faker/filepicker'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { RandomAntIcon, RandomMuiIcon } from './icon'
 
 // need a variant where its just a button and the icon
 // need a variant where its just an input with a couple of file related decorations
@@ -110,6 +72,8 @@ export const FilePicker = ({ theme }: { theme: VanillaTheme }) => {
   const tertiaryPadding = randInt(0, 4)
   const withMuiIcon = Math.random() > 0.5
 
+  const iconSize = useMemo(() => randInt(24, 40), [])
+
   return (
     <div
       className="dropzone"
@@ -134,57 +98,59 @@ export const FilePicker = ({ theme }: { theme: VanillaTheme }) => {
         border: `${borderWidth}px ${borderStyle} currentColor`,
       }}
     >
+
       {withMuiIcon ? (
         <RandomMuiIcon
-          icons={[
-            AttachEmail,
-            AttachFile,
-            AttachEmailRounded,
-            AttachEmailTwoTone,
-            AttachFileOutlined,
-            AttachFileRounded,
-            AttachFileTwoTone,
-            AttachFileSharp,
-            Download,
-            DownloadForOffline,
-            FileDownload,
-            FileDownloadOutlined,
-            Cloud,
-            CloudCircle,
-            CloudCircleOutlined,
-            CloudCircleRounded,
-            CloudCircleSharp,
-            Image,
-            Folder,
-            Upload,
-            UploadFile,
-            UploadFileOutlined,
-            UploadFileRounded,
-            UploadFileSharp,
-            UploadFileTwoTone,
+          iconSize={iconSize}
+          permittedIcons={[
+            'AttachEmail',
+            'AttachFile',
+            'AttachEmailRounded',
+            'AttachEmailTwoTone',
+            'AttachFileOutlined',
+            'AttachFileRounded',
+            'AttachFileTwoTone',
+            'AttachFileSharp',
+            'Download',
+            'DownloadForOffline',
+            'FileDownload',
+            'FileDownloadOutlined',
+            'Cloud',
+            'CloudCircle',
+            'CloudCircleOutlined',
+            'CloudCircleRounded',
+            'CloudCircleSharp',
+            'Image',
+            'Folder',
+            'Upload',
+            'UploadFile',
+            'UploadFileOutlined',
+            'UploadFileRounded',
+            'UploadFileSharp',
+            'UploadFileTwoTone',
           ]}
         />
       ) : (
         <RandomAntIcon
-          icons={[
-            UploadOutlined,
-            DownloadOutlined,
-            FileAddOutlined,
-            FileAddFilled,
-            FileExcelOutlined,
-            FileExcelTwoTone,
-            FileExcelFilled,
-            FileJpgOutlined,
-            FileProtectOutlined,
-            FileSearchOutlined,
-            ProfileOutlined,
-            FileZipOutlined,
-            FileZipFilled,
-            ProfileTwoTone,
-            AntCloudOutlined,
-
-            FileImageOutlined,
-            FileImageFilled,
+          iconSize={iconSize}
+          permittedIcons={[
+            'AntCloudOutlined',
+            'DownloadOutlined',
+            'FileAddFilled',
+            'FileAddOutlined',
+            'FileExcelFilled',
+            'FileExcelOutlined',
+            'FileExcelTwoTone',
+            'FileImageFilled',
+            'FileImageOutlined',
+            'FileJpgOutlined',
+            'FileProtectOutlined',
+            'FileSearchOutlined',
+            'FileZipFilled',
+            'FileZipOutlined',
+            'ProfileOutlined',
+            'ProfileTwoTone',
+            'UploadOutlined',
           ]}
         />
       )}
@@ -325,23 +291,23 @@ export const FilePickerSlim = ({ theme }: { theme: VanillaTheme }) => {
           }}
         >
           <RandomMuiIcon
-            sizeRange={[iconSize, iconSize]}
-            icons={[
-              AttachFile,
-              AudioFile,
-              AudioFileOutlined,
-              AudioFileRounded,
-              AudioFileSharp,
-              AudioFileTwoTone,
-              DriveFileMove,
-              DriveFileMoveOutline,
-              AttachEmail,
-              AttachEmailRounded,
-              AttachEmailTwoTone,
-              AttachFileOutlined,
-              AttachFileRounded,
-              AttachFileSharp,
-              AttachFileTwoTone,
+            iconSize={iconSize}
+            permittedIcons={[
+              'AttachFile',
+              'AudioFile',
+              'AudioFileOutlined',
+              'AudioFileRounded',
+              'AudioFileSharp',
+              'AudioFileTwoTone',
+              'DriveFileMove',
+              'DriveFileMoveOutline',
+              'AttachEmail',
+              'AttachEmailRounded',
+              'AttachEmailTwoTone',
+              'AttachFileOutlined',
+              'AttachFileRounded',
+              'AttachFileSharp',
+              'AttachFileTwoTone',
             ]}
           />
         </Flex>
@@ -364,21 +330,20 @@ export const FilePickerSlim = ({ theme }: { theme: VanillaTheme }) => {
       />
       {selected ? (
         <RandomMuiIcon
+          iconSize={iconSize}
           sx={{
             ...(bookEndPos === 'start'
-                ? {
-                  marginRight: '4px'
+              ? {
+                  marginRight: '4px',
                 }
-                : {}
-            )
+              : {}),
           }}
-          sizeRange={[iconSize, iconSize]}
-          icons={[
-            RemoveCircle,
-            RemoveCircleOutline,
-            Close,
-            Delete,
-            DeleteOutline,
+          permittedIcons={[
+            'RemoveCircle',
+            'RemoveCircleOutline',
+            'Close',
+            'Delete',
+            'DeleteOutline',
           ]}
         />
       ) : null}
@@ -393,18 +358,18 @@ export const FilePickerSlim = ({ theme }: { theme: VanillaTheme }) => {
           }}
         >
           <RandomMuiIcon
-            sizeRange={[iconSize, iconSize]}
-            icons={[
-              AttachFile,
-              AudioFile,
-              DriveFileMove,
-              DriveFileMoveOutline,
-              AttachEmail,
-              AttachEmailRounded,
-              AttachEmailTwoTone,
-              AttachFileOutlined,
-              AttachFileRounded,
-              AttachFileSharp,
+            iconSize={iconSize}
+            permittedIcons={[
+              'AttachFile',
+              'AudioFile',
+              'DriveFileMove',
+              'DriveFileMoveOutline',
+              'AttachEmail',
+              'AttachEmailRounded',
+              'AttachEmailTwoTone',
+              'AttachFileOutlined',
+              'AttachFileRounded',
+              'AttachFileSharp',
             ]}
           />
         </Flex>
