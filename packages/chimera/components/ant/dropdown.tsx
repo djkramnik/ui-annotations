@@ -17,12 +17,15 @@ type State = {
   shadowIndex: number
   labels: string[]
   selectedIndex: number | null
-  open: boolean
   size: 'small' | 'middle' | 'large'
   phrase: string
 }
 
-export function AntDropdown() {
+export function AntDropdown({
+  open,
+}: {
+  open?: boolean
+}) {
   const { token } = antdTheme.useToken()
   const [state, setState] = useState<State | null>(null)
 
@@ -39,18 +42,30 @@ export function AntDropdown() {
       shadowIndex: randInt(1, 6),
       labels,
       selectedIndex,
-      open: Math.random() < 0.4,
       size: randomPick(['small', 'middle', 'large']),
       phrase,
     }
 
     setState(initial)
-  }, [])
+  }, [open])
+
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => {
+        document.querySelector('.ant-select-dropdown')
+          ?.setAttribute('data-label', `label_${InteractiveLabel.dropdown_menu}`)
+      }, 1)
+      return
+    }
+    setTimeout(() => {
+      document.querySelector('.ant-card-body')
+        ?.setAttribute('data-label', `label_${InteractiveLabel.dropdown}`)
+    }, 1)
+  }, [open])
 
   if (!state) return null
 
-  const { width, shadowIndex, labels, selectedIndex, open, size, phrase } = state
-
+  const { width, shadowIndex, labels, selectedIndex, size, phrase } = state
 
   const borderColor =
     // @ts-ignore
@@ -83,7 +98,6 @@ export function AntDropdown() {
         }}
         bodyStyle={{ padding: 0 }}
       >
-        <LabelWrap label={InteractiveLabel.dropdown} style={{ width: 'initial' }}>
           <Select
             style={{ width: '100%' }}
             size={size}
@@ -101,7 +115,7 @@ export function AntDropdown() {
               </Option>
             ))}
           </Select>
-        </LabelWrap>
+
       </Card>
     </Space>
   )

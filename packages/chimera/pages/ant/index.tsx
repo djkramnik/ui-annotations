@@ -31,6 +31,8 @@ const AntdComponent = () => {
       return <AntTextInput />
     case InteractiveLabel.dropdown:
       return <AntDropdown />
+    case InteractiveLabel.dropdown_menu:
+      return <AntDropdown open={true} />
     case InteractiveLabel.pagination:
       return <AntPagination />
     case InteractiveLabel.avatar:
