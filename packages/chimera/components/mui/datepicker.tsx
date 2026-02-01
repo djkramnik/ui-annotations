@@ -11,6 +11,7 @@ import { randInt, randomPick } from "../../util/random"
 import { DATE_PICKER_LABELS } from "../../util/faker/date"
 import { Theme } from "@mui/material"
 import { useEffect } from "react"
+import { InteractiveLabel } from "ui-labelling-shared"
 
 type MuiDatePickerProps = {
   label: string
@@ -40,14 +41,20 @@ function randomPlausibleDate(): Dayjs {
  * 1 -> MobileDatePicker
  * 2 -> StaticDatePicker
  */
-function pickVariant(): 0 | 1 | 2 {
+function pickVariant(open?: boolean): 0 | 1 | 2 {
+  if (!open) {
+    return randInt(0, 1) as 0 | 1 | 2
+  }
   return randInt(0, 2) as 0 | 1 | 2
 }
 
-const MuiDatePicker = () => {
+const MuiDatePicker = ({
+  open
+}: {
+  open?: boolean
+}) => {
   const [value, setValue] = React.useState<Dayjs | null>(() => randomPlausibleDate())
-  const [variant] = React.useState<0 | 1 | 2>(() => pickVariant())
-  const open = Math.random() > 0.5
+  const [variant] = React.useState<0 | 1 | 2>(() => pickVariant(open))
   const label = randomPick(DATE_PICKER_LABELS)
   const sx = {
     // Outlined input root
@@ -71,9 +78,23 @@ const MuiDatePicker = () => {
     },
   }
 
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+    setTimeout(() => {
+      document.querySelector('[role="dialog"]')
+        ?.setAttribute('data-label', `label_${InteractiveLabel.calendar}`)
+    }, 1)
+  }, [open])
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Box sx={{ width: 320 }} data-label="label_datepicker">
+      <Box sx={{ width: 320 }}
+        {...((!open || variant === 2)? {
+          'data-label': `label_${!open ? InteractiveLabel.datepicker : InteractiveLabel.calendar}`
+        } : {})
+      }>
         {variant === 0 && (
           <DesktopDatePicker
             label={label}

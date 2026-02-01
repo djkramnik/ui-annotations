@@ -67,6 +67,8 @@ const MuiComponent = () => {
       return (
         <MuiDatePicker />
       )
+    case InteractiveLabel.calendar:
+      return <MuiDatePicker open={true} />
     default:
       return null
   }
