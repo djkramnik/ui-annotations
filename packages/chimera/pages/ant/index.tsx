@@ -4,7 +4,7 @@ import { ConfigProvider } from "antd";
 import { useRouter } from "next/router";
 import { InteractiveLabel } from "ui-labelling-shared";
 import { AntRadioGroup } from "../../components/ant/radio";
-import AntDatePicker from "../../components/ant/datepicker";
+import { AntDatePicker } from "../../components/ant/datepicker";
 import { randomAntTheme } from "../../components/ant/theme";
 import { useMemo } from "react";
 import { AntAccordion } from "../../components/ant/accordion";
@@ -62,6 +62,10 @@ const AntdComponent = () => {
     case InteractiveLabel.datepicker:
       return (
         <AntDatePicker />
+      )
+    case InteractiveLabel.calendar:
+      return (
+        <AntDatePicker open={true} />
       )
     default:
       return null

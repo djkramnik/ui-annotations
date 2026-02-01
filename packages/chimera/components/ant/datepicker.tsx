@@ -27,41 +27,35 @@ function pickVariant(): Variant {
   return i === 0 ? "date" : i === 1 ? "month" : "static"
 }
 
-const AntDatePicker: React.FC = () => {
+export const AntDatePicker = ({
+  open
+}: {
+  open?: boolean
+}) => {
   const [value, setValue] = React.useState<Dayjs>(() => randomPlausibleDate())
   const [variant] = React.useState<Variant>(() => pickVariant())
   const label = React.useMemo(() => randomPick(DATE_PICKER_LABELS), [])
-  const open = React.useMemo(() => Math.random() > 0.5, [])
-
-  // Ant v5 uses Dayjs by default; no adapter needed.
-  // We only care about varied visual states on initial render.
 
   useEffect(() => {
-    const el = document.querySelector('.label_datepicker')
-    if (el) {
-      el.setAttribute('data-label', 'label_datepicker')
-    }
-  }, [])
+    const label = open ? InteractiveLabel.calendar : InteractiveLabel.datepicker
+    const selector = open ? '.ant-picker-panel-container' : '.ant-picker'
+    setTimeout(() => {
+      document.querySelector(selector)?.setAttribute('data-label', `label_${label}`)
+    }, 1)
+  }, [open])
 
   return (
     <Space direction="vertical" style={{ width: 320 }}>
       <Typography.Text type="secondary">{label}</Typography.Text>
 
       {variant === "date" && (
-        <LabelWrap label={InteractiveLabel.datepicker}>
-          <DatePicker
-            classNames= {{
-              popup: {
-                root: 'label_datepicker'
-              }
-            }}
-            value={value}
-            onChange={(d) => d && setValue(d)}
-            open={open}                 // show dropdown calendar on mount occasionally
-            style={{ width: "100%" }}
-            allowClear
-          />
-        </LabelWrap>
+        <DatePicker
+          value={value}
+          onChange={(d) => d && setValue(d)}
+          open={open}                 // show dropdown calendar on mount occasionally
+          style={{ width: "100%" }}
+          allowClear
+        />
       )}
 
       {variant === "month" && (
@@ -88,5 +82,3 @@ const AntDatePicker: React.FC = () => {
     </Space>
   )
 }
-
-export default AntDatePicker
