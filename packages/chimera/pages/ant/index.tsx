@@ -1,5 +1,3 @@
-"use client";
-
 import { ConfigProvider } from "antd";
 import { useRouter } from "next/router";
 import { InteractiveLabel } from "ui-labelling-shared";

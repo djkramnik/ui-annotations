@@ -18,7 +18,7 @@ export const extractNamedArgs = (): Record<string, string> | null => {
   return dict
 }
 
-export const configName = z.enum(['interactive', 'text', 'synth'])
+export const configName = z.enum(['interactive', 'text', 'synth', 'video-synth'])
 export type ConfigName = z.infer<typeof configName>
 
 export const scraperArgs = z.object({
@@ -26,7 +26,8 @@ export const scraperArgs = z.object({
   transform: configName,
   links: configName,
   debug: z.string().optional(),
-  max_scroll: z.string().optional()
+  max_scroll: z.string().optional(),
+  headless: z.string().optional()
 })
 
 export type ScraperConfig = {
@@ -36,4 +37,5 @@ export type ScraperConfig = {
   maxScrollIndex?: number
   maxLinks?: number
   debug?: boolean
+  headless: boolean
 }

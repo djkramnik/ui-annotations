@@ -17,7 +17,8 @@ import { fetchHnLinks } from './configs/fetch-hn-links'
 // we can perform various options on the page to check if its truly ready for processing
 // before proceeding. This is to debug / eliminate the mis-aligned bounding box issues that sometimes occur
 
-;(async () => {
+;import { getVideoLinks, transformForVideo } from './configs/video-synth'
+(async () => {
   const args = extractNamedArgs()
   const parsedArgs = scraperArgs.safeParse(args)
   if (parsedArgs.error) {
@@ -28,7 +29,10 @@ import { fetchHnLinks } from './configs/fetch-hn-links'
   let browser: Browser | null = null
   let page: Page | null = null
   try {
-    const p = await launchPuppeteer({ headless: true })
+    // stupido.
+    // getting our configs requires us to first launch the browser and page smh
+    const { headless } = parsedArgs.data
+    const p = await launchPuppeteer({ headless: headless === undefined || headless === 'true' })
     browser = p.browser
     page = p.page
     const config = mapArgs(parsedArgs.data, page)
@@ -129,25 +133,31 @@ function mapArgs({
   transform,
   links,
   debug,
-  max_scroll
+  max_scroll,
+  headless
 }: {
   processor: ConfigName
   transform: ConfigName
   links: ConfigName
   debug?: string
   max_scroll?: string
+  headless?: string
 }, page: Page): ScraperConfig {
   const processors: Record<ConfigName, ScraperConfig['processScreen']> = {
     'interactive': processScreenForInteractive,
     'text': processScreenText,
     'synth': (page: Page, link: string) => {
       return processScreenForSynth(page, link, { paddingPx: 5 })
-    }
+    },
+    'video-synth': (page: Page, link: string) => {
+      return processScreenForSynth(page, link, { paddingPx: 5 })
+    },
   }
   const transformers: Record<ConfigName, ApplyTransformations> = {
     'interactive': applyInteractiveTransforms,
     'text': applyInteractiveTransforms, // applyTextTransforms exists but was less reliable and I have no alt right now
     'synth': transformForSynth,
+    'video-synth': transformForVideo,
   }
 
   // this is messy
@@ -158,7 +168,8 @@ function mapArgs({
     'text': () => {
       return fetchHnLinks(page, { tag: 'text' })
     },
-    'synth': () => getChimericLinks(2)
+    'synth': () => getChimericLinks(2),
+    'video-synth': getVideoLinks,
   }
 
   return {
@@ -166,6 +177,10 @@ function mapArgs({
     transform: transformers[transform],
     fetchLinks: linkFetchers[links],
     debug: debug === 'true',
-    maxScrollIndex: max_scroll ? Number(max_scroll) : undefined
+    maxScrollIndex: max_scroll ? Number(max_scroll) : undefined,
+    // pointless because bad code
+    headless: headless === undefined
+      ? true
+      : (headless === 'true')
   }
 }

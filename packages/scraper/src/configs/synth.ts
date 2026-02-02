@@ -32,7 +32,8 @@ export async function getChimericLinks(defaultReps: number = 50): Promise<string
     InteractiveLabel.toggle
   ]
   const vanillaLabels: InteractiveLabel[] = [
-    InteractiveLabel.filepicker
+    InteractiveLabel.filepicker,
+    InteractiveLabel.file_drop
   ]
 
   // framework links will be reloaded defaultReps (or multiplier) number of times and alternate between mui and ant versions
@@ -47,8 +48,7 @@ export async function getChimericLinks(defaultReps: number = 50): Promise<string
   const vanillaLinks = vanillaLabels.reduce((acc, l) => {
     return acc.concat(
       new Array(labelMultiplier[l] ?? defaultReps)
-        .fill(null)
-        .map(_ => `http://locahlst:3000?component=${labelToComponent[l] ?? l}`)
+        .fill(`http://localhost:3000?component=${labelToComponent[l] ?? l}`)
     )
   }, [] as string[])
 

@@ -22,7 +22,7 @@ const DEFAULT_URLS = [
   // HLS
   'https://stream.mux.com/VcmKA6aqzIzlg3MayLJDnbF55kX00mds028Z65QxvBYaA.m3u8',
   // DASH
-  'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps_640x360_800k.mpd',
+  // 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps_640x360_800k.mpd',
   // Mux
   'https://stream.mux.com/maVbJv2GSYNRgS02kPXOOGdJMWGU1mkA019ZUjYE7VU7k',
   'https://stream.mux.com/Sc89iWAyNkhJ3P1rQ02nrEdCFTnfT01CZ2KmaEcxXfB008',
@@ -38,7 +38,7 @@ const DEFAULT_URLS = [
   'https://home.wistia.com/medias/29b0fbf547',
   'https://home.wistia.com/medias/bq6epni33s',
   // Spotify
-  'https://open.spotify.com/episode/5Jo9ncrz2liWiKj8inZwD2',
+  // 'https://open.spotify.com/episode/5Jo9ncrz2liWiKj8inZwD2',
   // Twitch
   'https://www.twitch.tv/videos/106400740',
   'https://www.twitch.tv/kronovi',
@@ -234,6 +234,7 @@ export const VanillaVideo: React.FC = () => {
           </div>
 
           <button
+            id="gen_player"
             type="button"
             onClick={handleGenerate}
             style={{ marginTop: 8, padding: '6px 12px', cursor: 'pointer' }}
