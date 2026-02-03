@@ -35,7 +35,7 @@ export function AntAccordion() {
     // pick a single plausible icon for the whole accordion
     setIcon(() => randomPick(plausibleIcons))
 
-    const count = randInt(2, 5)
+    const count = 5
     const generated: Item[] = Array.from({ length: count }, () => ({
       title: randomPick(cardTitles),
       description: randomPick(cardDescriptions),

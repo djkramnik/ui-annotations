@@ -24,7 +24,7 @@ export function AntAvatar() {
   const [items, setItems] = useState<Item[]>([])
 
   useEffect(() => {
-    const count = randInt(3, 8)
+    const count = 8
 
     const makeLetters = () => {
       const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'

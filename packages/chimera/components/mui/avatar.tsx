@@ -21,7 +21,7 @@ export function MuiAvatar() {
   const [items, setItems] = useState<Item[]>([])
 
   useEffect(() => {
-    const count = randInt(3, 8)
+    const count = 8
 
     const makeContent = () => {
       const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'

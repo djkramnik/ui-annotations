@@ -65,7 +65,7 @@ export function MuiButtonSet() {
   const [items, setItems] = useState<Item[]>([])
 
   useEffect(() => {
-    const count = randInt(4, 10)
+    const count = 10
 
     const generated: Item[] = Array.from({ length: count }, () => {
       const variant = randomPick<Item['variant']>(['contained', 'outlined', 'text'])

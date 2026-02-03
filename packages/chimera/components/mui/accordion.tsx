@@ -34,7 +34,7 @@ export function MuiAccordion() {
   const [expanded, setExpanded] = useState<number | false>(false)
 
   useEffect(() => {
-    const count = randInt(2, 5)
+    const count = 5
     const generated: Item[] = Array.from({ length: count }, () => ({
       title: randomPick(cardTitles),
       description: randomPick(cardDescriptions),

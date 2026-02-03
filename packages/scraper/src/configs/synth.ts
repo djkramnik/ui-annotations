@@ -4,6 +4,11 @@ import { saveSyntheticRecord } from '../util/interactive'
 import { snooze } from '../util'
 import { InteractiveLabel } from 'ui-labelling-shared'
 
+// accordion 5
+// avatar 8
+// button 10
+// dropdown
+
 // sigh.. some synth pages have multiple of a component.  Ideally they would all be like that and have a fixed
 // number per render.. but to avoid needing to go back and do that we have this multiplier factor. this lets us generate
 // extra pages / reloads of labels for which the synth page outputs less of the component
