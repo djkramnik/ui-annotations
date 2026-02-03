@@ -21,10 +21,10 @@ export function AntPagination() {
   const [items, setItems] = useState<Item[]>([])
 
   useEffect(() => {
-    const count = randInt(2, 6)
+    const count = 6
 
     const generated: Item[] = Array.from({ length: count }, () => {
-      const pageSize = randInt(5, 20)
+      const pageSize = randInt(3, 15)
       const total = randInt(20, 200)
       return {
         width: randInt(260, 700),

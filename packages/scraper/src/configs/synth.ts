@@ -7,7 +7,14 @@ import { InteractiveLabel } from 'ui-labelling-shared'
 // accordion 5
 // avatar 8
 // button 10
-// dropdown
+// dropdown 1
+// datepicker 1
+// calendar
+// iconbutton 50
+// pagination apx 50.. hard to make static
+// radio 4
+// slider
+
 
 // sigh.. some synth pages have multiple of a component.  Ideally they would all be like that and have a fixed
 // number per render.. but to avoid needing to go back and do that we have this multiplier factor. this lets us generate
@@ -26,7 +33,8 @@ export async function getChimericLinks(defaultReps: number = 50): Promise<string
     InteractiveLabel.accordion,
     InteractiveLabel.avatar,
     InteractiveLabel.button,
-    // InteractiveLabel.datepicker, // needs separation of picker and open calendar
+    InteractiveLabel.datepicker,
+    InteractiveLabel.calendar,
     InteractiveLabel.dropdown,
     InteractiveLabel.iconbutton,
     InteractiveLabel.pagination,

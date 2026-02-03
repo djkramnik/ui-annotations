@@ -44,7 +44,7 @@ export function MuiSlider() {
   const [items, setItems] = useState<Item[]>([])
 
   useEffect(() => {
-    const count = randInt(2, 6)
+    const count = 1
     const generated: Item[] = Array.from({ length: count }, () => {
       const min = 0
       const max = randomPick([50, 100, 200])
@@ -77,65 +77,67 @@ export function MuiSlider() {
   }, [])
 
   return (
-    <Stack direction="column" alignItems="flex-start" spacing={2}>
-      {items.map((it, idx) => {
-        const wrapperSx =
-          it.orientation === 'vertical'
-            ? { height: randInt(140, 260), px: 2, py: 3 }
-            : { py: 1.5 }
+    <div style={{ padding: '50px'}}>
+      <Stack direction="column" alignItems="flex-start" spacing={2}>
+        {items.map((it, idx) => {
+          const wrapperSx =
+            it.orientation === 'vertical'
+              ? { height: randInt(140, 260), px: 2, py: 3 }
+              : { py: 1.5 }
 
-        return (
-          <Box
-            key={idx}
-            sx={{
-              width: it.width,
-              transform: `scale(${it.scale})`,
-              transformOrigin: 'left top',
-            }}
-            // expose per-item color to Slider parts
-            style={{ ['--c' as any]: it.colorHex }}
-          >
-            <Box sx={wrapperSx}>
-              <Slider
-                data-label="label_slider"
-                value={it.value}
-                onChange={(_, newValue) =>
-                  setItems(prev =>
-                    prev.map((x, j) => (j === idx ? { ...x, value: newValue as Value } : x)),
-                  )
-                }
-                min={it.min}
-                max={it.max}
-                step={it.step}
-                marks={it.marks}
-                size={it.size}
-                disabled={it.disabled}
-                orientation={it.orientation}
-                track={it.track}
-                valueLabelDisplay={it.valueLabelDisplay}
-                // style parts using the per-item CSS var
-                sx={{
-                  '& .MuiSlider-thumb': {
-                    bgcolor: 'var(--c)',
-                    border: '2px solid #fff',
-                    boxShadow: 'none',
-                  },
-                  '& .MuiSlider-track': {
-                    bgcolor: 'var(--c)',
-                  },
-                  '& .MuiSlider-rail': {
-                    opacity: 0.3,
-                  },
-                  '& .MuiSlider-valueLabel': {
-                    bgcolor: 'var(--c)',
-                  },
-                }}
-                aria-label={`Random slider ${idx + 1}`}
-              />
+          return (
+            <Box
+              key={idx}
+              sx={{
+                width: it.width,
+                transform: `scale(${it.scale})`,
+                transformOrigin: 'left top',
+              }}
+              // expose per-item color to Slider parts
+              style={{ ['--c' as any]: it.colorHex }}
+            >
+              <Box sx={wrapperSx}>
+                <Slider
+                  data-label="label_slider"
+                  value={it.value}
+                  onChange={(_, newValue) =>
+                    setItems(prev =>
+                      prev.map((x, j) => (j === idx ? { ...x, value: newValue as Value } : x)),
+                    )
+                  }
+                  min={it.min}
+                  max={it.max}
+                  step={it.step}
+                  marks={it.marks}
+                  size={it.size}
+                  disabled={it.disabled}
+                  orientation={it.orientation}
+                  track={it.track}
+                  valueLabelDisplay={it.valueLabelDisplay}
+                  // style parts using the per-item CSS var
+                  sx={{
+                    '& .MuiSlider-thumb': {
+                      bgcolor: 'var(--c)',
+                      border: '2px solid #fff',
+                      boxShadow: 'none',
+                    },
+                    '& .MuiSlider-track': {
+                      bgcolor: 'var(--c)',
+                    },
+                    '& .MuiSlider-rail': {
+                      opacity: 0.3,
+                    },
+                    '& .MuiSlider-valueLabel': {
+                      bgcolor: 'var(--c)',
+                    },
+                  }}
+                  aria-label={`Random slider ${idx + 1}`}
+                />
+              </Box>
             </Box>
-          </Box>
-        )
-      })}
-    </Stack>
+          )
+        })}
+      </Stack>
+    </div>
   )
 }

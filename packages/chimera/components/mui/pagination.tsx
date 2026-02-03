@@ -19,7 +19,7 @@ export function MuiPagination() {
   const [items, setItems] = useState<Item[]>([])
 
   useEffect(() => {
-    const itemCount = randInt(2, 6)
+    const itemCount = 6
 
     const generated: Item[] = Array.from({ length: itemCount }, () => {
       const pageCount = randInt(3, 15)

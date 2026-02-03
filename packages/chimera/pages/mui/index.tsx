@@ -23,10 +23,7 @@ const MuiComponent = () => {
 
   switch(component) {
     case InteractiveLabel.iconbutton:
-      const showAlt = query.alt === 'true'
-      return showAlt
-        ? <MuiIconsGridAlt />
-        : <AllMuiIconsGrid fontSize="large" />
+      return <MuiIconsGridAlt />
     case InteractiveLabel.button:
       return <MuiButtonSet />
     case InteractiveLabel.textinput:
