@@ -1,5 +1,6 @@
 import { Page } from "puppeteer-core";
 import { InteractiveLabel } from "ui-labelling-shared";
+import { randInt, snooze } from "../util";
 
 export async function getVideoLinks(reps: number = 1): Promise<string[]> {
   return new Array(reps)
@@ -53,5 +54,7 @@ export async function transformForVideo(page: Page) {
     }
   })
   await page.addStyleTag({ content: 'nextjs-portal{display:none!important;}' })
+  // we need to wait for a random period to catch the video at random timestamp?
+  await snooze(randInt(10, 30) * 1000)
   return async () => {}
 }

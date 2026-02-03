@@ -4,27 +4,37 @@ import { saveSyntheticRecord } from '../util/interactive'
 import { snooze } from '../util'
 import { InteractiveLabel } from 'ui-labelling-shared'
 
+// items per render
+
+// framework
+
 // accordion 5
 // avatar 8
 // button 10
 // dropdown 1
+// dropdown_menu 1
 // datepicker 1
 // calendar
 // iconbutton 50
 // pagination apx 50.. hard to make static
 // radio 4
-// slider
+// checkbox 4
+// slider 1
+// textarea 5
+// textinput 7
+// toggle 6
+
+// vanilla
+
+// video 1
+// filepicker 1
+// file_drop 1
 
 
-// sigh.. some synth pages have multiple of a component.  Ideally they would all be like that and have a fixed
-// number per render.. but to avoid needing to go back and do that we have this multiplier factor. this lets us generate
-// extra pages / reloads of labels for which the synth page outputs less of the component
+// some pages render more synth components than others
+// lets say we want to aim for 100 crops per label per run
+// then we need take the target (100) divided by the number of items rendered
 const labelMultiplier: Partial<Record<InteractiveLabel, number>> = {
-
-}
-
-// more bullshit.  because there is some mismatch between the canonial label and the actual page name
-const labelToComponent: Partial<Record<InteractiveLabel, string>> = {
 
 }
 
@@ -36,9 +46,11 @@ export async function getChimericLinks(defaultReps: number = 50): Promise<string
     InteractiveLabel.datepicker,
     InteractiveLabel.calendar,
     InteractiveLabel.dropdown,
+    InteractiveLabel.dropdown_menu,
     InteractiveLabel.iconbutton,
     InteractiveLabel.pagination,
     InteractiveLabel.radio,
+    InteractiveLabel.checkbox,
     InteractiveLabel.slider,
     InteractiveLabel.textarea,
     InteractiveLabel.textinput,
@@ -54,14 +66,14 @@ export async function getChimericLinks(defaultReps: number = 50): Promise<string
     return acc.concat(new Array(labelMultiplier[l] ?? defaultReps)
       .fill(null)
       .map(
-        (_, i) => `http://localhost:3000/${i % 2 ? 'mui' : 'ant'}?component=${labelToComponent[l] ?? l}`)
+        (_, i) => `http://localhost:3000/${i % 2 ? 'mui' : 'ant'}?component=${l}`)
       )
   }, [] as string[])
 
   const vanillaLinks = vanillaLabels.reduce((acc, l) => {
     return acc.concat(
       new Array(labelMultiplier[l] ?? defaultReps)
-        .fill(`http://localhost:3000?component=${labelToComponent[l] ?? l}`)
+        .fill(`http://localhost:3000?component=${l}`)
     )
   }, [] as string[])
 

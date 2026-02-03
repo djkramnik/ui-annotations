@@ -28,7 +28,7 @@ export function AntToggle() {
   const [items, setItems] = useState<Item[]>([])
 
   useEffect(() => {
-    const count = randInt(2, 6)
+    const count = 6
     const generated: Item[] = Array.from({ length: count }, () => ({
       width: randInt(220, 600),
       scale: randInt(90, 130) / 100,

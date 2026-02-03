@@ -79,7 +79,7 @@ export function MuiToggle() {
   const [items, setItems] = useState<Item[]>([])
 
   useEffect(() => {
-    const count = randInt(2, 6)
+    const count = 6
     const generated: Item[] = Array.from({ length: count }, () => ({
       width: randInt(220, 600),
       margin: randInt(6, 18),

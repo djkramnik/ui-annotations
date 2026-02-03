@@ -16,6 +16,7 @@ import { MuiTextInput } from "../../components/mui/textinput"
 import { MuiButtonSet } from "../../components/mui/button"
 import { AllMuiIconsGrid } from "../../components/mui/icon"
 import { MuiIconsGridAlt } from '../../components/mui/iconbutton'
+import { MuiCheckboxGroup } from '../../components/mui/checkbox'
 
 const MuiComponent = () => {
   const { query } = useRouter()
@@ -51,6 +52,14 @@ const MuiComponent = () => {
     case InteractiveLabel.accordion:
       return (
         <MuiAccordion />
+      )
+    case InteractiveLabel.checkbox:
+      return (
+        <MuiCheckboxGroup
+          title="Gender"
+          options={['Male', 'Female', 'Binary', 'Zim']}
+          selected={[1]}
+        />
       )
     case InteractiveLabel.radio:
       return (

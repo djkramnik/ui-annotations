@@ -15,12 +15,21 @@ import { AntDropdown } from "../../components/ant/dropdown";
 import { AntTextInput } from "../../components/ant/textinput";
 import { AntButtonSet } from "../../components/ant/button";
 import { AntIconsGrid } from "../../components/ant/icon";
+import { AntCheckboxGroup } from "../../components/ant/checkbox";
 
 const AntdComponent = () => {
   const { query } = useRouter();
   const component = String(query.component) as InteractiveLabel;
 
   switch (component) {
+    case InteractiveLabel.checkbox:
+      return (
+        <AntCheckboxGroup
+            title="Gender"
+            options={['Male', 'Female', 'Binary', 'Zim']}
+            selected={[3]}
+        />
+      )
     case InteractiveLabel.iconbutton:
       return <AntIconsGrid />
     case InteractiveLabel.button:

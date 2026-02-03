@@ -21,7 +21,7 @@ export function AntTextarea() {
   const [items, setItems] = useState<Item[]>([])
 
   useEffect(() => {
-    const count = randInt(2, 5)
+    const count = 5
     const generated: Item[] = Array.from({ length: count }, () => ({
       width: randInt(240, 700),
       rows: randInt(2, 6),

@@ -7,6 +7,7 @@
     "start": "npm run build && node dist/index.js",
     "start:synth": "npm run build && node dist/index.js --processor=synth --transform=synth --links=synth --max_scroll=0",
     "start:synth:debug": "npm run build && node dist/index.js --processor=synth --transform=synth --links=synth --debug=true --max_scroll=0",
+    "start:video-synth": "npm run build && node dist/index.js --headless=n --processor=video-synth --transform=video-synth --links=video-synth --max_scroll=0",
     "prisma:db:pull": "npx prisma db pull"
   },
   "keywords": [],

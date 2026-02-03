@@ -110,7 +110,7 @@ export function AntTextInput() {
   const [items, setItems] = useState<Item[]>([])
 
   useEffect(() => {
-    const count = randInt(3, 7)
+    const count = 7
 
     const generated: Item[] = Array.from({ length: count }, () => {
       const { flavor, label, placeholder } = getRandomTextInputConfig()
