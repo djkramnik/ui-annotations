@@ -281,7 +281,10 @@ export default function InteractiveLabellingPage() {
                       src={toImgSrc(r.screenshot)}
                     />
                   </td>
-                  <td style={cellStyle}>{r.label ?? 'UNLABELLED'}</td>
+                  <td style={cellStyle}>
+                    {r.label ?? 'UNLABELLED'}<br />
+                    {JSON.stringify(r.metadata)}
+                  </td>
                   <td style={cellStyle}>
                     <LabelForm
                       id={r.id}

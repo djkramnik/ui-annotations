@@ -18,7 +18,13 @@ export const extractNamedArgs = (): Record<string, string> | null => {
   return dict
 }
 
-export const configName = z.enum(['interactive', 'text', 'synth', 'video-synth'])
+export const configName = z.enum([
+  'interactive',
+  'text',
+  'synth',
+  'video-synth',
+  'ads'
+])
 export type ConfigName = z.infer<typeof configName>
 
 export const scraperArgs = z.object({

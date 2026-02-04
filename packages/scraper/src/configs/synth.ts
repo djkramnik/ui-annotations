@@ -139,6 +139,7 @@ export async function processScreenForSynth(
     paddingPx?: number
     afterScrollWaitMs?: number
   },
+  getMeta?: (page: Page, link: string) => Promise<Record<string, any>>
 ) {
   const paddingPx = opts?.paddingPx ?? 0
   const afterScrollWaitMs = opts?.afterScrollWaitMs ?? 0
@@ -213,7 +214,9 @@ export async function processScreenForSynth(
     await saveSyntheticRecord({
       label: labelSuffixFromId(labelName),
       base64,
-      meta: { type: link.includes('mui') ? 'mui' : 'ant' },
+      meta: typeof getMeta === 'function'
+        ? (await getMeta(page, link))
+        : { type: link.includes('mui') ? 'mui' : 'ant' },
     })
 
     await el.dispose()

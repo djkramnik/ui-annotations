@@ -26,6 +26,7 @@ export type InteractiveRecord = {
   annotationId: number | null
   screenshot: ArrayBuffer
   label: string | null
+  metadata?: Record<string, any> | null
 }
 
 export const getOcr = (id: number): Promise<{ screenshot: number[]; text: string }> => {

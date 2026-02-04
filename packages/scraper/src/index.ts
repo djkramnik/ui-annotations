@@ -18,6 +18,7 @@ import { fetchHnLinks } from './configs/fetch-hn-links'
 // before proceeding. This is to debug / eliminate the mis-aligned bounding box issues that sometimes occur
 
 ;import { getVideoLinks, transformForVideo } from './configs/video-synth'
+import { getAdLinks, transformForAd } from './configs/ad-synth'
 (async () => {
   const args = extractNamedArgs()
   const parsedArgs = scraperArgs.safeParse(args)
@@ -152,12 +153,25 @@ function mapArgs({
     'video-synth': (page: Page, link: string) => {
       return processScreenForSynth(page, link, { paddingPx: 5 })
     },
+    'ads': (page: Page, link: string) => {
+      return processScreenForSynth(
+        page,
+        link,
+        { paddingPx: 5 },
+        function getMeta(page, link) {
+          return Promise.resolve({
+            url: link
+          })
+        }
+      )
+    }
   }
   const transformers: Record<ConfigName, ApplyTransformations> = {
     'interactive': applyInteractiveTransforms,
     'text': applyInteractiveTransforms, // applyTextTransforms exists but was less reliable and I have no alt right now
     'synth': transformForSynth,
     'video-synth': transformForVideo,
+    'ads': transformForAd,
   }
 
   // this is messy
@@ -170,6 +184,7 @@ function mapArgs({
     },
     'synth': () => getChimericLinks(2),
     'video-synth': getVideoLinks,
+    'ads': getAdLinks,
   }
 
   return {
