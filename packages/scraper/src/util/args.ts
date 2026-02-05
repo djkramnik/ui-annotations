@@ -23,7 +23,8 @@ export const configName = z.enum([
   'text',
   'synth',
   'video-synth',
-  'ads'
+  'ads',
+  'image-scrape'
 ])
 export type ConfigName = z.infer<typeof configName>
 

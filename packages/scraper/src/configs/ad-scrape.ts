@@ -1,3 +1,5 @@
+// on further though ad-synth is a misnomer.  We are scraping here
+
 import { Page } from "puppeteer-core"
 import { InteractiveLabel } from "ui-labelling-shared"
 import { snooze } from "../util"

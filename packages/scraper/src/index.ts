@@ -18,7 +18,8 @@ import { fetchHnLinks } from './configs/fetch-hn-links'
 // before proceeding. This is to debug / eliminate the mis-aligned bounding box issues that sometimes occur
 
 ;import { getVideoLinks, transformForVideo } from './configs/video-synth'
-import { getAdLinks, transformForAd } from './configs/ad-synth'
+import { getAdLinks, transformForAd } from './configs/ad-scrape'
+import { getImgLinks, transformForImg } from './configs/img-scrape'
 (async () => {
   const args = extractNamedArgs()
   const parsedArgs = scraperArgs.safeParse(args)
@@ -164,6 +165,18 @@ function mapArgs({
           })
         }
       )
+    },
+    'image-scrape': (page: Page, link: string) => {
+      return processScreenForSynth(
+        page,
+        link,
+        { paddingPx: 5 },
+        function getMeta(page, link) {
+          return Promise.resolve({
+            url: link
+          })
+        }
+      )
     }
   }
   const transformers: Record<ConfigName, ApplyTransformations> = {
@@ -172,6 +185,7 @@ function mapArgs({
     'synth': transformForSynth,
     'video-synth': transformForVideo,
     'ads': transformForAd,
+    'image-scrape': transformForImg,
   }
 
   // this is messy
@@ -185,6 +199,10 @@ function mapArgs({
     'synth': () => getChimericLinks(2),
     'video-synth': getVideoLinks,
     'ads': getAdLinks,
+    'image-scrape': () => {
+      // return fetchHnLinks(page, { maxPages: 1})
+      return getImgLinks()
+    }
   }
 
   return {
