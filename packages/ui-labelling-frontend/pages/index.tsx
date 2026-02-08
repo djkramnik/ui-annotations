@@ -1,7 +1,7 @@
 import { CSSProperties, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { SimpleDate } from '../components/date'
-import { Analytics, CountBreakdown, getAnalytics, getAnnotations, getPublishedAnnotations } from '../api'
+import { Analytics, CountBreakdown, getAnnotations, getPublishedAnnotations } from '../api'
 import { Flex } from '../components/flex'
 import { AnnotationLabel } from 'ui-labelling-shared'
 import { useRouter } from 'next/router'
@@ -89,15 +89,13 @@ export default function DirectoryPage() {
       return Promise.all([
         getAnnotations(tag, syntheticQuery === 'true'),
         getPublishedAnnotations(tag),
-        getAnalytics(tag),
       ])
-      .then(([drafts, published, stats]) => {
+      .then(([drafts, published]) => {
         if (cancelled === true) {
           return
         }
         setRows(drafts.data)
         setPubRows(published.data)
-        setStats(stats.data)
       })
       .catch(console.error)
     }

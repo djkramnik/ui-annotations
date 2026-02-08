@@ -11,3 +11,4 @@ annotated_sample.png
 **/*/*.pt
 ocr_driver.sh
 runs
+logos/
