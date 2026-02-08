@@ -52,7 +52,7 @@ model screenshot {
   annotations         Json
   image_data          Bytes?
   published           Int           @default(0)
-  tag                 String?
+  tag                 String
   synthetic_parent_id Int?
   image_crop          image_crop[]
   interactive         interactive[]
