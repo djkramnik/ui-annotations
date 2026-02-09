@@ -62,6 +62,24 @@ model screenshot {
 
   // new back-relation (does not create a column)
   annotation annotation[]
+  tag_ref             screenshot_tag?  @relation(fields: [tag], references: [tag])
+}
+
+model screenshot_tag {
+  tag    String            @id // canonical list of valid tags
+  // optional back-relations
+  screenshots screenshot[]
+  labels      tag_label[]
+}
+
+model tag_label {
+  id    Int            @id @default(autoincrement())
+  tag   String
+  label String
+
+  tag_ref screenshot_tag @relation(fields: [tag], references: [tag])
+
+  @@index([tag])
 }
 
 model annotation {
@@ -81,11 +99,4 @@ model annotation {
 
   @@index([screenshot_id])
   @@map("annotation")
-}
-
-model tag_label {
-  id    Int     @id(map: "tag_label_pkey") @default(autoincrement())
-  tag   String?
-  label String
-  color String
 }
