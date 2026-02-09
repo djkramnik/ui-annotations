@@ -41,6 +41,49 @@ export enum ServiceManualLabel {
   text_unit = 'unit'
 }
 
+export const labelColorArr: string[] = [
+  '#1E88E5',
+  '#424242',
+  '#D81B60', // magenta/pink
+	'#8E24AA', // purple
+
+	'#43A047', // green
+  '#F4511E', // orange
+	'#66BB6A', // lighter green
+  '#3949AB', // indigo
+	'#A5D6A7', // pale green
+
+
+	'#FB8C00', // amber
+	'#FFB74D', // light amber
+
+	'#E53935', // red
+	'#EF5350', // light red
+
+
+  '#FFF8DC',
+
+	'#00897B', // teal
+	'#26A69A', // lighter teal
+	'#80CBC4', // pale teal
+
+	'#6D4C41', // brown
+	'#8D6E63', // light brown
+
+	'#1976D2', // link blue
+	'#0288D1', // light link blue
+	'#757575', // medium gray
+
+	'#9E9E9E', // gray
+	'#BDBDBD', // light gray
+  '#FFD54F',
+  '#00ACC1',
+  '#C0CA33',
+
+  '#f28500',
+  '#ed9121'
+]
+
 export const serviceManualLabel: Record<ServiceManualLabel, string> = {
 	logo: '#1E88E5', // blue
 	text_block: '#424242', // dark gray
@@ -492,7 +535,7 @@ export interface ScreenshotRequest {
     width: number
     height: number
   }
-  tag?: string
+  tag: string
   synthetic_parent_id?: number
 }
 

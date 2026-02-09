@@ -19,6 +19,7 @@ import {
   Screenshot,
   Annotation,
   Rect,
+  labelColorArr,
 } from 'ui-labelling-shared'
 import ScreenshotAnnotator from '../../components/screenshot-annotated' // ← NEW
 import { SimpleDate } from '../../components/date'
@@ -33,7 +34,7 @@ import {
 import { DrawSurface } from '../../components/draw-surface'
 import { PageMode, ToggleState, DangerState } from '../../utils/type'
 import { Popup } from '../../components/popup'
-import { useLabels } from '../../hooks/labels'
+import { useLabelSet } from '../../hooks/labels'
 import { AnnotationToggler } from '../../components/annotation'
 import { useAdjustRect } from '../../hooks/adjust'
 import { adjustAnnotation } from '../../utils/adjust'
@@ -211,7 +212,13 @@ export default function AnnotationPage() {
     dangerState: null,
     currToggleIndex: null,
   })
-  const labels = useLabels(String(query.tag))
+  const labels = useLabelSet(String(query.tag || 'og'))
+  const labelColors = labels.reduce((acc, l, idx) => {
+    return {
+      ...acc,
+      [l]: labelColorArr[idx % labelColorArr.length]
+    }
+  }, {} as Record<string, string>)
   const adjustment = useAdjustRect(
     typeof pageState.currToggleIndex === 'number'
       ? (annotations?.[pageState.currToggleIndex] ?? null)
@@ -849,11 +856,7 @@ export default function AnnotationPage() {
             }}
           >
             <ScreenshotAnnotator
-              labels={
-                query.tag === 'service_manual'
-                  ? serviceManualLabel
-                  : annotationLabels
-              }
+              labels={labelColors}
               handleClick={handleAnnotationClick}
               screenshot={screenshotDataUrl}
               labelOverride={{
@@ -907,16 +910,13 @@ export default function AnnotationPage() {
                 flexDirection: 'column',
               }}
             >
-              {Object.entries(
-                query.tag === 'service_manual'
-                  ? serviceManualLabel
-                  : annotationLabels,
-              ).map(([label, colour]) => (
+              {
+              Object.entries(labelColors).map(([label, c]) => (
                 <div
                   key={label}
                   style={{
                     width: '100%',
-                    backgroundColor: colour,
+                    backgroundColor: c,
                     padding: 4,
                     fontSize: 16,
                   }}

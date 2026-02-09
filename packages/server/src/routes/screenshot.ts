@@ -69,7 +69,7 @@ screenshotRouter.post('/', async (req: Request, res: Response) => {
     const id = await prisma.$transaction(async ($tx) => {
       const record = await $tx.screenshot.create({
         data: {
-          tag: tag ?? null,
+          tag,
           scroll_y:   window.scrollY,
           view_width: window.width,
           view_height: window.height,
@@ -327,6 +327,22 @@ screenshotRouter.get('/:id', async (req: Request, res: Response) => {
   } catch (err) {
     console.error(err)
     res.status(500).send({ message: 'Unexpected error ' + err })
+  }
+})
+
+screenshotRouter.get('/tag/:tag', async (req: Request, res: Response) => {
+  const tag = String(req.params.tag)
+  try {
+    const rows = await prisma.tag_label.findMany({
+      where: {
+        tag
+      }
+    })
+    return res.status(200).send({
+      data: rows.map(r => r.label)
+    })
+  } catch(e) {
+    return res.status(500).send({ error: String(e) })
   }
 })
 

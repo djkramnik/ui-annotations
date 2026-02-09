@@ -5,6 +5,30 @@ import sharp from 'sharp'
 import { getRasterSize } from './utils/raster'
 import { Annotation } from 'ui-labelling-shared'
 
+;(async function prep(): Promise<[string, string[]]> {
+  const tag = process.argv[2]
+  if (!tag) {
+    throw Error('tag not supplied in script args')
+  }
+  const prisma = new PrismaClient()
+  const labels = (await prisma.tag_label.findMany({
+    select: { label: true},
+    where: {
+      tag
+    }
+  })).map(({ label }) => label)
+  if (!labels || !labels.length) {
+    throw Error('no labels found for tag ' + tag)
+  }
+  return [tag, labels]
+})()
+.then(([tag, labels]) => {
+  return main(tag, labels)
+}).then(() => {
+  process.exit(0)
+}).catch((e) => {
+  console.error('error with img_crop script', e)
+})
 
 const tag: string = process.argv[2] ?? 'service_manual'
 
@@ -14,15 +38,11 @@ const labels: string[] = typeof _labelArg === 'string'
   ? _labelArg.split(',')
   : ['qr_code', 'barcode']
 
-main(tag, labels)
-
-type ImageCropRecord = {
+type InteractiveRecord = {
   image_data: Buffer
   screenshot_id: number
   true_id: string
-  aspect_ratio: number
-  og_width: number
-  og_label: string
+  label: string
 }
 
 function getClamp(min: number, max: number) {
@@ -47,19 +67,8 @@ async function main(tag: string, labels: string[]) {
       id: true
     }
   })
-  // prevent dups
-  const existingAnnoIds = (await prisma.image_crop.findMany({
-    select: {
-      true_id: true
-    }
-  })).reduce((acc, item) => {
-    if (!item.true_id) {
-      return acc
-    }
-    return acc.concat(item.true_id)
-  }, [] as string[])
 
-  let crops: ImageCropRecord[] = []
+  let crops: InteractiveRecord[] = []
 
   let badAnnotationIds = []
   for (const screen of screens) {
@@ -107,9 +116,6 @@ async function main(tag: string, labels: string[]) {
         badAnnotationIds.push(a.id ?? 'none')
         continue
       }
-      if (existingAnnoIds.includes(a.id)) {
-        continue
-      }
       if (!labels.includes(a.label)) {
         continue
       }
@@ -152,9 +158,7 @@ async function main(tag: string, labels: string[]) {
           screenshot_id: screen.id,
           image_data: clip,
           true_id: a.id,
-          og_width: Math.round(scaledRoundedRect.width),
-          aspect_ratio: Number((scaledRoundedRect.width / scaledRoundedRect.height).toFixed(2)),
-          og_label: a.label
+          label: a.label,
         })
       } catch (e) {
         console.error('wtf (sharp?)', e)
@@ -166,7 +170,7 @@ async function main(tag: string, labels: string[]) {
   console.log('this many bad boys', badAnnotationIds.length)
   console.log('sample hunk', badAnnotationIds[0])
 
-  await prisma.image_crop.createMany({
+  await prisma.interactive.createMany({
     data: crops,
   })
 }
