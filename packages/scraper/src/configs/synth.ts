@@ -93,7 +93,7 @@ export async function getChimericLinks(defaultReps: number = 2): Promise<string[
     )
   }, [] as string[])
 
-  return frameworkLinks.concat(vanillaLinks)
+  return (vanillaLinks).concat(frameworkLinks)
 }
 
 

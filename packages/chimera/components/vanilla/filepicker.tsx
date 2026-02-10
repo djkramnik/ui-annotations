@@ -32,6 +32,7 @@ import {
 } from '../../util/faker/filepicker'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { RandomAntIcon, RandomMuiIcon } from './icon'
+import { InteractiveLabel } from 'ui-labelling-shared'
 
 // need a variant where its just a button and the icon
 // need a variant where its just an input with a couple of file related decorations
@@ -76,6 +77,7 @@ export const FilePicker = ({ theme }: { theme: VanillaTheme }) => {
 
   return (
     <div
+      data-label={`label_${InteractiveLabel.file_drop}`}
       className="dropzone"
       style={{
         position: 'relative',
@@ -282,6 +284,7 @@ export const FilePickerSlim = ({ theme }: { theme: VanillaTheme }) => {
     >
       {bookEndW && bookEndPos === 'start' ? (
         <Flex
+          data-label={`label_${InteractiveLabel.filepicker}`}
           jcc
           aic
           style={{

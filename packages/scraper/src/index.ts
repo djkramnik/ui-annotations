@@ -52,7 +52,7 @@ async function main(config: ScraperConfig, page: Page) {
     transform,
     fetchLinks,
     maxScrollIndex = 3,
-    maxLinks = 1000,
+    maxLinks = 10000,
     debug,
   } = config
 

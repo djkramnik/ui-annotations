@@ -10,14 +10,18 @@ type FlexProps = {
   jcsa?: boolean
   wrap?: boolean
   gap?: CSSProperties['gap']
+  'data-label'?: string
 }
 
 export const Flex = React.forwardRef<HTMLDivElement, FlexProps>(function Flex(
-  { style, children, aic, jcsb, jcc, jcsa, wrap, col, gap },
+  props,
   ref,
 ) {
+  const { style, children, aic, jcsb, jcc, jcsa, wrap, col, gap} = props
+
   return (
     <div
+      data-label={props['data-label']}
       ref={ref}
       style={{
         display: 'flex',
