@@ -35,10 +35,26 @@ import { InteractiveLabel } from 'ui-labelling-shared'
 // lets say we want to aim for 100 crops per label per run
 // then we need take the target (100) divided by the number of items rendered
 const labelMultiplier: Partial<Record<InteractiveLabel, number>> = {
-
+  accordion: 20,
+  avatar: 11,
+  button: 10,
+  dropdown: 100,
+  dropdown_menu: 100,
+  datepicker: 100,
+  calendar: 100,
+  iconbutton: 2,
+  pagination: 2,
+  radio: 25,
+  checkbox: 25,
+  slider: 100,
+  textarea: 20,
+  textinput: 14,
+  toggle: 20,
+  filepicker: 100,
+  file_drop: 100
 }
 
-export async function getChimericLinks(defaultReps: number = 50): Promise<string[]> {
+export async function getChimericLinks(defaultReps: number = 2): Promise<string[]> {
   const frameworkLabels: InteractiveLabel[] = [
     InteractiveLabel.accordion,
     InteractiveLabel.avatar,

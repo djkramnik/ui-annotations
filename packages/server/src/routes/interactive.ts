@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express'
 import { prisma } from '../db'
+import { InteractiveLabel } from 'ui-labelling-shared'
 
 export const interactiveRouter = Router()
 
@@ -104,11 +105,17 @@ interactiveRouter.get('/analytics', async (req: Request, res: Response) => {
     count: bigint,
   }[]>` select label, count(*) from interactive group by label order by 1 desc`
 
+  const sanctionedLabels = Object.values(InteractiveLabel)
+  const sanctionedData: {label: string; count: number}[]
+    = sanctionedLabels.map(label => {
+      return {
+        label,
+        count: Number(labelCounts.find(i => i.label === label)?.count ?? 0)
+      }
+    })
+
   res.status(200).send({
-    labelCounts: labelCounts.map(lc => ({
-      ...lc,
-      count: Number(lc.count)
-    }))
+    labelCounts: sanctionedData
   })
 })
 
