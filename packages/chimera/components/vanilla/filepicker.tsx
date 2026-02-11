@@ -272,6 +272,7 @@ export const FilePickerSlim = ({ theme }: { theme: VanillaTheme }) => {
 
   return (
     <Flex
+      data-label={`label_${InteractiveLabel.filepicker}`}
       gap="4px"
       aic
       ref={inputRef}
@@ -284,7 +285,6 @@ export const FilePickerSlim = ({ theme }: { theme: VanillaTheme }) => {
     >
       {bookEndW && bookEndPos === 'start' ? (
         <Flex
-          data-label={`label_${InteractiveLabel.filepicker}`}
           jcc
           aic
           style={{

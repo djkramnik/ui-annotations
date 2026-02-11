@@ -53,7 +53,9 @@ const labelMultiplier: Partial<Record<InteractiveLabel, number>> = {
   filepicker: 100,
   file_drop: 100
 }
-
+// since we have a label multiplier per label, defaultReps is meaningless now
+// update this to be 'targetReps'... then update multiplier to actually be the number of rendered elements per label
+// then take floor(targetReps / multiplier).  This way we can just update the target and everything adjust appropriately.
 export async function getChimericLinks(defaultReps: number = 2): Promise<string[]> {
   const frameworkLabels: InteractiveLabel[] = [
     InteractiveLabel.accordion,
@@ -74,7 +76,7 @@ export async function getChimericLinks(defaultReps: number = 2): Promise<string[
   ]
   const vanillaLabels: InteractiveLabel[] = [
     InteractiveLabel.filepicker,
-    InteractiveLabel.file_drop
+    // InteractiveLabel.file_drop
   ]
 
   // framework links will be reloaded defaultReps (or multiplier) number of times and alternate between mui and ant versions
@@ -93,7 +95,8 @@ export async function getChimericLinks(defaultReps: number = 2): Promise<string[
     )
   }, [] as string[])
 
-  return (vanillaLinks).concat(frameworkLinks)
+  // return (vanillaLinks).concat(frameworkLinks)
+  return vanillaLinks
 }
 
 
