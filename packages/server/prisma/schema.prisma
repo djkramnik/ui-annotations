@@ -100,3 +100,37 @@ model annotation {
   @@index([screenshot_id])
   @@map("annotation")
 }
+
+model font_asset {
+  id        Int                 @id @default(autoincrement())
+  sha1      String              @unique
+  ext       String
+  mime_type String
+  byte_size Int
+  data      Bytes
+  created_at DateTime           @default(now()) @db.Timestamptz(6)
+  bundles   font_bundle_asset[]
+}
+
+model font_bundle {
+  id         Int                 @id @default(autoincrement())
+  slug       String?
+  family     String
+  css_text   String
+  manifest   Json
+  created_at DateTime            @default(now()) @db.Timestamptz(6)
+  assets     font_bundle_asset[]
+
+  @@index([family])
+}
+
+model font_bundle_asset {
+  id             Int         @id @default(autoincrement())
+  font_bundle_id Int
+  font_asset_id  Int
+  font_bundle    font_bundle @relation(fields: [font_bundle_id], references: [id], onDelete: Cascade)
+  font_asset     font_asset  @relation(fields: [font_asset_id], references: [id], onDelete: Cascade)
+
+  @@unique([font_bundle_id, font_asset_id])
+  @@index([font_asset_id])
+}
