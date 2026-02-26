@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client"
+import { PrismaClient } from "annotation_schema"
 
 let prisma: PrismaClient | null = null
 

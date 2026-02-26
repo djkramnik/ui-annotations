@@ -7,6 +7,7 @@
     "dev:api": "npm run -w ui-labelling-server dev",
     "dev:ui": "npm run -w ui-labelling-frontend dev",
     "build:shared": "npm run -w ui-labelling-shared build && npm install",
+    "build:annotation_schema": "npm run -w annotation_schema build && npm install",
     "build:infer-layout": "npm run -w infer-layout build",
     "build:synth-extension": "npm run build:shared && npm run -w synth-extension build",
     "build:extension": "npm run build:shared && npm run -w ui-labelling-extension build",

@@ -10,7 +10,7 @@
     "start:video-synth": "npm run build && node dist/index.js --headless=n --processor=video-synth --transform=video-synth --links=video-synth --max_scroll=0",
     "start:ad": "npm run build && node dist/index.js --headless=n --processor=ads --transform=ads --links=ads --max_scroll=0",
     "start:img": "npm run build && node dist/index.js --headless=n --processor=image-scrape --transform=image-scrape --links=image-scrape --max_scroll=0",
-    "prisma:db:pull": "npx prisma db pull"
+    "prisma:db:pull": "npx prisma db pull --schema ../annotation_schema/prisma/schema.prisma"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
@@ -27,7 +27,7 @@
     "ts-node": "^10.9.2"
   },
   "dependencies": {
-    "@prisma/client": "^6.14.0",
+    "annotation_schema": "^1.0.0",
     "image-size": "^2.0.2",
     "puppeteer-core": "^24.19.0",
     "sharp": "^0.34.4",

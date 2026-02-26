@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from 'annotation_schema'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { imageSize } from 'image-size'

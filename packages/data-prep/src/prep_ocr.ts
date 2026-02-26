@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from 'annotation_schema';
 import fs from 'fs'
 import path from 'path'
 import { trainTestSplit } from './utils/split_data';

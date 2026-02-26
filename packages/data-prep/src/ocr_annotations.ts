@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from 'annotation_schema'
 import { Annotation, Rect, ServiceManualLabel } from 'ui-labelling-shared'
 
 enum ServiceManualTextLabel {

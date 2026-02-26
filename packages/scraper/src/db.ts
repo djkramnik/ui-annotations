@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from 'annotation_schema'
 
 export const prisma = new PrismaClient({
   transactionOptions: {

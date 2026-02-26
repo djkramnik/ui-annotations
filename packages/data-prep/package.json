@@ -15,7 +15,7 @@
     "write_interactive": "npm run build && node dist/write_interactive.js",
     "start:textregion": "npm run build && CLASS_NAMES=textRegion OUTPUT_ROOT=coco_textregion TAG=textregion node dist/index.js",
     "start:interactive": "npm run build && CLASS_NAMES=interactive OUTPUT_ROOT=coco_interactive TAG=interactive node dist/index.js",
-    "prisma:db:pull": "npx prisma db pull"
+    "prisma:db:pull": "npx prisma db pull --schema ../annotation_schema/prisma/schema.prisma"
   },
   "keywords": [],
   "author": "",
@@ -27,7 +27,7 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "@prisma/client": "^6.14.0",
+    "annotation_schema": "^1.0.0",
     "sharp": "^0.34.4",
     "ui-labelling-shared": "^1.1.0"
   }

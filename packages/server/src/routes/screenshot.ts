@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express'
 import { prisma } from '../db'
 import { Annotation, AnnotationLabel, Screenshot, ScreenshotRequest } from 'ui-labelling-shared'
-import { Prisma } from '@prisma/client'
+import { Prisma } from 'annotation_schema'
 
 export const screenshotRouter = Router()
 

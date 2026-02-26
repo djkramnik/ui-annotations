@@ -5,9 +5,9 @@
   "scripts": {
     "dev": "nodemon ./src/index.ts",
     "prisma:init": "npx prisma init",
-    "prisma:generate": "npx prisma generate",
-    "prisma:migrate:dev": "npx prisma migrate dev --name",
-    "prisma:migrate:deploy": "npx prisma migrate deploy",
+    "prisma:generate": "npx prisma generate --schema ../annotation_schema/prisma/schema.prisma",
+    "prisma:migrate:dev": "npx prisma migrate dev --schema ../annotation_schema/prisma/schema.prisma --name",
+    "prisma:migrate:deploy": "npx prisma migrate deploy --schema ../annotation_schema/prisma/schema.prisma",
     "build": "tsc && cp .env ./dist/.env",
     "watch": "tsc -w"
   },
@@ -25,7 +25,7 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
-    "@prisma/client": "^6.9.0",
+    "annotation_schema": "^1.0.0",
     "express": "^5.1.0",
     "sharp": "^0.34.3",
     "ui-labelling-shared": "file:../shared"

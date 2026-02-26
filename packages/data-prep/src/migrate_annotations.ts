@@ -1,5 +1,5 @@
 // should only need one time.  Part of a data refactoring
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from 'annotation_schema'
 import { Annotation } from 'ui-labelling-shared'
 
 main()

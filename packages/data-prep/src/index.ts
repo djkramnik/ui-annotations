@@ -1,6 +1,6 @@
 /* src/index.ts */
 /* eslint-disable no-console */
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from 'annotation_schema';
 import { detectImageExt, getRasterSize } from './utils/raster';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';

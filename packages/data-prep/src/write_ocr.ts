@@ -3,7 +3,7 @@
 // crop out the bounding box into a standalone screenshot, and write that along with
 // the actual text + other meta into ocr table
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "annotation_schema";
 import sharp from 'sharp'
 import { getRasterSize } from "./utils/raster";
 import { Annotation, Rect } from "ui-labelling-shared";

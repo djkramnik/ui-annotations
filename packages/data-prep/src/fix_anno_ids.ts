@@ -1,6 +1,6 @@
 // adaptation of write_interactive
 // will we refactor this?  odds not looking good
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from 'annotation_schema'
 import { Annotation } from 'ui-labelling-shared'
 
 main('service_manual')
