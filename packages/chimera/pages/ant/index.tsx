@@ -4,7 +4,7 @@ import { InteractiveLabel } from "ui-labelling-shared";
 import { AntRadioGroup } from "../../components/ant/radio";
 import { AntDatePicker } from "../../components/ant/datepicker";
 import { randomAntTheme } from "../../components/ant/theme";
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { AntAccordion } from "../../components/ant/accordion";
 import { AntTextarea } from "../../components/ant/textarea";
 import { AntToggle } from "../../components/ant/toggle";
@@ -16,6 +16,11 @@ import { AntTextInput } from "../../components/ant/textinput";
 import { AntButtonSet } from "../../components/ant/button";
 import { AntIconsGrid } from "../../components/ant/icon";
 import { AntCheckboxGroup } from "../../components/ant/checkbox";
+import {
+  applyPreferredFamily,
+  loadInlineFontBundleStyles,
+  loadRandomFontBundle,
+} from "../../util/font-bundle";
 
 const AntdComponent = () => {
   const { query } = useRouter();
@@ -80,7 +85,46 @@ const AntdComponent = () => {
 };
 
 export default function Page() {
-  const theme = useMemo(() => randomAntTheme(), [])
+  const [theme, setTheme] = useState(() => randomAntTheme());
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadFontTheme(): Promise<void> {
+      const bundle = await loadRandomFontBundle();
+      if (!bundle) {
+        console.warn("[chimera] No font bundles available from /api/fonts/random");
+        if (mounted) {
+          setTheme(randomAntTheme());
+        }
+        return;
+      }
+
+      const { slug, family, cssText, manifest } = bundle;
+      console.log(`[chimera] Using font bundle id: ${bundle.id}`);
+      console.log(`[chimera] Using font folder: ${slug || "(none)"}`);
+      console.log(`[chimera] Selected font family: ${family}`);
+
+      try {
+        loadInlineFontBundleStyles(cssText);
+        if (!mounted) {
+          return;
+        }
+        setTheme(randomAntTheme(applyPreferredFamily(manifest, family)));
+      } catch (_error) {
+        if (mounted) {
+          setTheme(randomAntTheme());
+        }
+      }
+    }
+
+    void loadFontTheme();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   return (
     <ConfigProvider theme={theme} >
       <div

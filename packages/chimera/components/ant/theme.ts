@@ -1,11 +1,15 @@
 import { theme as antdTheme } from "antd"
 import type { ThemeConfig } from "antd/es/config-provider/context"
 import { randInt, randomPick } from "../../util/random"
-import { getRandomLocalFont } from "../../util/faker/font"
 import { DARK_COLOR_SCHEMES, LIGHT_COLOR_SCHEMES } from "../../util/faker/color"
 import { adjustColor } from "../../util/color"
 
-export function randomAntTheme(): ThemeConfig {
+type FontManifest = {
+  selectedFamilies?: string[]
+  fonts?: Array<{ family: string }>
+}
+
+export function randomAntTheme(fontManifest?: FontManifest): ThemeConfig {
   const dark = Math.random() < 0.4
   const {
     primary,
@@ -18,10 +22,7 @@ export function randomAntTheme(): ThemeConfig {
   // Slight separation between base and containers (elevated/paper)
   const bgPaper = adjustColor(bgDefault, randInt(0, 5) * (dark ? 1 : -1))
 
-  const fontFamily =
-    Math.random() > 0.6
-      ? `"Fira Sans","Roboto","Helvetica","Arial",sans-serif`
-      : getRandomLocalFont()
+  const fontFamily = pickFontFamily(fontManifest)
 
   const borderRadius = [4, 6, 8, 10, 12][randInt(0, 4)]
 
@@ -130,4 +131,40 @@ export function randomAntTheme(): ThemeConfig {
   }
 
   return config
+}
+
+function pickFontFamily(fontManifest?: FontManifest): string {
+  const families = new Set<string>()
+
+  for (const family of fontManifest?.selectedFamilies || []) {
+    const cleaned = family.trim()
+    if (cleaned) {
+      families.add(cleaned)
+    }
+  }
+
+  for (const item of fontManifest?.fonts || []) {
+    const cleaned = item.family.trim()
+    if (cleaned) {
+      families.add(cleaned)
+    }
+  }
+
+  if (families.size > 0) {
+    const preferred = Array.from(families).map(function toQuoted(family) {
+      return `'${family.replace(/'/g, "\\'")}'`
+    })
+    preferred.push(
+      "system-ui",
+      "-apple-system",
+      "Segoe UI",
+      "Roboto",
+      "Helvetica",
+      "Arial",
+      "sans-serif",
+    )
+    return preferred.join(",")
+  }
+
+  return "'Fira Sans','Roboto','Helvetica','Arial',sans-serif"
 }

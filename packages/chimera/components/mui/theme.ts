@@ -1,10 +1,14 @@
 import { createTheme } from "@mui/material/styles";
 import { randInt, randomPick } from "../../util/random";
-import { getRandomLocalFont } from "../../util/faker/font";
 import { DARK_COLOR_SCHEMES, LIGHT_COLOR_SCHEMES } from "../../util/faker/color";
 import { adjustColor } from "../../util/color";
 
-export function randomMuiTheme() {
+type FontManifest = {
+  selectedFamilies?: string[];
+  fonts?: Array<{ family: string }>;
+};
+
+export function randomMuiTheme(fontManifest?: FontManifest) {
   const dark = Math.random() < 0.4;
   const {
     primary,
@@ -202,14 +206,47 @@ export function randomMuiTheme() {
       text: { primary: textPrimary, secondary: textSecondary },
     },
     typography: {
-      fontFamily:
-        Math.random() > 0.6
-          ? `"Fira Sans","Roboto","Helvetica","Arial",sans-serif`
-          : getRandomLocalFont(),
+      fontFamily: pickFontFamily(fontManifest),
     },
     shape: { borderRadius: shapeRadius },
     components,
   });
 
   return theme;
+}
+
+function pickFontFamily(fontManifest?: FontManifest): string {
+  const families = new Set<string>();
+
+  for (const family of fontManifest?.selectedFamilies || []) {
+    const cleaned = family.trim();
+    if (cleaned) {
+      families.add(cleaned);
+    }
+  }
+
+  for (const item of fontManifest?.fonts || []) {
+    const cleaned = item.family.trim();
+    if (cleaned) {
+      families.add(cleaned);
+    }
+  }
+
+  if (families.size > 0) {
+    const preferred = Array.from(families).map(function toQuoted(family) {
+      return `'${family.replace(/'/g, "\\'")}'`;
+    });
+    preferred.push(
+      "system-ui",
+      "-apple-system",
+      "Segoe UI",
+      "Roboto",
+      "Helvetica",
+      "Arial",
+      "sans-serif"
+    );
+    return preferred.join(",");
+  }
+
+  return "'Fira Sans','Roboto','Helvetica','Arial',sans-serif";
 }

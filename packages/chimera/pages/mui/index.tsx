@@ -1,5 +1,5 @@
-import { useRouter } from 'next/router'
 import { ThemeProvider, CssBaseline } from "@mui/material"
+import { useEffect, useState } from 'react'
 import { InteractiveLabel } from 'ui-labelling-shared'
 import { MuiRadioGroup } from '../../components/mui/radio'
 import { useComponent } from "../../hooks/useComponent"
@@ -17,9 +17,13 @@ import { MuiButtonSet } from "../../components/mui/button"
 import { AllMuiIconsGrid } from "../../components/mui/icon"
 import { MuiIconsGridAlt } from '../../components/mui/iconbutton'
 import { MuiCheckboxGroup } from '../../components/mui/checkbox'
+import {
+  applyPreferredFamily,
+  loadInlineFontBundleStyles,
+  loadRandomFontBundle,
+} from '../../util/font-bundle'
 
 const MuiComponent = () => {
-  const { query } = useRouter()
   const component = useComponent()
 
   switch(component) {
@@ -79,9 +83,48 @@ const MuiComponent = () => {
       return null
   }
 }
-const theme = randomMuiTheme()
 
 export default () => {
+  const [theme, setTheme] = useState(() => randomMuiTheme())
+
+  useEffect(() => {
+    let mounted = true
+
+    async function loadFontTheme(): Promise<void> {
+      const bundle = await loadRandomFontBundle()
+      if (!bundle) {
+        console.warn('[chimera] No font bundles available from /api/fonts/random')
+        if (mounted) {
+          setTheme(randomMuiTheme())
+        }
+        return
+      }
+
+      const { slug, family, cssText, manifest } = bundle
+      console.log(`[chimera] Using font bundle id: ${bundle.id}`)
+      console.log(`[chimera] Using font folder: ${slug || '(none)'}`)
+      console.log(`[chimera] Selected font family: ${family}`)
+
+      try {
+        loadInlineFontBundleStyles(cssText)
+        if (!mounted) {
+          return
+        }
+        setTheme(randomMuiTheme(applyPreferredFamily(manifest, family)))
+      } catch (_error) {
+        if (mounted) {
+          setTheme(randomMuiTheme())
+        }
+      }
+    }
+
+    void loadFontTheme()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
