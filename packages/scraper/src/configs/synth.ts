@@ -250,6 +250,7 @@ function labelSuffixFromId(label: string): string {
 
 export async function transformForSynth(page: Page) {
   await page.addStyleTag({ content: 'nextjs-portal{display:none!important;}' })
+  await snooze(2000) // feels safer.  we have slow font loading potentially
   // no cleanup to do
   return async () => {}
 }

@@ -3,13 +3,22 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "tsc && node dist/index.js"
+    "start": "tsc && node dist/index.js",
+    "start:sans-upload": "SKIP_DATA_UPLOAD=true tsc && node dist/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.948.0",
+    "@aws-sdk/client-sagemaker": "^3.948.0",
+    "annotation_schema": "^1.0.0",
+    "dotenv": "^17.2.3"
+  },
   "devDependencies": {
+    "@types/node": "^24.10.2",
+    "prisma": "^6.14.0",
     "typescript": "^5.9.3"
   }
 }

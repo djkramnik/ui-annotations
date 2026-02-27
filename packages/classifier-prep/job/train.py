@@ -13,14 +13,14 @@ from torchvision import datasets, transforms
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train an image classifier with timm on SageMaker.")
-    parser.add_argument("--model-name", type=str, default="vit_base_patch16_224")
-    parser.add_argument("--num-classes", type=int, default=None)
-    parser.add_argument("--epochs", type=int, default=5)
-    parser.add_argument("--batch-size", type=int, default=32)
-    parser.add_argument("--learning-rate", type=float, default=3e-4)
-    parser.add_argument("--weight-decay", type=float, default=0.01)
-    parser.add_argument("--num-workers", type=int, default=4)
-    parser.add_argument("--image-size", type=int, default=224)
+    parser.add_argument("--model-name", type=str, default=os.environ.get("MODEL_NAME", "vit_base_patch16_224"))
+    parser.add_argument("--num-classes", type=int, default=int(os.environ["NUM_CLASSES"]) if "NUM_CLASSES" in os.environ else None)
+    parser.add_argument("--epochs", type=int, default=int(os.environ.get("EPOCHS", "5")))
+    parser.add_argument("--batch-size", type=int, default=int(os.environ.get("BATCH_SIZE", "32")))
+    parser.add_argument("--learning-rate", type=float, default=float(os.environ.get("LEARNING_RATE", "3e-4")))
+    parser.add_argument("--weight-decay", type=float, default=float(os.environ.get("WEIGHT_DECAY", "0.01")))
+    parser.add_argument("--num-workers", type=int, default=int(os.environ.get("NUM_WORKERS", "4")))
+    parser.add_argument("--image-size", type=int, default=int(os.environ.get("IMAGE_SIZE", "224")))
     parser.add_argument(
         "--train-dir",
         type=str,
@@ -40,7 +40,7 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"),
     )
-    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--seed", type=int, default=int(os.environ.get("SEED", "42")))
     return parser.parse_args()
 
 
