@@ -7,7 +7,15 @@ export const fontRouter = Router()
 
 fontRouter.get('/random', async (_req, res) => {
   try {
-    const bundles = await prisma.font_bundle.findMany({
+    const totalBundles = await prisma.font_bundle.count()
+    if (totalBundles === 0) {
+      return res.status(404).json({ error: 'no font bundles found' })
+    }
+
+    const randomOffset = Math.floor(Math.random() * totalBundles)
+    const selected = await prisma.font_bundle.findFirst({
+      skip: randomOffset,
+      orderBy: { id: 'asc' },
       select: {
         id: true,
         slug: true,
@@ -28,11 +36,10 @@ fontRouter.get('/random', async (_req, res) => {
       },
     })
 
-    if (bundles.length === 0) {
+    if (!selected) {
       return res.status(404).json({ error: 'no font bundles found' })
     }
 
-    const selected = bundles[Math.floor(Math.random() * bundles.length)]
     const rewrittenCssText = await rewriteBundleCssToAssetUrls(selected.css_text, selected.assets)
     return res.status(200).json({
       data: {
