@@ -7,6 +7,7 @@ import { prisma } from './db'
 import { ocrRouter } from './routes/ocr'
 import { interactiveRouter } from './routes/interactive'
 import { annotationRouter } from './routes/annotation'
+import { fontRouter } from './routes/font'
 
 dotenv.config({ path: path.join(__dirname, '.env') })
 
@@ -23,6 +24,7 @@ dotenv.config({ path: path.join(__dirname, '.env') })
     app.use('/api/util', utilRouter)
     app.use('/api/ocr', ocrRouter)
     app.use('/api/interactive', interactiveRouter)
+    app.use('/api/fonts', fontRouter)
 
     const server = app.listen(port, () => {
       console.log('serving listening on port', port)
