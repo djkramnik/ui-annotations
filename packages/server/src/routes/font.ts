@@ -1,4 +1,6 @@
 import { Router } from 'express'
+import { readFile, readdir } from 'fs/promises'
+import path from 'path'
 import { prisma } from '../db'
 
 export const fontRouter = Router()
@@ -46,6 +48,34 @@ fontRouter.get('/random', async (_req, res) => {
   } catch (error) {
     console.error('failed to load random font bundle', error)
     return res.status(500).json({ error: 'failed to load random font bundle' })
+  }
+})
+
+fontRouter.get('/assets/:id', async (req, res) => {
+  const id = Number(req.params.id)
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: 'invalid asset id' })
+  }
+
+  try {
+    const asset = await prisma.font_asset.findUnique({
+      where: { id },
+      select: {
+        mime_type: true,
+        data: true,
+      },
+    })
+
+    if (!asset) {
+      return res.status(404).json({ error: 'asset not found' })
+    }
+
+    res.setHeader('Content-Type', asset.mime_type)
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+    return res.status(200).send(Buffer.from(asset.data))
+  } catch (error) {
+    console.error('failed to load font asset', error)
+    return res.status(500).json({ error: 'failed to load font asset' })
   }
 })
 
