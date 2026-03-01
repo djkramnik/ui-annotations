@@ -33,6 +33,7 @@ type Config = {
   volumeSizeGb: number;
   maxRuntimeSeconds: number;
   skipDataUpload: boolean;
+  skipTrainingJob: boolean;
 };
 
 const prisma = new PrismaClient();
@@ -68,6 +69,7 @@ function parseConfig(): Config {
   const trainSplitRaw = Number(process.env.TRAIN_SPLIT ?? '0.8');
   const trainSplit = Number.isFinite(trainSplitRaw) ? Math.min(Math.max(trainSplitRaw, 0.1), 0.95) : 0.8;
   const skipDataUpload = process.env.SKIP_DATA_UPLOAD === 'true';
+  const skipTrainingJob = process.env.SKIP_TRAINING_JOB === 'true';
   const instanceType = (process.env.AWS_SAGEMAKER_INSTANCE_TYPE ??
     'ml.g5.xlarge') as TrainingInstanceType;
   const instanceCount = Number(process.env.AWS_SAGEMAKER_INSTANCE_COUNT ?? '1');
@@ -91,6 +93,7 @@ function parseConfig(): Config {
     volumeSizeGb,
     maxRuntimeSeconds,
     skipDataUpload,
+    skipTrainingJob,
   };
 }
 
@@ -323,6 +326,11 @@ async function main(): Promise<void> {
       throw new Error('No interactive rows found with non-null label for current filters.');
     }
     await uploadDataset(rows, config);
+  }
+
+  if (config.skipTrainingJob) {
+    console.log('SKIP_TRAINING_JOB=true; skipping SageMaker training job submission.');
+    return;
   }
 
   await startTrainingJob(config);

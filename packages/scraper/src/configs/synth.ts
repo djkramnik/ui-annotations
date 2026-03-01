@@ -59,20 +59,20 @@ const labelMultiplier: Partial<Record<InteractiveLabel, number>> = {
 export async function getChimericLinks(defaultReps: number = 2): Promise<string[]> {
   const frameworkLabels: InteractiveLabel[] = [
     InteractiveLabel.accordion,
-    InteractiveLabel.avatar,
-    InteractiveLabel.button,
+    // InteractiveLabel.avatar,
+    // InteractiveLabel.button,
     InteractiveLabel.datepicker,
     InteractiveLabel.calendar,
     InteractiveLabel.dropdown,
     InteractiveLabel.dropdown_menu,
-    InteractiveLabel.iconbutton,
+    // InteractiveLabel.iconbutton,
     InteractiveLabel.pagination,
     InteractiveLabel.radio,
     InteractiveLabel.checkbox,
     InteractiveLabel.slider,
     InteractiveLabel.textarea,
-    InteractiveLabel.textinput,
-    InteractiveLabel.toggle
+    // InteractiveLabel.textinput,
+    // InteractiveLabel.toggle
   ]
   const vanillaLabels: InteractiveLabel[] = [
     InteractiveLabel.filepicker,
@@ -95,7 +95,8 @@ export async function getChimericLinks(defaultReps: number = 2): Promise<string[
     )
   }, [] as string[])
 
-  return (vanillaLinks).concat(frameworkLinks)
+  // return (vanillaLinks).concat(frameworkLinks)
+  return vanillaLinks
 }
 
 

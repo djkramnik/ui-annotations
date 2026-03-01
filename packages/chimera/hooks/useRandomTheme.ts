@@ -1,8 +1,10 @@
 import { VanillaTheme } from '../components/vanilla/type'
+import { FontManifest } from '../util/font-bundle'
 import { getRandomLocalFont } from '../util/faker/font'
 import { randInt } from '../util/random'
 
-export const useRandomTheme = (): VanillaTheme => {
+export const useRandomTheme = (fontManifest?: FontManifest): VanillaTheme => {
+  const manifestFontFamily = pickFontFamily(fontManifest)
   const {
     background,
     text,
@@ -21,11 +23,47 @@ export const useRandomTheme = (): VanillaTheme => {
     },
     font: {
       fontFamily: {
-        primary: getRandomLocalFont(),
-        secondary: getRandomLocalFont(),
+        primary: manifestFontFamily || getRandomLocalFont(),
+        secondary: manifestFontFamily || getRandomLocalFont(),
       },
     },
   }
+}
+
+function pickFontFamily(fontManifest?: FontManifest): string | null {
+  const families = new Set<string>()
+
+  for (const family of fontManifest?.selectedFamilies || []) {
+    const cleaned = family.trim()
+    if (cleaned) {
+      families.add(cleaned)
+    }
+  }
+
+  for (const item of fontManifest?.fonts || []) {
+    const cleaned = item.family.trim()
+    if (cleaned) {
+      families.add(cleaned)
+    }
+  }
+
+  if (families.size === 0) {
+    return null
+  }
+
+  const preferred = Array.from(families).map(function toQuoted(family) {
+    return `'${family.replace(/'/g, "\\'")}'`
+  })
+  preferred.push(
+    'system-ui',
+    '-apple-system',
+    'Segoe UI',
+    'Roboto',
+    'Helvetica',
+    'Arial',
+    'sans-serif',
+  )
+  return preferred.join(',')
 }
 
 const THEMES = [
