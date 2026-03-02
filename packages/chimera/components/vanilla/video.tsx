@@ -14,6 +14,94 @@ type RandomPlayerConfig = {
   width: number; // px
 };
 
+const detectProvider = (url: string): string => {
+  if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
+  if (url.includes('vimeo.com')) return 'vimeo';
+  if (url.includes('twitch.tv')) return 'twitch';
+  if (url.includes('tiktok.com')) return 'tiktok';
+  if (url.includes('wistia.com')) return 'wistia';
+  if (url.includes('mux.com')) return 'mux';
+  if (url.endsWith('.m3u8')) return 'hls';
+  if (url.endsWith('.mpd')) return 'dash';
+  if (url.endsWith('.mp3')) return 'audio';
+  return 'generic';
+};
+
+
+const TIKTOK_URLS = [
+  'https://www.tiktok.com/@martinlopez2269/video/7611344380259077390',
+  'https://www.tiktok.com/@_brad_marchand/video/7604509356075339028',
+  'https://www.tiktok.com/@thaeshweyeephyo51/video/7609178277789519125',
+  'https://www.tiktok.com/@orlandopirates/video/7604097684533726484',
+  'https://www.tiktok.com/@.zuzuuuq/video/7586977176071851286',
+  'https://www.tiktok.com/@milypurr/video/7589072467923094840',
+  'https://www.tiktok.com/@marc_news/video/7607351729000156434',
+  'https://www.tiktok.com/@edibertotrisha/video/7609995943693372685',
+  'https://www.tiktok.com/@yoon38624/video/7602498275501034760',
+  'https://www.tiktok.com/@c.h.l.o.e.e/video/7606856370419207447',
+  'https://www.tiktok.com/@www.tiktok.comsokphanith/video/7611543410213768468',
+  'https://www.tiktok.com/@brown.fam_/video/7605746514274667798',
+  'https://www.tiktok.com/@user3746210595559/video/7601730635459235095',
+  'https://www.tiktok.com/@cyndyhanna666/video/7605944345807555871',
+  'https://www.tiktok.com/@phinsophannya/video/7601689829771922706',
+  'https://www.tiktok.com/@zucklar_/video/7603454465672301837',
+  'https://www.tiktok.com/@officialbobbydancing/video/7607036830986276114',
+  'https://www.tiktok.com/@albertvidss/video/7608638677614398742',
+  'https://www.tiktok.com/@putsywaa/video/7584764524507450645',
+  'https://www.tiktok.com/@ai.fact.s/video/7602789102123011341',
+  'https://www.tiktok.com/@kiklidanceacademy/video/7607047781534141718',
+  'https://www.tiktok.com/@abood.alshaer88/video/7602163943271894293',
+  'https://www.tiktok.com/@jonbernardk/video/7603661736520027413',
+  'https://www.tiktok.com/@koteekopong/video/7600235888920055058',
+  'https://www.tiktok.com/@m_jojomc/video/7580092696790945057',
+  'https://www.tiktok.com/@ssamaragohar47/video/7603057299783191831',
+  'https://www.tiktok.com/@oxyhiiii/video/7601738245432462614',
+  'https://www.tiktok.com/@magnoliaartstiktok/video/7605072744325139730',
+  'https://www.tiktok.com/@senzoofficial02/video/7609618623904140565',
+  'https://www.tiktok.com/@edmondx.fan8/video/7610768666098945301',
+  'https://www.tiktok.com/@lyricsandvibes7/video/7603369558908357908',
+  'https://www.tiktok.com/@harleen_005/video/7601617959542361366',
+  'https://www.tiktok.com/@petsnaps0/video/7603088688255487262',
+  'https://www.tiktok.com/@delegatefowler/video/7605352796170292510',
+  'https://www.tiktok.com/@france_girls0/video/7602758724054207766',
+  'https://www.tiktok.com/@thereal_kaymedusa/video/7610104622635617554',
+  'https://www.tiktok.com/@ueik_thw/video/7602891902836362504',
+  'https://www.tiktok.com/@jueves_tattoo/video/7611253921184517384',
+  'https://www.tiktok.com/@losdekchuchaoficial/video/7611854473375386900'
+]
+
+const YOUTUBE_URLS: string[] = [
+'https://youtu.be/DqCcZk8T9Wk?si=ZzCYnavwmngtRZ2c',
+'https://youtu.be/G6Kspj3OO0s',
+'https://youtu.be/s88r_q7oufE?list=RDs88r_q7oufE',
+'https://youtu.be/muoWDA6zmsY?list=RDmuoWDA6zmsY',
+'https://youtu.be/Xk73PkJt9gI',
+'https://youtu.be/t-PuYjOVebc',
+'https://youtu.be/EpOyzzNuwVk',
+'https://youtu.be/vV8IAOojoAA?list=RDvV8IAOojoAA',
+'https://youtu.be/vtSnBsI4raU',
+'https://youtu.be/7sJOfaWjPmo',
+'https://youtu.be/ZF4T833lln4',
+'https://youtu.be/R6-cNg2nyB4',
+'https://youtu.be/OiPiRKbNCWY?list=RDOiPiRKbNCWY',
+'https://youtu.be/a4pBXzDPErQ?list=RDa4pBXzDPErQ',
+'https://youtu.be/a9eNQZbjpJk?list=RDa9eNQZbjpJk',
+'https://youtu.be/1vx8iUvfyCY',
+'https://youtu.be/xvV98jQGTC8',
+'https://youtu.be/yrrcL03itbA',
+'https://www.youtube.com/shorts/bzLfzAqY5XE?',
+'https://youtu.be/oH-txHzE4jA',
+'https://youtu.be/eVli-tstM5E',
+'https://youtu.be/4rXwJmBVvmo',
+'https://youtu.be/mE3SvDwecBA',
+'https://youtu.be/OhWM4_pIKVg',
+'https://youtu.be/NJJ8WEjD8SY?list=RDNJJ8WEjD8SY',
+'https://youtu.be/US0Ty2nngjw',
+'https://youtu.be/izDAOvHz5Wc',
+'https://youtu.be/SSIcrYZvnuE'
+
+]
+
 const DEFAULT_URLS = [
   // HTML
   'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4',
@@ -45,7 +133,10 @@ const DEFAULT_URLS = [
   // TikTok
   'https://www.tiktok.com/@_luwes/video/7527476667770522893',
   'https://www.tiktok.com/@scout2015/video/6718335390845095173',
-];
+].concat(TIKTOK_URLS).concat(YOUTUBE_URLS);
+
+
+
 
 const PLAYBACK_RATE_OPTIONS = [0.5, 1, 1.25, 1.5, 2];
 
@@ -56,6 +147,7 @@ export const VanillaVideo: React.FC = () => {
   const [allowLight, setAllowLight] = useState(true);
   const [allowLoop, setAllowLoop] = useState(true);
   const [allowMuted, setAllowMuted] = useState(true);
+  const [autoplayCompat, setAutoplayCompat] = useState(true);
   const [minVolume, setMinVolume] = useState(0.1); // 0–1
   const [maxVolume, setMaxVolume] = useState(1);
   const [enabledRates, setEnabledRates] = useState<number[]>([1, 1.5, 2]);
@@ -114,6 +206,7 @@ export const VanillaVideo: React.FC = () => {
 
     const nextConfig: RandomPlayerConfig = {
       url: randomUrl,
+      // playing: true,
       playing: randBool(), // could force true if you prefer
       controls: allowControls ? randBool() : false,
       light: allowLight ? randBool() : false,
@@ -126,6 +219,19 @@ export const VanillaVideo: React.FC = () => {
 
     setConfig(nextConfig);
   };
+
+  const effectiveConfig = useMemo(() => {
+    if (!config) return null;
+    if (!autoplayCompat) return config;
+    if (!config.playing) return config;
+
+    // Browser/provider autoplay is far more reliable in this mode.
+    return {
+      ...config,
+      light: false,
+      muted: true,
+    };
+  }, [autoplayCompat, config]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -184,6 +290,15 @@ export const VanillaVideo: React.FC = () => {
                 onChange={e => setAllowMuted(e.target.checked)}
               />{' '}
               Randomize <code>muted</code>
+            </label>
+            <label style={{ display: 'block', fontSize: 14 }}>
+              <input
+                type="checkbox"
+                checked={autoplayCompat}
+                onChange={e => setAutoplayCompat(e.target.checked)}
+              />{' '}
+              Autoplay compatibility mode (if <code>playing=true</code>, force{' '}
+              <code>light=false</code> and <code>muted=true</code>)
             </label>
           </div>
 
@@ -244,7 +359,7 @@ export const VanillaVideo: React.FC = () => {
         </div>
       </section>
 
-      {config && (
+      {effectiveConfig && (
         <>
           {/* Text printout of the random options */}
           <section>
@@ -262,15 +377,17 @@ export const VanillaVideo: React.FC = () => {
             >
               {JSON.stringify(
                 {
-                  url: config.url,
-                  playing: config.playing,
-                  controls: config.controls,
-                  light: config.light,
-                  loop: config.loop,
-                  muted: config.muted,
-                  volume: config.volume,
-                  playbackRate: config.playbackRate,
-                  widthPx: config.width,
+                  provider: detectProvider(effectiveConfig.url),
+                  url: effectiveConfig.url,
+                  playing: effectiveConfig.playing,
+                  controls: effectiveConfig.controls,
+                  light: effectiveConfig.light,
+                  loop: effectiveConfig.loop,
+                  muted: effectiveConfig.muted,
+                  volume: effectiveConfig.volume,
+                  playbackRate: effectiveConfig.playbackRate,
+                  widthPx: effectiveConfig.width,
+                  autoplayCompatibilityMode: autoplayCompat,
                 },
                 null,
                 2
@@ -282,19 +399,20 @@ export const VanillaVideo: React.FC = () => {
           <section style={{ marginTop: 16 }}>
             <div
               style={{
-                width: config.width,
+                width: effectiveConfig.width,
                 maxWidth: '100%',
               }}
             >
               <ReactPlayer
-                src={config.url}
-                playing={config.playing}
-                controls={config.controls}
-                light={config.light}
-                loop={config.loop}
-                muted={config.muted}
-                volume={config.volume}
-                playbackRate={config.playbackRate}
+                src={effectiveConfig.url}
+                playing={effectiveConfig.playing}
+                controls={effectiveConfig.controls}
+                light={effectiveConfig.light}
+                loop={effectiveConfig.loop}
+                muted={effectiveConfig.muted}
+                volume={effectiveConfig.volume}
+                playbackRate={effectiveConfig.playbackRate}
+                playsInline
                 width="100%"
                 height="auto"
                 style={{ aspectRatio: '16/9' }}
@@ -323,4 +441,3 @@ export const VanillaVideo: React.FC = () => {
     </div>
   );
 };
-

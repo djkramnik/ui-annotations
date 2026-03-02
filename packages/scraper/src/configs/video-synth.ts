@@ -54,7 +54,58 @@ export async function transformForVideo(page: Page) {
     }
   })
   await page.addStyleTag({ content: 'nextjs-portal{display:none!important;}' })
-  // we need to wait for a random period to catch the video at random timestamp?
-  await snooze(randInt(10, 30) * 1000)
+
+  const seeked = await page.evaluate(async (endBufferSeconds: number) => {
+    const mediaEls = Array.from(
+      document.querySelectorAll('video, audio')
+    ) as Array<HTMLVideoElement | HTMLAudioElement>
+
+    const isPlaying = (el: HTMLVideoElement | HTMLAudioElement) =>
+      !el.paused && !el.ended && el.readyState >= 2
+
+    const playingEls = mediaEls.filter(isPlaying)
+    if (!playingEls.length) {
+      return false
+    }
+
+    // Pick a currently playing media element and seek to a random safe point.
+    const target = playingEls[Math.floor(Math.random() * playingEls.length)]
+    const duration = target.duration
+
+    if (!Number.isFinite(duration) || duration <= 0) {
+      return false
+    }
+
+    const maxSeek = Math.max(0, duration - endBufferSeconds)
+    if (maxSeek <= 0) {
+      return false
+    }
+
+    const randomTime = Math.random() * maxSeek
+    await new Promise<void>((resolve) => {
+      let resolved = false
+      const done = () => {
+        if (!resolved) {
+          resolved = true
+          resolve()
+        }
+      }
+      const timeout = window.setTimeout(done, 1500)
+      target.addEventListener(
+        'seeked',
+        () => {
+          window.clearTimeout(timeout)
+          done()
+        },
+        { once: true }
+      )
+      target.currentTime = randomTime
+    })
+
+    return true
+  }, 20)
+
+  await snooze(seeked ? 1000 : 500)
+
   return async () => {}
 }
