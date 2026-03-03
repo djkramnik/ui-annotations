@@ -13,6 +13,7 @@ from torchvision import datasets, transforms
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train an image classifier with timm on SageMaker.")
+    parser.add_argument("command", nargs="?", default="train")
     parser.add_argument("--model-name", type=str, default=os.environ.get("MODEL_NAME", "vit_base_patch16_224"))
     parser.add_argument("--num-classes", type=int, default=int(os.environ["NUM_CLASSES"]) if "NUM_CLASSES" in os.environ else None)
     parser.add_argument("--epochs", type=int, default=int(os.environ.get("EPOCHS", "5")))
@@ -41,7 +42,12 @@ def parse_args() -> argparse.Namespace:
         default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"),
     )
     parser.add_argument("--seed", type=int, default=int(os.environ.get("SEED", "42")))
-    return parser.parse_args()
+    args, unknown = parser.parse_known_args()
+    if args.command not in ("train",):
+        raise ValueError(f"Unsupported command '{args.command}'. Expected 'train'.")
+    if unknown:
+        print(f"Ignoring unrecognized CLI args: {unknown}")
+    return args
 
 
 def set_seed(seed: int) -> None:
