@@ -3,13 +3,17 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-ENV_FILE="${PROJECT_DIR}/.env"
+DEPLOY_ENV_FILE="${PROJECT_DIR}/.env.deploy"
 
-if [[ -f "${ENV_FILE}" ]]; then
+if [[ -f "${DEPLOY_ENV_FILE}" ]]; then
   set -a
   # shellcheck disable=SC1090
-  source "${ENV_FILE}"
+  source "${DEPLOY_ENV_FILE}"
   set +a
+else
+  echo "WARNING: ${DEPLOY_ENV_FILE} not found."
+  echo "Create it from .env.deploy.example before running deploy_docker.sh."
+  exit 1
 fi
 
 AWS_REGION="${AWS_REGION:-us-east-1}"
