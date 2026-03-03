@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "start": "tsc && node dist/index.js",
-    "start:sans-upload": "tsc && SKIP_DATA_UPLOAD=true node dist/index.js"
+    "start:sans-upload": "tsc && SKIP_DATA_UPLOAD=true node dist/index.js",
+    "start:sans-job": "tsc && SKIP_TRAINING_JOB=true node dist/index.js"
   },
   "keywords": [],
   "author": "",
