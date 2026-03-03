@@ -21,6 +21,7 @@ AWS_PROFILE="${AWS_PROFILE:-}"
 AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID:-}"
 ECR_REPOSITORY="${AWS_ECR_REPOSITORY:-classifier-prep}"
 IMAGE_TAG="${AWS_SAGEMAKER_IMAGE_TAG:-latest}"
+AWS_DEBUG="${AWS_DEBUG:-false}"
 
 aws_cli() {
   if [[ -n "${AWS_PROFILE}" ]]; then
@@ -29,6 +30,22 @@ aws_cli() {
     aws "$@"
   fi
 }
+
+log_context() {
+  local caller_arn
+  caller_arn="$(aws_cli sts get-caller-identity --query Arn --output text 2>/dev/null || echo "unknown")"
+  echo "Deploy context:"
+  echo "  profile: ${AWS_PROFILE:-<default>}"
+  echo "  region: ${AWS_REGION}"
+  echo "  account_id: ${AWS_ACCOUNT_ID}"
+  echo "  caller_arn: ${caller_arn}"
+  echo "  ecr_repository: ${ECR_REPOSITORY}"
+  echo "  image_tag: ${IMAGE_TAG}"
+}
+
+if [[ "${AWS_DEBUG}" == "true" ]]; then
+  set -x
+fi
 
 if [[ -z "${AWS_ACCOUNT_ID}" ]]; then
   AWS_ACCOUNT_ID="$(aws_cli sts get-caller-identity --query Account --output text)"
@@ -41,17 +58,17 @@ fi
 
 IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}"
 
-if [[ -n "${AWS_PROFILE}" ]]; then
-  echo "Using AWS profile: ${AWS_PROFILE}"
-fi
+log_context
 
 echo "Ensuring ECR repository exists: ${ECR_REPOSITORY}"
-aws_cli ecr describe-repositories \
+if ! aws_cli ecr describe-repositories \
   --repository-names "${ECR_REPOSITORY}" \
-  --region "${AWS_REGION}" >/dev/null 2>&1 || \
-aws_cli ecr create-repository \
-  --repository-name "${ECR_REPOSITORY}" \
-  --region "${AWS_REGION}" >/dev/null
+  --region "${AWS_REGION}" >/dev/null; then
+  echo "Repository not found or inaccessible; attempting create-repository."
+  aws_cli ecr create-repository \
+    --repository-name "${ECR_REPOSITORY}" \
+    --region "${AWS_REGION}" >/dev/null
+fi
 
 echo "Logging into ECR (${AWS_REGION})"
 aws_cli ecr get-login-password --region "${AWS_REGION}" | \
