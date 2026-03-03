@@ -12,23 +12,8 @@ if [[ -f "${ENV_FILE}" ]]; then
   set +a
 fi
 
-AWS_PROFILE_OVERRIDE=""
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --profile)
-      AWS_PROFILE_OVERRIDE="${2:-}"
-      shift 2
-      ;;
-    *)
-      echo "Unknown argument: $1"
-      echo "Usage: $0 [--profile <aws-profile>]"
-      exit 1
-      ;;
-  esac
-done
-
 AWS_REGION="${AWS_REGION:-us-east-1}"
-AWS_PROFILE="${AWS_PROFILE_OVERRIDE:-${AWS_PROFILE:-}}"
+AWS_PROFILE="${AWS_PROFILE:-}"
 AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID:-}"
 ECR_REPOSITORY="${AWS_ECR_REPOSITORY:-classifier-prep}"
 IMAGE_TAG="${AWS_SAGEMAKER_IMAGE_TAG:-latest}"
