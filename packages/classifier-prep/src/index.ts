@@ -19,6 +19,7 @@ type InteractiveRow = {
 type Config = {
   screenTag?: string;
   labels?: string[];
+  downloadChunkSize: number;
   trainSplit: number;
   runName: string;
   region: string;
@@ -47,6 +48,12 @@ function utcTimestamp(): string {
   )}-${pad(d.getUTCMinutes())}-${pad(d.getUTCSeconds())}`;
 }
 
+function utcDateStamp(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+}
+
 function required(name: string): string {
   const value = process.env[name];
   if (!value) {
@@ -58,7 +65,11 @@ function required(name: string): string {
 function parseConfig(): Config {
   const screenTag = process.env.SCREEN_TAG;
   const labels = process.env.LABELS?.split(',').map(s => s.trim()).filter(Boolean);
-  const runName = process.env.CLASSIFIER_RUN_NAME ?? `classifier-${utcTimestamp()}`;
+  const downloadChunkSizeRaw = Number(process.env.DOWNLOAD_CHUNK_SIZE ?? '1000');
+  const downloadChunkSize = Number.isFinite(downloadChunkSizeRaw)
+    ? Math.max(1, Math.floor(downloadChunkSizeRaw))
+    : 1000;
+  const runName = process.env.CLASSIFIER_RUN_NAME ?? `classifier-${utcDateStamp()}`;
   const region = required('AWS_REGION');
   const bucket = required('AWS_S3_BUCKET');
   const datasetS3Uri = process.env.AWS_SAGEMAKER_DATASET_URI ?? `s3://${bucket}/classifier/${runName}`;
@@ -79,6 +90,7 @@ function parseConfig(): Config {
   return {
     screenTag,
     labels,
+    downloadChunkSize,
     trainSplit,
     runName,
     region,
@@ -174,21 +186,52 @@ function splitRows(rows: InteractiveRow[], ratio: number): { train: InteractiveR
 }
 
 async function getInteractiveRows(config: Config): Promise<InteractiveRow[]> {
-  const rows = await prisma.interactive.findMany({
-    where: {
-      label: {
-        not: null,
-        ...(config.labels?.length ? { in: config.labels } : {}),
+  const allRows: InteractiveRow[] = [];
+  let lastSeenId: number | undefined = undefined;
+  let chunkNumber = 0;
+
+  while (true) {
+    const rows = await prisma.interactive.findMany({
+      where: {
+        label: {
+          not: null,
+          ...(config.labels?.length ? { in: config.labels } : {}),
+        },
+        ...(config.screenTag ? { screenshot: { is: { tag: config.screenTag } } } : {}),
       },
-      ...(config.screenTag ? { screenshot: { is: { tag: config.screenTag } } } : {}),
-    },
-    select: {
-      id: true,
-      label: true,
-      image_data: true,
-    },
-  });
-  return rows as InteractiveRow[];
+      select: {
+        id: true,
+        label: true,
+        image_data: true,
+      },
+      orderBy: {
+        id: 'asc',
+      },
+      take: config.downloadChunkSize,
+      ...(lastSeenId !== undefined
+        ? {
+            cursor: {
+              id: lastSeenId,
+            },
+            skip: 1,
+          }
+        : {}),
+    });
+
+    chunkNumber += 1;
+    const typedRows = rows as InteractiveRow[];
+    allRows.push(...typedRows);
+    console.log(
+      `Fetched ${typedRows.length} interactive records from Prisma (chunk ${chunkNumber}, total ${allRows.length}).`,
+    );
+
+    if (typedRows.length < config.downloadChunkSize) {
+      break;
+    }
+    lastSeenId = typedRows[typedRows.length - 1]!.id;
+  }
+
+  return allRows;
 }
 
 async function uploadDataset(rows: InteractiveRow[], config: Config): Promise<void> {
@@ -326,6 +369,8 @@ async function main(): Promise<void> {
       throw new Error('No interactive rows found with non-null label for current filters.');
     }
     await uploadDataset(rows, config);
+    console.log(`Dataset S3 URI: ${config.datasetS3Uri}`);
+    console.log(`Output S3 URI: ${config.outputS3Uri}`);
   }
 
   if (config.skipTrainingJob) {
