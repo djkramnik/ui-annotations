@@ -65,7 +65,7 @@ function required(name: string): string {
 function parseConfig(): Config {
   const screenTag = process.env.SCREEN_TAG;
   const labels = process.env.LABELS?.split(',').map(s => s.trim()).filter(Boolean);
-  const downloadChunkSizeRaw = Number(process.env.DOWNLOAD_CHUNK_SIZE ?? '1000');
+  const downloadChunkSizeRaw = Number(process.env.DOWNLOAD_CHUNK_SIZE ?? '200');
   const downloadChunkSize = Number.isFinite(downloadChunkSizeRaw)
     ? Math.max(1, Math.floor(downloadChunkSizeRaw))
     : 1000;
@@ -235,6 +235,7 @@ async function getInteractiveRows(config: Config): Promise<InteractiveRow[]> {
 }
 
 async function uploadDataset(rows: InteractiveRow[], config: Config): Promise<void> {
+  console.log('uploading data to s3...')
   const { bucket, prefix } = parseS3Uri(config.datasetS3Uri);
   const labels = Array.from(new Set(rows.map(r => r.label).filter((x): x is string => !!x)));
   const labelMap = buildLabelMap(labels);
@@ -264,6 +265,7 @@ async function uploadDataset(rows: InteractiveRow[], config: Config): Promise<vo
     if (pending.length >= uploadConcurrency) {
       await Promise.all(pending);
       pending.length = 0;
+      console.log(`uploaded ${uploadConcurrency} images`)
     }
   };
 
