@@ -2,7 +2,7 @@ import { Page } from "puppeteer-core";
 import { InteractiveLabel } from "ui-labelling-shared";
 import { randInt, snooze } from "../util";
 
-export async function getVideoLinks(reps: number = 1): Promise<string[]> {
+export async function getVideoLinks(reps: number = 300): Promise<string[]> {
   return new Array(reps)
     .fill(`http://localhost:3000?component=${InteractiveLabel.video}`)
 }
@@ -55,6 +55,7 @@ export async function transformForVideo(page: Page) {
   })
   await page.addStyleTag({ content: 'nextjs-portal{display:none!important;}' })
 
+  await snooze(1000 * 10)
   const seeked = await page.evaluate(async (endBufferSeconds: number) => {
     const mediaEls = Array.from(
       document.querySelectorAll('video, audio')
@@ -105,7 +106,7 @@ export async function transformForVideo(page: Page) {
     return true
   }, 20)
 
-  await snooze(seeked ? 1000 : 500)
+  await snooze(seeked ? 2000 : 500)
 
   return async () => {}
 }

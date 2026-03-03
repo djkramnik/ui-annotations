@@ -206,8 +206,7 @@ export const VanillaVideo: React.FC = () => {
 
     const nextConfig: RandomPlayerConfig = {
       url: randomUrl,
-      // playing: true,
-      playing: randBool(), // could force true if you prefer
+      playing: Math.random() > 0.3,
       controls: allowControls ? randBool() : false,
       light: allowLight ? randBool() : false,
       loop: allowLoop ? randBool() : false,
