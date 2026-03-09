@@ -1,0 +1,1 @@
+docker run --rm -p 5001:5000 -v "$(pwd)/models:/app/models" classifier-inference
