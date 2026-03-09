@@ -341,7 +341,7 @@ async function startTrainingJob(config: Config): Promise<void> {
     Environment: {
       MODEL_DIR: '/opt/ml/model',
       MODEL_NAME: process.env.MODEL_NAME ?? 'vit_base_patch16_224',
-      EPOCHS: process.env.EPOCHS ?? '5',
+      EPOCHS: process.env.EPOCHS ?? '10',
       BATCH_SIZE: process.env.BATCH_SIZE ?? '32',
       LEARNING_RATE: process.env.LEARNING_RATE ?? '0.0003',
       WEIGHT_DECAY: process.env.WEIGHT_DECAY ?? '0.01',

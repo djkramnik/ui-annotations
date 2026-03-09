@@ -34,7 +34,7 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default=os.environ.get("SM_CHANNEL_VALIDATION")
         or os.environ.get("SM_CHANNEL_VAL")
-        or "",
+        or "/opt/ml/input/data/validation",
     )
     parser.add_argument(
         "--model-dir",
@@ -177,6 +177,23 @@ def main() -> None:
     set_seed(args.seed)
     device = resolve_device()
 
+    channel_env = {
+        "SM_CHANNEL_TRAINING": os.environ.get("SM_CHANNEL_TRAINING"),
+        "SM_CHANNEL_TRAIN": os.environ.get("SM_CHANNEL_TRAIN"),
+        "SM_CHANNEL_VALIDATION": os.environ.get("SM_CHANNEL_VALIDATION"),
+        "SM_CHANNEL_VAL": os.environ.get("SM_CHANNEL_VAL"),
+    }
+    print(
+        json.dumps(
+            {
+                "event": "channel_env",
+                "env": channel_env,
+                "resolved_train_dir": args.train_dir,
+                "resolved_val_dir": args.val_dir,
+            }
+        )
+    )
+
     model_dir = Path(args.model_dir)
     model_dir.mkdir(parents=True, exist_ok=True)
 
@@ -186,6 +203,18 @@ def main() -> None:
         raise FileNotFoundError(f"Validation directory does not exist: {args.val_dir}")
 
     train_loader, val_loader, class_to_idx = make_loaders(args)
+    print(
+        json.dumps(
+            {
+                "event": "dataset_info",
+                "train_dir": args.train_dir,
+                "val_dir": args.val_dir,
+                "train_examples": len(train_loader.dataset),
+                "val_examples": len(val_loader.dataset) if val_loader is not None else 0,
+                "has_validation_loader": val_loader is not None,
+            }
+        )
+    )
     inferred_classes = len(class_to_idx)
     num_classes = args.num_classes or inferred_classes
 
@@ -223,11 +252,26 @@ def main() -> None:
             "val_acc": val_acc,
         }
         history.append(epoch_summary)
-        print(json.dumps(epoch_summary))
-
-        if score > best_score:
+        checkpoint_saved = score > best_score
+        if checkpoint_saved:
             best_score = score
             torch.save(model.state_dict(), model_dir / "model_best.pth")
+        print(
+            json.dumps(
+                {
+                    "event": "epoch_end",
+                    "epoch": epoch + 1,
+                    "train_loss": train_loss,
+                    "train_acc": train_acc,
+                    "val_loss": val_loss,
+                    "val_acc": val_acc,
+                    "score": score,
+                    "best_score": best_score,
+                    "checkpoint_saved": checkpoint_saved,
+                    "has_validation_loader": val_loader is not None,
+                }
+            )
+        )
 
     torch.save(model.state_dict(), model_dir / "model_last.pth")
 
